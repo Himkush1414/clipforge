@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from clipforge.analysis.transcribe import Word
-from clipforge.captions.layout import LaidOutGroup, PlacedWord, group_words, layout_group
+from clipforge.captions.layout import LaidOutGroup, PlacedWord, group_words, is_rtl, layout_group
 from clipforge.captions.presets import CaptionPreset
 
 ENTRANCE_MS = 90
@@ -81,6 +81,8 @@ def _word_events(laid: LaidOutGroup, placed: PlacedWord, position: int, preset: 
 
     tags = [
         "\\an5",
+        # -1 lets libass find the base direction, so punctuation lands on the correct side of RTL words.
+        "\\fe-1" if is_rtl(word.text) else "",
         f"\\fn{placed.font}",
         f"\\fs{placed.size:.1f}",
         f"\\1c{ass_color(base_color)}",
@@ -161,7 +163,9 @@ def build_ass(
     lines = [_header(preset, width, height)]
     for group in group_words(words, preset, ratio):
         laid = layout_group(group, preset, width, height, ratio, language)
-        for position, placed in enumerate(laid.words):
+        for placed in laid.words:
+            # Spoken position, for timing. Right-to-left lines are stored in on-screen order.
+            position = group.words.index(placed.word)
             lines.extend(event + "\n" for event in _word_events(laid, placed, position, preset))
     return "".join(lines)
 
