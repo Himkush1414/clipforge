@@ -19,6 +19,7 @@ from clipforge.analysis.scenes import SceneAnalysis, analyze_scenes
 from clipforge.analysis.scoring import Moment, find_moments
 from clipforge.analysis.transcribe import Word, extract_audio, transcribe, words_from_dicts
 from clipforge.autopilot import decide
+from clipforge.captions.layout import undrawable_words
 from clipforge.captions.presets import BUILTIN_PRESETS, CaptionPreset
 from clipforge.config import get_settings
 from clipforge.db import session_scope
@@ -269,9 +270,15 @@ def run_job(ctx: JobContext) -> None:
 
     preset = None
     if edit.get("captions", True):
-        preset = load_preset(
-            edit.get("preset_id") or (channel.settings.get("preset_id") if channel else None)
-        )
+        chosen = edit.get("preset_id") or (channel.settings.get("preset_id") if channel else None)
+        preset = load_preset(chosen or options.get("auto_preset"))
+        missing = undrawable_words(analysis.words, preset, analysis.language)
+        if missing:
+            notes.append(
+                f"{len(missing)} caption words use letters no installed font can draw, such as "
+                f'"{missing[0]}", so they may appear as empty boxes. Japanese, Korean and Chinese need '
+                "the font from scripts/setup.sh. Right-to-left languages such as Arabic are not supported."
+            )
     templates = channel.settings if channel else {}
     corpus = " ".join(w.text for w in analysis.words)
     out_dir = settings.renders_dir / job.id
@@ -299,6 +306,7 @@ def run_job(ctx: JobContext) -> None:
             fit=edit.get("fit", "smart"),
             transition=edit.get("transition", "cut"),
             cuts=analysis.scenes.cut_times,
+            language=analysis.language,
         )
         result = render_clip(
             spec,

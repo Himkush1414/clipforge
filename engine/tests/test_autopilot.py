@@ -17,6 +17,7 @@ from clipforge.autopilot import (
     choose_resolution,
     decide,
 )
+from clipforge.captions.presets import BUILTIN_PRESETS
 from clipforge.media.ffmpeg import find_tool
 from clipforge.media.probe import MediaInfo
 
@@ -169,6 +170,14 @@ def test_auto_job_end_to_end_still_requires_rights(scene_video, monkeypatch):
         for i, t in enumerate("Nobody expected this. What a wild little test video it was!".split())
     ]
     monkeypatch.setattr(pipeline, "transcribe", lambda *a, **k: {"language": "en", "words": words})
+    rendered_presets = []
+    real_render = pipeline.render_clip
+
+    def spying_render(spec, **kwargs):
+        rendered_presets.append(spec.preset.name)
+        return real_render(spec, **kwargs)
+
+    monkeypatch.setattr(pipeline, "render_clip", spying_render)
     with TestClient(create_app()) as client:
         with open(scene_video, "rb") as handle:
             source = client.put(
@@ -194,3 +203,5 @@ def test_auto_job_end_to_end_still_requires_rights(scene_video, monkeypatch):
     clip = job["clips"][0]
     assert clip["ratio"] == job["decisions"]["ratio"]
     assert clip["preset_id"] == job["decisions"]["preset"]
+    # What was really rendered, not only what was recorded: this once differed.
+    assert rendered_presets == [BUILTIN_PRESETS[job["decisions"]["preset"]].name] * len(job["clips"])
