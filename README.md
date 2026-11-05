@@ -31,11 +31,11 @@ Early but working. See [Tested and untested](#tested-and-untested) for exactly w
 
 ## Tested and untested
 
-**Tested on real runs:** full jobs through the API and web UI with GPU transcription and NVENC, on an owned synthetic sample, including a one-hour video.
+**Tested on real runs:** full jobs through the API and web UI with GPU transcription and NVENC, on an owned synthetic sample, including a one-hour video, 12-minute parts, and short 8K renders. A fresh clone installs and passes the same checks.
 
 **Tested only against mocks:** all three platform upload flows. No live upload has ever been made, because that needs your own platform app credentials.
 
-**Not tested:** real anime, film or gameplay footage (auto mode's genre rules are reasoned, not calibrated), CJK captions (no bundled font), a real 8K render (only an 8K encoder test), macOS and non-WSL Linux.
+**Not tested:** real anime, film or gameplay footage (auto mode's genre rules are reasoned, not calibrated), a long 8K render, macOS and non-WSL Linux.
 
 ## Tech stack
 
@@ -64,7 +64,7 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Requirements
 
 - WSL2 on Windows, or Linux. Developed on Ubuntu 26.04 under WSL2.
-- Python 3.11 or newer. [uv](https://docs.astral.sh/uv/) is used when available.
+- Python 3.11 or newer (tested on 3.12). [uv](https://docs.astral.sh/uv/) is used when available.
 - Node.js 20 or newer.
 - FFmpeg with libass. The setup script downloads a static build if none is installed.
 - Optional: an NVIDIA GPU for much faster transcription and encoding. Everything also works on CPU.
