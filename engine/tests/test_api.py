@@ -266,7 +266,7 @@ def test_too_long_duration_gives_a_clear_failure_or_clamps(client, scene_video, 
     job = client.get(f"/api/jobs/{run_queued()}").json()
     assert job["status"] in ("done", "failed")
     if job["status"] == "failed":
-        assert "shorter" in job["error"]
+        assert "clip length" in job["error"]
 
 
 def test_cancel_queued_job(client, scene_video):

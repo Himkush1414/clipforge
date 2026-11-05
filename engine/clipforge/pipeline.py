@@ -208,6 +208,8 @@ def _plan_clips(
     for moment in moments:
         start, end = refine(moment.start, moment.end, analysis.words, cut_times, info.fps, info.duration)
         moment.start, moment.end = start, end
+        if not moment.text:  # Sparse speech uses non-verbal units, which carry no text of their own.
+            moment.text = " ".join(w.text for w in analysis.words if start <= w.start and w.end <= end)
         spans = [(start, end)]
         if edit.get("remove_pauses"):
             spans = remove_pauses(start, end, analysis.words)
@@ -250,8 +252,7 @@ def run_job(ctx: JobContext) -> None:
         )
     if not planned:
         raise ValueError(
-            "No clip fits these settings. Try a shorter clip duration "
-            f"(the video is {info.duration:.0f} seconds long)."
+            f"No clip fits these settings. Try another clip length (the video lasts {info.duration:.0f} s)."
         )
     decisions = {**decisions, "language": analysis.language, "notes": notes, "words": len(analysis.words)}
     with session_scope() as session:
@@ -277,6 +278,9 @@ def run_job(ctx: JobContext) -> None:
         step = (1 - ANALYSIS_SHARE) / len(planned)
         ctx.update(stage=f"rendering clip {index + 1} of {len(planned)}", progress=base)
         clip_id = f"{job.id[:8]}{index:02d}"
+        with session_scope() as session:
+            if session.get(Clip, clip_id) is not None:  # Restarted job: this clip is already done.
+                continue
         output = out_dir / f"{clip_id}.mp4"
         spec = RenderSpec(
             source=Path(source.path),
