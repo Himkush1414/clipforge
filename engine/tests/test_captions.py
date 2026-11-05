@@ -226,3 +226,53 @@ def test_preview_clip_is_real_video(tmp_path):
     )
     info = probe(out)
     assert (info.width, info.height) == (720, 720)
+
+
+@pytest.mark.parametrize(
+    "ratio,size", [("9:16", (1080, 1920)), ("1:1", (1080, 1080)), ("16:9", (1920, 1080))]
+)
+@pytest.mark.parametrize("name", sorted(BUILTIN_PRESETS))
+def test_words_never_collide_even_at_peak_pop(name, ratio, size):
+    """Found on a real render: a big popping word covered its neighbours."""
+    preset = BUILTIN_PRESETS[name]
+    width, height = size
+    if preset.max_words == 1:
+        return
+    words = [Word("really", 0.0, 0.5), Word("wondered", 0.5, 1.0), Word("how", 1.0, 1.5)]
+    group = group_words(words, preset, ratio)[0]
+    placed = layout_group(group, preset, width, height, ratio).words
+    assert len(placed) >= 2
+    pop = preset.active_pop
+    same_line = [(a, b) for a, b in zip(placed, placed[1:], strict=False) if abs(a.y - b.y) < a.size]
+    assert same_line
+    for a, b in same_line:
+        for popping_left in (True, False):
+            left_half = a.width / 2 * (pop if popping_left else 1.0) + a.size * preset.outline
+            right_half = b.width / 2 * (1.0 if popping_left else pop) + b.size * preset.outline
+            assert a.x + left_half <= b.x - right_half + 0.5, (a.word.text, b.word.text)
+
+
+def _word_columns(path, threshold=120):
+    """Columns holding drawn text. Runs separated by an empty column are separate words."""
+    arr = np.asarray(Image.open(path).convert("RGB")).astype(int)
+    used = np.where(arr.max(axis=2).max(axis=0) > threshold)[0]
+    return np.split(used, np.where(np.diff(used) > 1)[0] + 1)
+
+
+def test_big_word_leaves_visible_space_on_the_rendered_frame_at_peak_pop(tmp_path):
+    """Measured on real pixels at the moment the middle word is at its largest."""
+    # A white outline on black: letters merge into word blobs, so only gaps between words remain.
+    preset = BUILTIN_PRESETS["manga-punch"].model_copy(
+        update={"tilt": 0.0, "shadow": 0.0, "outline_color": "#FFFFFF"}
+    )
+    words = [Word("really", 0.0, 0.5), Word("wondered", 0.5, 1.0), Word("how", 1.0, 1.5)]
+    out = render_preview(
+        preset,
+        tmp_path / "peak.png",
+        "9:16",
+        at=0.56,
+        words=words,
+        size=(1080, 1920),
+        background=BG.format(w=1080, h=1920),
+    )
+    assert len(_word_columns(out)) == 3
