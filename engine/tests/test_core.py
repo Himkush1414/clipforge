@@ -74,7 +74,9 @@ def test_normal_filters_pass():
 
 
 def test_filter_path_escaping():
-    assert escape_filter_path("/a b/c:d'e.ass") == "/a b/c\\:d\\'e.ass"
+    assert escape_filter_path("/a b/c.ass") == "/a b/c.ass"
+    assert escape_filter_path("c:d") == "c\\\\:d"
+    assert escape_filter_path("[x],y") == "\\[x\\]\\,y"
 
 
 def test_hardware_only_offers_resolutions_an_encoder_passed():

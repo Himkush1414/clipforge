@@ -440,3 +440,16 @@ def test_crossfade_with_many_cuts_falls_back_and_says_so(scene_video, tmp_path):
     result = render_clip(spec_for(scene_video, tmp_path, cuts, transition="crossfade"))
     assert count_frames(result.path) == 60
     assert any("clean cuts" in note for note in result.notes)
+
+
+@pytest.mark.parametrize("folder", ["it's here", "a [b], c; d", "x:y", "100% = done"])
+def test_captions_render_when_the_work_folder_has_awkward_characters(tmp_path, monkeypatch, folder):
+    from clipforge import config
+    from clipforge.captions.preview import render_preview, sample_words
+
+    monkeypatch.setenv("CLIPFORGE_WORK_DIR", str(tmp_path / folder))
+    config.get_settings.cache_clear()
+    out = render_preview(
+        BUILTIN_PRESETS["anime-impact"], tmp_path / "p.png", "9:16", words=sample_words("hello there")
+    )
+    assert Image.open(out).size == (540, 960)

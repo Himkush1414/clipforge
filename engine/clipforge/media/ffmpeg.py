@@ -105,8 +105,13 @@ def run_ffmpeg(
 
 
 def escape_filter_path(path: Path | str) -> str:
-    r"""Escape a path for use as an FFmpeg filter option value, e.g. ass=filename."""
-    text = str(path)
-    for char in ("\\", ":", "'", "[", "]", ",", ";"):
-        text = text.replace(char, "\\" + char)
-    return text
+    r"""Escape a path for a filter option such as ass=filename=...
+
+    FFmpeg parses twice, so two levels are needed: the option value, then the filter graph.
+    """
+    value = str(path)
+    for char in ("\\", "'", ":"):
+        value = value.replace(char, "\\" + char)
+    for char in ("\\", "'", "[", "]", ",", ";"):
+        value = value.replace(char, "\\" + char)
+    return value

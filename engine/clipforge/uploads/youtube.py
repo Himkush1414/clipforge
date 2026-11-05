@@ -148,7 +148,11 @@ def upload(http: httpx.Client, channel_id: str, request: UploadRequest) -> Remot
     token = _access_token(http, channel_id)
     headers = {"Authorization": f"Bearer {token}"}
     metadata = {
-        "snippet": {"title": request.title[:100], "description": request.description[:5000]},
+        "snippet": {
+            # YouTube rejects angle brackets in both fields.
+            "title": request.title.replace("<", "").replace(">", "")[:100],
+            "description": request.description.replace("<", "").replace(">", "")[:5000],
+        },
         "status": {"privacyStatus": request.privacy, "selfDeclaredMadeForKids": request.made_for_kids},
     }
     start = http.post(
