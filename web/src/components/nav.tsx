@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { formatBytes, usePoll, type Hardware } from "@/lib/api";
+import { formatBytes, usePoll, type Hardware, type StorageReport } from "@/lib/api";
 
 const LINKS = [
   { href: "/", label: "New job" },
@@ -10,12 +10,13 @@ const LINKS = [
   { href: "/clips", label: "Clips" },
   { href: "/presets", label: "Caption presets" },
   { href: "/channels", label: "Channels" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export function Nav() {
   const pathname = usePathname();
   const { data: hardware, error } = usePoll<Hardware>("/api/hardware", 0);
-  const { data: storage } = usePoll<{ free_bytes: number; renders_bytes: number; media_bytes: number }>("/api/storage", 15000);
+  const { data: storage } = usePoll<StorageReport>("/api/storage", 15000);
 
   return (
     <aside className="border-b border-line bg-panel md:sticky md:top-0 md:flex md:h-screen md:w-56 md:shrink-0 md:flex-col md:border-b-0 md:border-r">

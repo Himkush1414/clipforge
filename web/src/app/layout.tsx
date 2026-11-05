@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DiskBanner } from "@/components/disk-banner";
 import { Nav } from "@/components/nav";
 import "./globals.css";
 
@@ -12,7 +13,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen md:flex">
         <Nav />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8 sm:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8 sm:py-8">
+          <DiskBanner />
+          {children}
+        </main>
       </body>
     </html>
   );
