@@ -7,6 +7,7 @@
 - Works with no channel: a "No channel" option, a warning with three choices when nothing is connected, and three clip folders (Unassigned, Queued, Saved)
 - Per-clip and multi-select actions: Move to Saved, Move to Queued, Upload to channel, Download, Delete
 - A "clips are waiting to upload" banner once a channel is connected
+- Right-to-left captions for Arabic, Persian, Urdu and Hebrew
 - A Settings page for the Saved path and disk limits, plus disk warnings and a refusal to start jobs when space is low
 - A repeatable real-browser test, `e2e/run.sh`, which covers the clip player and drag and drop
 - Engine core: FFmpeg wrapper, media probe, hardware detection by real test encodes, SQLite models, restart-safe job queue, 24-hour clip cleanup

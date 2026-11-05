@@ -11,6 +11,8 @@ Bundled in `engine/clipforge/assets/fonts/`. All are under the [SIL Open Font Li
 | Bangers | 2010 The Bangers Project Authors | `bangers.OFL.txt` |
 | Bebas Neue | 2010 by Dharma Type | `bebasneue.OFL.txt` |
 | Hind (Bold) | 2014, Indian Type Foundry (info@indiantypefoundry.com) | `hind.OFL.txt` |
+| Noto Sans Arabic (Bold) | 2022 The Noto Project Authors | `notosansarabic.OFL.txt` |
+| Noto Sans Hebrew (Bold) | 2022 The Noto Project Authors | `notosanshebrew.OFL.txt` |
 | Lilita One | 2011 Juan Montoreano (juan@remolacha.biz) | `lilitaone.OFL.txt` |
 | Poppins (Black, ExtraBold) | 2020 The Poppins Project Authors | `poppins.OFL.txt` |
 

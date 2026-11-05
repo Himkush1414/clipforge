@@ -17,7 +17,7 @@ Drop in a video of any length. clipforge transcribes it, finds the strongest mom
 - **Manual and auto modes.** Manual asks for genre, clip length, count, part numbering, format, ratio and resolution. Auto decides all of them from the content and shows its reasons.
 - **Clip finder.** Word timestamps, scene cuts, silences and audio peaks are scored for speech energy, emotion, topic change and visual action. Clips never start or end mid-sentence.
 - **Frame-accurate cuts**, down to a single frame, including at 29.97 fps.
-- **Caption engine.** One to three words at a time, synced to the audio, with a coloured active word, big emphasis words, small filler words and safe margins for each ratio. Seven presets, plus an editor with a live preview and a real libass render. Works with Latin scripts, Hindi, Japanese, Korean and Chinese.
+- **Caption engine.** One to three words at a time, synced to the audio, with a coloured active word, big emphasis words, small filler words and safe margins for each ratio. Seven presets, plus an editor with a live preview and a real libass render. Works with Latin scripts, Hindi, Japanese, Korean, Chinese, Arabic and Hebrew.
 - **Editing.** Clean cuts or crossfades, pause removal, face- and motion-aware vertical reframing, and two-pass loudness normalization to -14 LUFS.
 - **Quality checks** on every export: duration, resolution, audio, black frames, frozen video, loudness and peak.
 - **Titles and descriptions** generated locally from the transcript, with no network and no AI service.
@@ -168,7 +168,6 @@ Setup steps, limits and what needs your own action are in [docs/PLATFORMS.md](do
 ## Roadmap
 
 - Android app
-- Right-to-left captions (Arabic, Hebrew)
 - Calibration of auto mode on real footage
 - Timeline editor for hand-adjusting cuts
 
