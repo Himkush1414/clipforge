@@ -66,7 +66,7 @@ class LaidOutGroup:
 
 
 @lru_cache(maxsize=32)
-def _cell_ratio(font: str) -> tuple[float, float, float]:
+def cell_ratio(font: str) -> tuple[float, float, float]:
     """Return (em per size unit, baseline offset ratio, cell ascent ratio) for a bundled font."""
     tt = TTFont(FONTS_DIR / FONT_FILES[font], lazy=True)
     upm = tt["head"].unitsPerEm
@@ -86,7 +86,7 @@ def _pil_font(font: str, em_px: int) -> ImageFont.FreeTypeFont:
 
 def measure(text: str, font: str, size: float) -> float:
     """Width in pixels of text drawn by libass at this ASS font size."""
-    em = size * _cell_ratio(font)[0]
+    em = size * cell_ratio(font)[0]
     # Measure at a fixed large size and scale, so rounding does not depend on the output size.
     reference = _pil_font(font, 512)
     return reference.getlength(text) * em / 512
@@ -209,7 +209,7 @@ def layout_group(
         for word, word_width in zip(line, widths, strict=True):
             word_px = word_size(word, scale)
             font = word_font(word)
-            descent_ratio, ascent_ratio = _cell_ratio(font)[1:]
+            descent_ratio, ascent_ratio = cell_ratio(font)[1:]
             # Words share a baseline, so a big word and a small word sit on the same line.
             cell_center = baseline + word_px * descent_ratio - word_px / 2
             laid.words.append(
