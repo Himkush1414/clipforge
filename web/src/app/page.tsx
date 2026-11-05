@@ -47,7 +47,7 @@ export default function NewJobPage() {
   const [ratio, setRatio] = useState<Ratio>("9:16");
   const [resolution, setResolution] = useState("1080p");
 
-  const [presetId, setPresetId] = useState("anime-impact");
+  const [presetId, setPresetId] = useState("");
   const [captions, setCaptions] = useState(true);
   const [fit, setFit] = useState<"smart" | "crop" | "blur">("smart");
   const [pacing, setPacing] = useState(false);
@@ -113,7 +113,7 @@ export default function NewJobPage() {
             mode === "manual"
               ? { genre, clip_duration: duration, clip_count: count, part_numbering: numbering, format, ratio, resolution }
               : null,
-          edit: { preset_id: presetId, captions, fit, remove_pauses: pacing, transition },
+          edit: { preset_id: presetId || null, captions, fit, remove_pauses: pacing, transition },
         }),
       });
       router.push("/jobs");
@@ -307,6 +307,7 @@ export default function NewJobPage() {
               <Toggle label="Burn in word-by-word captions" checked={captions} onChange={setCaptions} />
               <Field label="Caption preset">
                 <select className="field" value={presetId} disabled={!captions} onChange={(e) => setPresetId(e.target.value)}>
+                  <option value="">{mode === "auto" ? "Choose for me, by genre" : "Default (Anime Impact)"}</option>
                   {presets?.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
