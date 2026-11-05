@@ -5,6 +5,7 @@ from __future__ import annotations
 import gc
 import json
 import logging
+import os
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -14,7 +15,7 @@ from scipy.io import wavfile
 
 from clipforge.config import get_settings
 from clipforge.hardware import detect, load_gpu_runtime
-from clipforge.media.ffmpeg import run_ffmpeg
+from clipforge.media.ffmpeg import Cancelled, run_ffmpeg
 
 log = logging.getLogger("clipforge.transcribe")
 
@@ -53,6 +54,8 @@ def _load_model(device: str):
     from faster_whisper import WhisperModel
 
     settings = get_settings()
+    # Keeps every download on the work drive, whatever the machine's default cache location is.
+    os.environ.setdefault("HF_HOME", str(settings.models_dir / "hf"))
     if device == "cuda":
         load_gpu_runtime()
         name, compute = settings.whisper_model_gpu, "int8_float16"
@@ -77,8 +80,10 @@ def transcribe(
     device = detect().whisper_device
     try:
         result = _run(audio, duration, device, language, on_progress, should_cancel)
+    except Cancelled:
+        raise
     except RuntimeError as exc:
-        if device != "cuda" or "Cancelled" in str(exc):
+        if device != "cuda":
             raise
         log.warning("GPU transcription failed (%s); retrying on CPU", exc)
         result = _run(audio, duration, "cpu", language, on_progress, should_cancel)
@@ -89,8 +94,6 @@ def transcribe(
 
 
 def _run(audio, duration, device, language, on_progress, should_cancel) -> dict:
-    from clipforge.media.ffmpeg import Cancelled
-
     # Decoded here so faster-whisper never needs its PyAV path. Our WAV is already 16 kHz mono.
     _, pcm = wavfile.read(audio, mmap=True)
     samples = np.asarray(pcm, dtype=np.float32) / 32768.0
