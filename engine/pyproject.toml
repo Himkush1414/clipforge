@@ -15,7 +15,7 @@ dependencies = [
   "scipy>=1.11",
   "pillow>=10.4",
   "fonttools>=4.40",
-  "opencv-python-headless>=4.10",
+  "opencv-python-headless>=4.10,<5",
   "psutil>=5.9",
 ]
 
