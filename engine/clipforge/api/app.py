@@ -24,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, select, update
 
 from clipforge import __version__
 from clipforge.captions.layout import cell_ratio
@@ -52,6 +52,7 @@ from clipforge.models import (
     utcnow,
 )
 from clipforge.pipeline import run_job
+from clipforge.qc import run_qc
 from clipforge.schemas import (
     ChannelCreate,
     ChannelSettings,
@@ -376,17 +377,26 @@ def create_app() -> FastAPI:
 
     @app.post("/api/jobs/{job_id}/cancel")
     def cancel_job(job_id: str, session: Session = Depends(get_session)) -> dict:
-        job = require(session, Job, job_id, "Job")
-        if job.status == JobStatus.queued.value:
-            job.status = JobStatus.cancelled.value
-            job.stage = "cancelled"
-        elif job.status == JobStatus.running.value:
-            job.cancel_requested = True
-        else:
-            raise HTTPException(409, f"Job is already {job.status}.")
-        session.add(job)
+        require(session, Job, job_id, "Job")
+        # Atomic, because the worker may be claiming this same job right now.
+        queued = session.exec(
+            update(Job)
+            .where(col(Job.id) == job_id, col(Job.status) == JobStatus.queued.value)
+            .values(status=JobStatus.cancelled.value, stage="cancelled", updated_at=utcnow())
+        )
+        if queued.rowcount == 0:
+            running = session.exec(
+                update(Job)
+                .where(col(Job.id) == job_id, col(Job.status) == JobStatus.running.value)
+                .values(cancel_requested=True, updated_at=utcnow())
+            )
+            if running.rowcount == 0:
+                session.rollback()
+                current = require(session, Job, job_id, "Job")
+                raise HTTPException(409, f"Job is already {current.status}.")
         session.commit()
-        return job_json(job)
+        session.expire_all()
+        return job_json(require(session, Job, job_id, "Job"))
 
     # ---------- clips ----------
     @app.get("/api/clips")
@@ -429,6 +439,11 @@ def create_app() -> FastAPI:
     @app.delete("/api/clips/{clip_id}")
     def delete_clip(clip_id: str, session: Session = Depends(get_session)) -> dict:
         clip = require(session, Clip, clip_id, "Clip")
+        uploading = session.exec(
+            select(Upload).where(Upload.clip_id == clip_id, Upload.status == UploadStatus.uploading.value)
+        ).first()
+        if uploading:
+            raise HTTPException(409, "This clip is uploading. Delete it when the upload has finished.")
         remove_clip_files(clip)
         clip.status = ClipStatus.deleted.value
         session.add(clip)
@@ -758,14 +773,35 @@ def create_app() -> FastAPI:
             new_id_value = new_id()
             output = Path(clip.path).with_name(f"{new_id_value}.mp4")
             await run_in_threadpool(replace_audio, Path(clip.path), audio, output, clip.duration)
+            # The audio changed, so the old quality results no longer describe this file.
+            quality = await run_in_threadpool(
+                run_qc, output, clip.width, clip.height, clip.duration, clip.frames / clip.duration, True
+            )
+            thumb = None
+            if clip.thumb_path and Path(clip.thumb_path).exists():
+                # Its own copy: each clip's cleanup deletes its own thumbnail.
+                thumb = output.with_suffix(".jpg")
+                shutil.copyfile(clip.thumb_path, thumb)
         finally:
             shutil.rmtree(folder, ignore_errors=True)
         now = utcnow()
         fresh = Clip(
             **clip.model_dump(
-                exclude={"id", "path", "size_bytes", "description", "reasons", "created_at", "expires_at"}
-            ),
+                exclude={
+                    "id",
+                    "path",
+                    "thumb_path",
+                    "qc",
+                    "size_bytes",
+                    "description",
+                    "reasons",
+                    "created_at",
+                    "expires_at",
+                }
+            ),  # fmt: skip
             id=new_id_value,
+            thumb_path=str(thumb) if thumb else None,
+            qc={**quality, "encoder": "video copied"},
             path=str(output),
             size_bytes=output.stat().st_size,
             description=f"{clip.description}\n\nAudio: {licence.strip()}",
