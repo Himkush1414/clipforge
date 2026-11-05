@@ -393,7 +393,25 @@ def test_title_logic():
     assert make_title("Ok. Why did the whole village suddenly vanish? Then we left.", "other").startswith(
         "Why did"
     )
-    assert len(make_title("word " * 100, "other")) <= 92
+    assert len(make_title("word " * 100, "other")) <= 72
+
+
+def test_long_title_prefers_a_whole_clause():
+    text = (
+        "That is incredible when you think about it, you are looking straight into the past of the universe."
+    )
+    assert make_title(text, "other") == "That is incredible when you think about it"
+
+
+def test_sentences_without_punctuation_do_not_run_together():
+    from clipforge.analysis.scoring import Sentence
+    from clipforge.analysis.transcribe import Word
+
+    assert (
+        Sentence(0, 1, [Word("into", 0, 0.5), Word("the", 0.5, 0.7), Word("past", 0.7, 1)]).closed_text
+        == "into the past."
+    )
+    assert Sentence(0, 1, [Word("really?", 0, 1)]).closed_text == "really?"
 
 
 def test_part_number_and_stray_braces():

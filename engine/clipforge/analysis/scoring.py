@@ -45,6 +45,12 @@ class Sentence:
     def text(self) -> str:
         return " ".join(w.text for w in self.words)
 
+    @property
+    def closed_text(self) -> str:
+        """Text with an end mark. Whisper often drops it, and joined sentences then run together."""
+        text = self.text.strip()
+        return f"{text}." if text and not SENTENCE_END.search(text) else text
+
 
 @dataclass
 class Moment:
@@ -252,7 +258,7 @@ def generate_candidates(
         if best_index is None:
             continue
         moment = score_moment(curves, weights, first.start, units[best_index].end)
-        moment.text = " ".join(u.text for u in units[i : best_index + 1]).strip()
+        moment.text = " ".join(u.closed_text for u in units[i : best_index + 1]).strip()
         moments.append(moment)
     return moments
 

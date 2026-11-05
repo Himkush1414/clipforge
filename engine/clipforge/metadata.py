@@ -9,7 +9,7 @@ from collections import Counter
 from clipforge.analysis.scoring import EMOTION_WORDS, tokenize
 from clipforge.models import RightsType
 
-TITLE_LIMIT = 90
+TITLE_LIMIT = 70
 DESCRIPTION_LIMIT = 4500
 
 GENRE_LABEL = {
@@ -61,7 +61,12 @@ def make_title(text: str, genre: str) -> str:
     best = max(enumerate(sentences), key=lambda item: _sentence_score(item[1], item[0]))[1]
     best = best.rstrip(".,;:…- ")
     if len(best) > TITLE_LIMIT:
-        best = best[:TITLE_LIMIT].rsplit(" ", 1)[0].rstrip(",;:- ") + "…"
+        # A whole clause reads better than a sentence chopped at a word.
+        clause = re.split(r"(?<=[,;:])\s+", best)[0].rstrip(",;: ")
+        if 20 <= len(clause) <= TITLE_LIMIT:
+            best = clause
+        else:
+            best = best[:TITLE_LIMIT].rsplit(" ", 1)[0].rstrip(",;:- ") + "…"
     return best[:1].upper() + best[1:]
 
 
