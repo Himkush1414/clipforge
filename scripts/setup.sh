@@ -34,6 +34,18 @@ if [ ! -s "$FONT" ]; then
   }
 fi
 
+# Face detection for vertical reframing. MIT licensed, 232 KB. Falls back to an older detector if missing.
+YUNET="$WORK/models/face/face_detection_yunet_2023mar.onnx"
+if [ ! -s "$YUNET" ]; then
+  echo "Downloading the face detector..."
+  mkdir -p "$WORK/models/face"
+  curl -fsSL -o "$YUNET" \
+    "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx" || {
+    rm -f "$YUNET"
+    echo "Could not download it. Reframing still works with the older detector."
+  }
+fi
+
 echo "Installing the engine..."
 if command -v uv >/dev/null; then
   [ -d "$WORK/venv" ] || uv venv --python 3.12 "$WORK/venv"
