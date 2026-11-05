@@ -33,6 +33,12 @@ class JobStatus(StrEnum):
     cancelled = "cancelled"
 
 
+class ClipFolder(StrEnum):
+    unassigned = "unassigned"  # Deleted 24 hours after creation.
+    queued = "queued"  # Timer paused. Deleted 24 hours after a successful upload.
+    saved = "saved"  # Never deleted automatically.
+
+
 class ClipStatus(StrEnum):
     ready = "ready"
     expired = "expired"
@@ -101,8 +107,9 @@ class Clip(SQLModel, table=True):
     preset_id: str | None = None
     qc: dict = Field(default_factory=dict, sa_column=Column(JSON))
     status: str = Field(default=ClipStatus.ready.value, index=True)
+    folder: str = Field(default=ClipFolder.unassigned.value, index=True)
     created_at: datetime = Field(default_factory=utcnow)
-    expires_at: datetime = Field(index=True)
+    expires_at: datetime | None = Field(default=None, index=True)  # None means the timer is off.
 
 
 class Preset(SQLModel, table=True):
