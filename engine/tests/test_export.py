@@ -4,6 +4,7 @@ import subprocess
 import numpy as np
 import pytest
 from PIL import Image
+from scipy.io import wavfile
 
 from clipforge.analysis.transcribe import Word
 from clipforge.captions.presets import BUILTIN_PRESETS
@@ -318,3 +319,124 @@ def test_subject_tracking_follows_a_moving_object(tmp_path):
     assert early and late
     assert max(early) < 0.3
     assert min(late) > 0.7
+
+
+def _flash_and_beep(tmp_path):
+    """10 s at 30 fps: black with a white flash from 5.0 s and a tone that starts at exactly 5.0 s."""
+    video = tmp_path / "sync.mp4"
+    graph = (
+        "color=c=black:s=320x240:r=30:d=10,drawbox=c=white:t=fill:enable='gte(t,5)'[v];"
+        "sine=f=1000:r=48000:d=10,volume='if(gte(t,5),1,0)':eval=frame[a]"
+    )
+    subprocess.run(
+        [
+            find_tool("ffmpeg"),
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-filter_complex",
+            graph,
+            "-map",
+            "[v]",
+            "-map",
+            "[a]",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-pix_fmt",
+            "yuv420p",
+            "-g",
+            "15",
+            "-c:a",
+            "aac",
+            str(video),
+        ],
+        check=True,
+    )
+    return video
+
+
+def _sync_offset(path, tmp_path):
+    """Seconds between the first white frame and the first loud audio in a rendered file."""
+    wav = tmp_path / "o.wav"
+    subprocess.run(
+        [
+            find_tool("ffmpeg"),
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(path),
+            "-ac",
+            "1",
+            "-ar",
+            "8000",
+            str(wav),
+        ],
+        check=True,
+    )
+    rate, samples = wavfile.read(wav)
+    window = rate // 100
+    rms = np.array([np.abs(samples[i : i + window]).mean() for i in range(0, len(samples) - window, window)])
+    audio_at = np.argmax(rms > rms.max() * 0.3) * window / rate
+    out = subprocess.run(
+        [
+            find_tool("ffmpeg"),
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-i",
+            str(path),
+            "-vf",
+            "scale=8:8,format=gray",
+            "-f",
+            "rawvideo",
+            "-",
+        ],
+        capture_output=True,
+        check=True,
+    ).stdout
+    frames = np.frombuffer(out, np.uint8).reshape(-1, 64).mean(axis=1)
+    return (np.argmax(frames > 128) / 30) - audio_at
+
+
+@pytest.mark.parametrize(
+    "cuts",
+    [
+        [(0, 60), (90, 120), (140, 170)],
+        [(0, 60), (90, 120), (130, 140), (142, 175), (200, 230), (240, 260), (270, 280)],
+    ],
+    ids=["direct", "one-by-one"],
+)
+def test_audio_stays_in_sync_across_cuts(tmp_path, cuts):
+    video = _flash_and_beep(tmp_path)
+    segments = [Segment(a, b) for a, b in cuts]
+    spec = RenderSpec(video, probe(video), segments, "16:9", "1080p", tmp_path / "o.mp4", fit="crop")
+    result = render_clip(spec)
+    assert count_frames(result.path) == sum(s.frames for s in segments)
+    assert abs(_sync_offset(result.path, tmp_path)) <= 2 / 30
+
+
+def test_many_cuts_are_rendered_one_at_a_time_with_exact_frames_and_captions(scene_video, tmp_path):
+    from clipforge.config import get_settings
+
+    cuts = [Segment(a, a + 10) for a in (0, 20, 40, 55, 80, 100, 115, 140)]
+    words = [Word("HELLO", 0.1, 0.5), Word("THERE", 3.4, 3.8)]
+    spec = spec_for(scene_video, tmp_path, cuts, words=words, preset=BUILTIN_PRESETS["anime-impact"])
+    result = render_clip(spec)
+    assert count_frames(result.path) == 80
+    assert result.frames == 80
+    # Output frame 34 is source frame 59, the last red one. Output frame 35 is source 60, the first blue.
+    assert grab(result.path, 34, tmp_path)[:, :, 0].mean() > 150
+    assert grab(result.path, 35, tmp_path)[:, :, 2].mean() > 150
+    assert list(get_settings().tmp_dir.iterdir()) == []
+
+
+def test_crossfade_with_many_cuts_falls_back_and_says_so(scene_video, tmp_path):
+    cuts = [Segment(a, a + 10) for a in (0, 20, 40, 60, 80, 100)]
+    result = render_clip(spec_for(scene_video, tmp_path, cuts, transition="crossfade"))
+    assert count_frames(result.path) == 60
+    assert any("clean cuts" in note for note in result.notes)
