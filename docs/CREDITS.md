@@ -14,6 +14,12 @@ Bundled in `engine/clipforge/assets/fonts/`. All are under the [SIL Open Font Li
 | Lilita One | 2011 Juan Montoreano (juan@remolacha.biz) | `lilitaone.OFL.txt` |
 | Poppins (Black, ExtraBold) | 2020 The Poppins Project Authors | `poppins.OFL.txt` |
 
+Downloaded by `scripts/setup.sh`, not stored in this repo:
+
+| Font | Copyright | Licence |
+|---|---|---|
+| [Noto Sans CJK](https://github.com/notofonts/noto-cjk) Bold | 2014-2021 Adobe | [SIL Open Font License 1.1](https://openfontlicense.org/) |
+
 ## Software used at runtime
 
 These are separate programs and libraries, not copied into this repo.
