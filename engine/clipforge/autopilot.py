@@ -136,7 +136,7 @@ def measure(
 def choose_genre(s: Signals) -> tuple[str, str]:
     if s.speech_share >= 0.45 and s.cuts_per_minute < 3:
         return "podcast", (
-            f"Speech covers {s.speech_share:.0%} of the video with {s.cuts_per_minute:.1f} scene cuts a minute."
+            f"Speech covers {s.speech_share:.0%} of the video, with {s.cuts_per_minute:.1f} cuts a minute."
         )
     if s.animation >= 0.62:
         return "anime", f"The picture looks drawn: flat color areas and hard edges (score {s.animation:.2f})."
