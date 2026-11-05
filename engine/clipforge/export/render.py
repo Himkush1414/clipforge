@@ -188,6 +188,15 @@ def _join_video(spec: RenderSpec, labels: list[str], parts: list[str], fps: floa
     return "joined"
 
 
+def finish_audio(loudness_filter: str | None) -> str:
+    """Convert to the final format first, so loudness is measured on the signal that is exported."""
+    chain = "aresample=48000,aformat=channel_layouts=stereo"
+    if loudness_filter:
+        # loudnorm's limiter resamples internally, so the format is set again after it.
+        chain += f",{loudness_filter},aresample=48000,aformat=channel_layouts=stereo"
+    return chain
+
+
 def build_audio_graph(spec: RenderSpec, seeks: list[float], final_filter: str | None) -> str:
     fps = spec.info.fps
     parts: list[str] = []
@@ -211,8 +220,7 @@ def build_audio_graph(spec: RenderSpec, seeks: list[float], final_filter: str | 
     else:
         parts.append(f"{''.join(labels)}concat=n={len(labels)}:v=0:a=1[ajoined]")
         last = "[ajoined]"
-    tail = f"{final_filter}," if final_filter else ""
-    parts.append(f"{last}{tail}aresample=48000,aformat=channel_layouts=stereo[aout]")
+    parts.append(f"{last}{finish_audio(final_filter)}[aout]")
     return ";".join(parts)
 
 
@@ -289,8 +297,15 @@ def _render_segments_one_by_one(
 
 
 def loudnorm_filter(stats: dict | None) -> str | None:
+    """Second pass. A plain gain lands exactly on target and changes nothing else about the sound.
+
+    Only when that gain would push peaks past the limit does loudnorm's limiter step in.
+    """
     if stats is None:
         return None
+    gain = TARGET_LUFS - float(stats["input_i"])
+    if float(stats["input_tp"]) + gain <= TARGET_PEAK:
+        return f"volume={gain:.2f}dB"
     return (
         f"loudnorm=I={TARGET_LUFS}:TP={TARGET_PEAK}:LRA={TARGET_LRA}"
         f":measured_I={stats['input_i']}:measured_TP={stats['input_tp']}"
@@ -368,8 +383,7 @@ def render_clip(
             video_graph = f"[0:v:0]{caption}[vout]"
 
             def audio_graph(final_filter: str | None) -> str:
-                tail = f"{final_filter}," if final_filter else ""
-                return f"[0:a:0]{tail}aresample=48000,aformat=channel_layouts=stereo[aout]"
+                return f"[0:a:0]{finish_audio(final_filter)}[aout]"
         else:
             input_args, seeks = _input_args(spec)
             video_graph = build_video_graph(spec, seeks, out_w, out_h, ass_path)
@@ -434,15 +448,16 @@ def replace_audio(video: Path, audio: Path, out: Path, duration: float) -> Path:
     # The new track is padded or cut to the clip's length, so picture and duration stay as they were.
     fit = f"apad,atrim=duration={duration:.6f},asetpts=PTS-STARTPTS"
     args: list[str | Path] = ["-i", video, "-i", audio, "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy"]
-    measure = f"{fit},loudnorm=I={TARGET_LUFS}:TP={TARGET_PEAK}:LRA={TARGET_LRA}:print_format=json"
+    loudness = f"loudnorm=I={TARGET_LUFS}:TP={TARGET_PEAK}:LRA={TARGET_LRA}:print_format=json"
+    measure = f"{fit},{finish_audio(loudness)}"
     stderr = run_ffmpeg(["-i", audio, "-af", measure, "-f", "null", "-"])
     match = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", stderr, re.S)
     stats = json.loads(match.group(0)) if match else None
     silent = stats is None or stats["input_i"] in ("-inf", "inf", "nan") or float(stats["input_i"]) < -70
-    final = fit if silent else f"{fit},{loudnorm_filter(stats)}"
+    final = fit if silent else f"{fit},{finish_audio(loudnorm_filter(stats))}"
     try:
         run_ffmpeg(
-            [*args, "-af", f"{final},aresample=48000,aformat=channel_layouts=stereo",
+            [*args, "-af", f"{final},{finish_audio(None)}",
              "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", partial]
         )  # fmt: skip
         partial.replace(out)
