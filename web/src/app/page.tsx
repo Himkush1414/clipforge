@@ -53,6 +53,7 @@ export default function NewJobPage() {
   const [pacing, setPacing] = useState(false);
   const [transition, setTransition] = useState<"cut" | "crossfade">("cut");
   const [channelId, setChannelId] = useState("");
+  const [language, setLanguage] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -113,7 +114,7 @@ export default function NewJobPage() {
             mode === "manual"
               ? { genre, clip_duration: duration, clip_count: count, part_numbering: numbering, format, ratio, resolution }
               : null,
-          edit: { preset_id: presetId || null, captions, fit, remove_pauses: pacing, transition },
+          edit: { preset_id: presetId || null, captions, fit, remove_pauses: pacing, transition, language: language || null },
         }),
       });
       router.push("/jobs");
@@ -305,6 +306,20 @@ export default function NewJobPage() {
           <Panel title="4. Editing">
             <div className="space-y-4">
               <Toggle label="Burn in word-by-word captions" checked={captions} onChange={setCaptions} />
+              <Field label="Spoken language" hint="Captions use the language spoken in the video. They are not translated.">
+                <select className="field" value={language} onChange={(e) => setLanguage(e.target.value)}>
+                  <option value="">Detect automatically</option>
+                  <option value="en">English</option>
+                  <option value="hi">Hindi</option>
+                  <option value="ja">Japanese</option>
+                  <option value="ko">Korean</option>
+                  <option value="zh">Chinese</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  <option value="pt">Portuguese</option>
+                </select>
+              </Field>
               <Field label="Caption preset">
                 <select className="field" value={presetId} disabled={!captions} onChange={(e) => setPresetId(e.target.value)}>
                   <option value="">{mode === "auto" ? "Choose for me, by genre" : "Default (Anime Impact)"}</option>
