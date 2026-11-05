@@ -1,5 +1,6 @@
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 from pathlib import Path
@@ -9,14 +10,27 @@ import pytest
 SHARED_TOOLS = Path.home() / "clipforge-work" / "tools" / "bin"
 
 
+def _chmod_capable_temp() -> Path:
+    """Secrets need a disk that honours chmod. /mnt drives under WSL do not, so use the work folder."""
+    folder = Path(tempfile.mkdtemp(prefix="cf-test-"))
+    probe = folder / "probe"
+    probe.write_text("x")
+    probe.chmod(0o600)
+    if stat.S_IMODE(probe.stat().st_mode) == 0o600:
+        return folder
+    shutil.rmtree(folder, ignore_errors=True)
+    fallback = Path.home() / "clipforge-work" / "tmp"
+    fallback.mkdir(parents=True, exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix="cf-test-", dir=fallback))
+
+
 @pytest.fixture(autouse=True)
 def isolated_work_dir(tmp_path, monkeypatch):
     """Each test gets its own work dir and database, but reuses the installed FFmpeg."""
     from clipforge import config, db, hardware
 
     monkeypatch.setenv("CLIPFORGE_WORK_DIR", str(tmp_path / "work"))
-    # /mnt drives ignore chmod, so secrets go on a real Linux disk, as they must in real use.
-    secrets_root = Path(tempfile.mkdtemp(prefix="cf-test-", dir=Path.home()))
+    secrets_root = _chmod_capable_temp()
     monkeypatch.setenv("CLIPFORGE_SECRETS_DIR", str(secrets_root / "secrets"))
     monkeypatch.setenv("CLIPFORGE_START_BACKGROUND", "false")
     if SHARED_TOOLS.exists():
