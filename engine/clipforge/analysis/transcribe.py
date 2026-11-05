@@ -9,6 +9,9 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import numpy as np
+from scipy.io import wavfile
+
 from clipforge.config import get_settings
 from clipforge.hardware import detect, load_gpu_runtime
 from clipforge.media.ffmpeg import run_ffmpeg
@@ -88,10 +91,13 @@ def transcribe(
 def _run(audio, duration, device, language, on_progress, should_cancel) -> dict:
     from clipforge.media.ffmpeg import Cancelled
 
+    # Decoded here so faster-whisper never needs its PyAV path. Our WAV is already 16 kHz mono.
+    _, pcm = wavfile.read(audio, mmap=True)
+    samples = np.asarray(pcm, dtype=np.float32) / 32768.0
     model = _load_model(device)
     try:
         segments, info = model.transcribe(
-            str(audio),
+            samples,
             language=language,
             word_timestamps=True,
             vad_filter=True,
@@ -104,7 +110,7 @@ def _run(audio, duration, device, language, on_progress, should_cancel) -> dict:
             if should_cancel and should_cancel():
                 raise Cancelled("Cancelled")
             for w in segment.words or []:
-                words.append(Word(w.word, w.start, w.end, w.probability))
+                words.append(Word(w.word, float(w.start), float(w.end), float(w.probability)))
             if on_progress and duration:
                 on_progress(min(1.0, segment.end / duration))
         return {

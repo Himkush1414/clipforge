@@ -65,15 +65,20 @@ GENRE_WEIGHTS: dict[str, dict[str, float]] = {
 }
 
 
-def split_sentences(words: list[Word], gap: float = 0.7, max_seconds: float = 20.0) -> list[Sentence]:
-    """Split on end punctuation or a long pause. A run with neither is capped at max_seconds."""
+def split_sentences(words: list[Word], gap: float = 0.6, max_seconds: float = 20.0) -> list[Sentence]:
+    """Split on end punctuation or a pause. A run with neither is capped at max_seconds.
+
+    Whisper sometimes drops punctuation, so a short pause before a capitalized word also counts.
+    """
     sentences: list[Sentence] = []
     current: list[Word] = []
     for i, word in enumerate(words):
         current.append(word)
         next_word = words[i + 1] if i + 1 < len(words) else None
         at_end = next_word is None
-        long_gap = next_word is not None and next_word.start - word.end >= gap
+        pause = next_word.start - word.end if next_word else 0.0
+        capital_next = next_word is not None and next_word.text.strip()[:1].isupper()
+        long_gap = pause >= gap or (capital_next and pause >= 0.25)
         too_long = word.end - current[0].start >= max_seconds
         if at_end or long_gap or SENTENCE_END.search(word.text) or too_long:
             sentences.append(Sentence(current[0].start, word.end, current))
