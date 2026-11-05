@@ -16,6 +16,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install engine
         run: pip install -e "engine[dev,ml]"
+      - name: Download CJK caption font
+        run: |
+          mkdir -p "$HOME/cjk-font"
+          curl -fsSL -o "$HOME/cjk-font/NotoSansCJK-Bold.ttc" \
+            "https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/OTC/NotoSansCJK-Bold.ttc"
+          echo "CLIPFORGE_TEST_CJK_FONT=$HOME/cjk-font/NotoSansCJK-Bold.ttc" >> "$GITHUB_ENV"
       - name: Lint
         working-directory: engine
         run: ruff check .
