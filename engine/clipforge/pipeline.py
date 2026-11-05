@@ -6,6 +6,7 @@ import json
 import logging
 import shutil
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -213,6 +214,10 @@ def _plan_clips(
     return planned
 
 
+def _clip_progress(ctx: JobContext, base: float, step: float) -> Callable[[float], None]:
+    return lambda p: ctx.update(progress=base + p * step * 0.9)
+
+
 def run_job(ctx: JobContext) -> None:
     settings = get_settings()
     with session_scope() as session:
@@ -287,7 +292,7 @@ def run_job(ctx: JobContext) -> None:
         )
         result = render_clip(
             spec,
-            on_progress=lambda p: ctx.update(progress=base + p * step * 0.9),
+            on_progress=_clip_progress(ctx, base, step),
             should_cancel=ctx.should_cancel,
         )
         ctx.update(stage=f"checking clip {index + 1} of {len(planned)}")
