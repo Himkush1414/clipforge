@@ -2,19 +2,26 @@
 
 from __future__ import annotations
 
+import html
 import logging
 import re
+import secrets
 import shutil
 import tempfile
 import threading
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path, PurePosixPath
+from typing import Literal
 
+import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import Session, col, select
@@ -26,13 +33,47 @@ from clipforge.captions.preview import PREVIEW_SIZES, render_preview, sample_wor
 from clipforge.cleanup import CleanupThread, cleanup_expired_clips, remove_clip_files
 from clipforge.config import get_settings
 from clipforge.db import get_session, session_scope
+from clipforge.export.render import replace_audio
 from clipforge.hardware import detect
 from clipforge.jobs import Worker
 from clipforge.media.ffmpeg import FFmpegError
 from clipforge.media.probe import probe
-from clipforge.models import Channel, Clip, ClipStatus, Job, JobStatus, Preset, Source, new_id, utcnow
+from clipforge.models import (
+    Channel,
+    Clip,
+    ClipStatus,
+    Job,
+    JobStatus,
+    Preset,
+    Source,
+    Upload,
+    UploadStatus,
+    new_id,
+    utcnow,
+)
 from clipforge.pipeline import run_job
-from clipforge.schemas import ChannelCreate, ChannelSettings, FrameCut, JobCreate
+from clipforge.schemas import (
+    ChannelCreate,
+    ChannelSettings,
+    ClaimReport,
+    ClaimResolve,
+    FrameCut,
+    JobCreate,
+    PlatformCredentials,
+    TargetChoice,
+    UploadCreate,
+)
+from clipforge.uploads import meta, service, youtube
+from clipforge.uploads.base import (
+    UploadError,
+    delete_platform_credentials,
+    delete_tokens,
+    load_tokens,
+    platform_credentials,
+    redirect_uri,
+    save_platform_credentials,
+    save_tokens,
+)
 
 log = logging.getLogger("clipforge.api")
 
@@ -50,6 +91,7 @@ VIDEO_EXTENSIONS = {
     ".mpg",
     ".mpeg",
 }
+AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus"}
 DISK_RESERVE_BYTES = 2 * 1024**3
 
 
@@ -131,23 +173,34 @@ class LinkRequest(BaseModel):
     link_group: str | None = Field(default=None, max_length=80)
 
 
+OAUTH_STATE_SECONDS = 900
+OAUTH_PAGE = (
+    "<!doctype html><meta charset=utf-8><title>clipforge</title>"
+    "<body style='font-family:system-ui;background:#0c0d10;color:#eceef2;padding:3rem'>"
+    "<h1>{title}</h1><p>{message}</p><p>You can close this tab.</p>"
+)
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
+    oauth_states: dict[str, dict] = {}
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         seed_presets()
         # Encoder tests take seconds, so run them now and not during the first page load.
         threading.Thread(target=detect, daemon=True).start()
-        worker, cleaner = None, None
+        worker, cleaner, uploader = None, None, None
         if settings.start_background:
-            worker, cleaner = Worker(run_job), CleanupThread()
+            worker, cleaner, uploader = Worker(run_job), CleanupThread(), service.UploadWorker()
             worker.start()
             cleaner.start()
+            uploader.start()
         yield
-        if worker and cleaner:
+        if worker and cleaner and uploader:
             worker.stop()
             cleaner.stop()
+            uploader.stop()
 
     app = FastAPI(title="clipforge", version=__version__, lifespan=lifespan)
     allowed_hosts = {"127.0.0.1", "localhost", "testserver"}
@@ -174,6 +227,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.exception_handler(UploadError)
+    async def upload_error(_request: Request, exc: UploadError):
+        return JSONResponse({"detail": str(exc)[:800]}, status_code=409)
 
     @app.exception_handler(FFmpegError)
     async def ffmpeg_error(_request: Request, exc: FFmpegError):
@@ -515,6 +572,211 @@ def create_app() -> FastAPI:
         session.commit()
         return {"deleted": channel_id}
 
+    # ---------- platform connections ----------
+    @app.get("/api/platforms")
+    def list_platforms() -> list[dict]:
+        """Secrets are write-only: this says whether they exist, and never returns them."""
+        return [
+            {
+                "group": group,
+                "configured": platform_credentials(group) is not None,
+                "redirect_uri": redirect_uri(),
+            }
+            for group in ("google", "meta")
+        ]
+
+    @app.put("/api/platforms/{group}/credentials")
+    def set_credentials(group: Literal["google", "meta"], body: PlatformCredentials) -> dict:
+        save_platform_credentials(group, body.client_id.strip(), body.client_secret.strip())
+        return {"group": group, "configured": True}
+
+    @app.delete("/api/platforms/{group}/credentials")
+    def remove_credentials(group: Literal["google", "meta"]) -> dict:
+        delete_platform_credentials(group)
+        return {"group": group, "configured": False}
+
+    @app.post("/api/channels/{channel_id}/connect")
+    def connect_channel(channel_id: str, session: Session = Depends(get_session)) -> dict:
+        channel = require(session, Channel, channel_id, "Channel")
+        now = time.time()
+        for key in [k for k, v in oauth_states.items() if now - v["created"] > OAUTH_STATE_SECONDS]:
+            del oauth_states[key]
+        state = secrets.token_urlsafe(32)
+        if channel.platform == "youtube":
+            url, verifier = youtube.begin_auth(state)
+        else:
+            url, verifier = meta.begin_auth(channel.platform, state)
+        oauth_states[state] = {"channel_id": channel_id, "verifier": verifier, "created": now}
+        return {"auth_url": url}
+
+    @app.get("/api/oauth/callback", response_class=HTMLResponse)
+    def oauth_callback(
+        state: str = "", code: str = "", error: str = "", session: Session = Depends(get_session)
+    ) -> HTMLResponse:
+        pending = oauth_states.pop(state, None)
+        if pending is None or time.time() - pending["created"] > OAUTH_STATE_SECONDS:
+            page = OAUTH_PAGE.format(
+                title="Sign-in link expired", message="Start again from the Channels page."
+            )
+            return HTMLResponse(page, status_code=400)
+        if error or not code:
+            message = html.escape(error or "No authorization code came back.")
+            return HTMLResponse(
+                OAUTH_PAGE.format(title="Sign-in cancelled", message=message), status_code=400
+            )
+        channel = require(session, Channel, pending["channel_id"], "Channel")
+        try:
+            with service.http_client() as http:
+                if channel.platform == "youtube":
+                    name = youtube.finish_auth(http, channel.id, code, pending["verifier"])
+                else:
+                    name = meta.finish_auth(http, channel.platform, channel.id, code)
+        except (UploadError, httpx.HTTPError, KeyError) as exc:
+            delete_tokens(channel.id)
+            log.warning("Sign-in failed for channel %s: %s", channel.id, type(exc).__name__)
+            message = (
+                html.escape(str(exc)[:300])
+                if isinstance(exc, UploadError)
+                else "The platform's reply was not usable."
+            )
+            return HTMLResponse(OAUTH_PAGE.format(title="Sign-in failed", message=message), status_code=400)
+        channel.connected = True
+        channel.account_name = name
+        session.add(channel)
+        session.commit()
+        return HTMLResponse(
+            OAUTH_PAGE.format(title="Connected", message=f"{html.escape(name)} is ready to use.")
+        )
+
+    @app.post("/api/channels/{channel_id}/disconnect")
+    def disconnect_channel(channel_id: str, session: Session = Depends(get_session)) -> dict:
+        channel = require(session, Channel, channel_id, "Channel")
+        delete_tokens(channel_id)
+        channel.connected = False
+        channel.account_name = None
+        session.add(channel)
+        session.commit()
+        return channel.model_dump()
+
+    @app.get("/api/channels/{channel_id}/targets")
+    def channel_targets(channel_id: str, session: Session = Depends(get_session)) -> dict:
+        require(session, Channel, channel_id, "Channel")
+        tokens = load_tokens(channel_id) or {}
+        return {
+            "selected": tokens.get("target"),
+            "targets": [{"id": t["id"], "name": t["name"]} for t in tokens.get("targets", [])],
+        }
+
+    @app.post("/api/channels/{channel_id}/target")
+    def choose_target(channel_id: str, body: TargetChoice, session: Session = Depends(get_session)) -> dict:
+        channel = require(session, Channel, channel_id, "Channel")
+        tokens = load_tokens(channel_id) or {}
+        target = next((t for t in tokens.get("targets", []) if t["id"] == body.target_id), None)
+        if target is None:
+            raise HTTPException(404, "That account is not available on this connection.")
+        tokens["target"] = target["id"]
+        save_tokens(channel_id, tokens)
+        channel.account_name = target["name"]
+        session.add(channel)
+        session.commit()
+        return channel.model_dump()
+
+    # ---------- uploads ----------
+    @app.post("/api/clips/{clip_id}/upload", status_code=201)
+    def create_upload(
+        clip_id: str, body: UploadCreate, session: Session = Depends(get_session)
+    ) -> list[dict]:
+        if body.link_group:
+            rows = session.exec(select(Channel.id).where(Channel.link_group == body.link_group)).all()
+            channel_ids = list(rows)
+            if not channel_ids:
+                raise HTTPException(404, "No channels in that group.")
+        else:
+            assert body.channel_id
+            channel_ids = [body.channel_id]
+        return [
+            u.model_dump()
+            for u in service.queue_upload(clip_id, channel_ids, body.privacy, body.made_for_kids)
+        ]
+
+    @app.get("/api/uploads")
+    def list_uploads(session: Session = Depends(get_session)) -> list[dict]:
+        rows = session.exec(select(Upload).order_by(col(Upload.created_at).desc()).limit(200)).all()
+        names = {c.id: c for c in session.exec(select(Channel)).all()}
+        return [
+            {
+                **u.model_dump(exclude={"detail"}),
+                "channel_name": names[u.channel_id].name if u.channel_id in names else None,
+                "platform": names[u.channel_id].platform if u.channel_id in names else None,
+            }
+            for u in rows
+        ]
+
+    @app.post("/api/uploads/{upload_id}/refresh")
+    def refresh_upload(upload_id: str) -> dict:
+        return service.refresh_upload(upload_id).model_dump(exclude={"detail"})
+
+    @app.post("/api/uploads/{upload_id}/report-claim")
+    def report_claim(upload_id: str, body: ClaimReport, session: Session = Depends(get_session)) -> dict:
+        """Some claims are invisible to the API (Instagram, or YouTube when the video stays live)."""
+        require(session, Upload, upload_id, "Upload")
+        service.record_claim(
+            upload_id, {"platform": "manual", "reason": "reported by you", "note": body.details}
+        )
+        session.expire_all()
+        return require(session, Upload, upload_id, "Upload").model_dump(exclude={"detail"})
+
+    @app.post("/api/uploads/{upload_id}/resolve")
+    def resolve_upload(upload_id: str, body: ClaimResolve) -> dict:
+        return service.resolve_claim(upload_id, body.resolution, body.note).model_dump(exclude={"detail"})
+
+    @app.put("/api/clips/{clip_id}/replace-audio", status_code=201)
+    async def replace_clip_audio(
+        clip_id: str, request: Request, filename: str, licence: str, session: Session = Depends(get_session)
+    ) -> dict:
+        """Only after a claim, and only with a track the user states a licence for. Makes a new clip."""
+        clip = require(session, Clip, clip_id, "Clip")
+        if not licence.strip():
+            raise HTTPException(422, "Say what licence you hold for this audio.")
+        if not clip.path or not Path(clip.path).exists():
+            raise HTTPException(410, "This clip has expired and was deleted.")
+        claimed = session.exec(
+            select(Upload).where(Upload.clip_id == clip_id, Upload.status == UploadStatus.claimed.value)
+        ).first()
+        if claimed is None:
+            raise HTTPException(409, "Replacing audio is offered only after a copyright claim on this clip.")
+        suffix = Path(PurePosixPath(filename.replace("\\", "/")).name).suffix.lower()
+        if suffix not in AUDIO_EXTENSIONS:
+            raise HTTPException(415, "Use an audio file such as WAV, MP3, M4A, FLAC or AAC.")
+        settings.tmp_dir.mkdir(parents=True, exist_ok=True)
+        folder = Path(tempfile.mkdtemp(prefix="audio-", dir=settings.tmp_dir))
+        try:
+            audio = folder / f"track{suffix}"
+            with audio.open("wb") as handle:
+                async for chunk in request.stream():
+                    handle.write(chunk)
+            new_id_value = new_id()
+            output = Path(clip.path).with_name(f"{new_id_value}.mp4")
+            await run_in_threadpool(replace_audio, Path(clip.path), audio, output, clip.duration)
+        finally:
+            shutil.rmtree(folder, ignore_errors=True)
+        now = utcnow()
+        fresh = Clip(
+            **clip.model_dump(
+                exclude={"id", "path", "size_bytes", "description", "reasons", "created_at", "expires_at"}
+            ),
+            id=new_id_value,
+            path=str(output),
+            size_bytes=output.stat().st_size,
+            description=f"{clip.description}\n\nAudio: {licence.strip()}",
+            reasons={"replaced_audio_licence": licence.strip(), "from_clip": clip_id},
+            created_at=now,
+            expires_at=now + timedelta(hours=settings.clip_ttl_hours),
+        )
+        session.add(fresh)
+        session.commit()
+        return clip_json(fresh)
+
     return app
 
 
@@ -530,6 +792,9 @@ def setup_logging() -> None:
             RotatingFileHandler(log_dir / "clipforge.log", maxBytes=5_000_000, backupCount=3),
         ],
     )
+    # httpx logs full request URLs at INFO, and sign-in URLs must never reach a log file.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 def main() -> None:
