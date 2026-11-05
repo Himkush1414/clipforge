@@ -6,7 +6,7 @@ import logging
 import threading
 from collections.abc import Callable
 
-from sqlmodel import select, update
+from sqlmodel import col, select, update
 
 from clipforge.db import session_scope
 from clipforge.media.ffmpeg import Cancelled
@@ -54,13 +54,13 @@ def claim_next_job() -> str | None:
     """Atomically move the oldest queued job to running."""
     with session_scope() as session:
         candidate = session.exec(
-            select(Job).where(Job.status == JobStatus.queued.value).order_by(Job.created_at)
+            select(Job).where(Job.status == JobStatus.queued.value).order_by(col(Job.created_at))
         ).first()
         if candidate is None:
             return None
         result = session.exec(
             update(Job)
-            .where(Job.id == candidate.id, Job.status == JobStatus.queued.value)
+            .where(col(Job.id) == candidate.id, col(Job.status) == JobStatus.queued.value)
             .values(status=JobStatus.running.value, stage="starting", updated_at=utcnow())
         )
         session.commit()

@@ -57,7 +57,7 @@ def cleanup_stale_temp() -> list[str]:
     """Remove temp dirs left by a crash. Normal renders remove their own temp at once."""
     settings = get_settings()
     cutoff = time.time() - settings.temp_max_age_hours * 3600
-    removed = []
+    removed: list[str] = []
     if not settings.tmp_dir.exists():
         return removed
     for entry in settings.tmp_dir.iterdir():
