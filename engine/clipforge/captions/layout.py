@@ -180,11 +180,24 @@ def layout_group(
         font = preset.emphasis_font if word.kind == "emphasis" and preset.emphasis_font else preset.font
         return font_for_text(word.text, font)
 
+    def gap_between(left: StyledWord, right: StyledWord, scale: float) -> float:
+        """Enough room that neither word touches the other at the peak of its pop, outline included.
+
+        Only one word pops at a time, so the larger of the two growths is what must fit.
+        """
+        left_w = measure(left.text, word_font(left), word_size(left, scale))
+        right_w = measure(right.text, word_font(right), word_size(right, scale))
+        growth = max(left_w, right_w) * (preset.active_pop - 1) / 2
+        outlines = (word_size(left, scale) + word_size(right, scale)) * preset.outline
+        return preset.word_gap * size * scale + growth + outlines
+
     def line_width(words: list[StyledWord], scale: float) -> float:
-        total = sum(measure(w.text, word_font(w), word_size(w, scale)) for w in words)
-        total += preset.word_gap * size * scale * (len(words) - 1)
-        # Room for the outline and the pop, so nothing touches the safe margin at peak scale.
-        return total * preset.active_pop + size * scale * preset.outline * 2
+        widths = [measure(w.text, word_font(w), word_size(w, scale)) for w in words]
+        gaps = sum(gap_between(a, b, scale) for a, b in zip(words, words[1:], strict=False))
+        # The first and last words can also pop outward, so the safe margin must allow for that.
+        edges = (widths[0] + widths[-1]) * (preset.active_pop - 1) / 2
+        outline = (word_size(words[0], scale) + word_size(words[-1], scale)) * preset.outline
+        return sum(widths) + gaps + edges + outline
 
     lines = [group.words]
     scale = min(1.0, max_width / max(1.0, line_width(group.words, 1.0)))
@@ -203,19 +216,19 @@ def layout_group(
     line_top = center - total_height / 2
     for line, line_height in zip(lines, heights, strict=True):
         baseline = line_top + line_height * 0.82
-        gap = preset.word_gap * size * scale
         widths = [measure(w.text, word_font(w), word_size(w, scale)) for w in line]
-        x = width / 2 - (sum(widths) + gap * (len(line) - 1)) / 2
-        for word, word_width in zip(line, widths, strict=True):
+        gaps = [gap_between(a, b, scale) for a, b in zip(line, line[1:], strict=False)]
+        x = width / 2 - (sum(widths) + sum(gaps)) / 2
+        for position, (word, word_width) in enumerate(zip(line, widths, strict=True)):
             word_px = word_size(word, scale)
             font = word_font(word)
-            descent_ratio, ascent_ratio = cell_ratio(font)[1:]
+            descent_ratio, _ascent_ratio = cell_ratio(font)[1:]
             # Words share a baseline, so a big word and a small word sit on the same line.
             cell_center = baseline + word_px * descent_ratio - word_px / 2
             laid.words.append(
                 PlacedWord(word, font, word_px, x + word_width / 2, cell_center, word_width, word_px)
             )
-            x += word_width + gap
+            x += word_width + (gaps[position] if position < len(gaps) else 0.0)
         line_top += line_height
     return laid
 
