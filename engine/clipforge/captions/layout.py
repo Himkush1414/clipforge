@@ -15,7 +15,7 @@ from PIL import ImageFont
 
 from clipforge.analysis.scoring import EMOTION_WORDS, STOPWORDS
 from clipforge.analysis.transcribe import Word
-from clipforge.captions.presets import FONT_FILES, FONTS_DIR, CaptionPreset
+from clipforge.captions.presets import CJK_FACES, CaptionPreset, cjk_path, font_location
 
 # Fractions of the frame: everything visible must stay inside these. The bottom of a 9:16 frame
 # and its right edge are covered by the app's own buttons on Shorts, Reels and TikTok.
@@ -28,7 +28,8 @@ RATIO_SIZE_FACTOR = {"9:16": 1.0, "1:1": 0.9, "16:9": 0.72}
 GROUP_CHAR_LIMIT = {"9:16": 20, "1:1": 24, "16:9": 34}
 
 BREAK_AFTER = re.compile(r"[.!?…,;:。！？，、][\"')\]]*$")
-DEVANAGARI = re.compile(r"[ऀ-ॿ]")
+HANGUL = re.compile(r"[\uac00-\ud7af\u1100-\u11ff]")
+KANA = re.compile(r"[\u3040-\u30ff]")
 
 
 @dataclass
@@ -67,8 +68,9 @@ class LaidOutGroup:
 
 @lru_cache(maxsize=32)
 def cell_ratio(font: str) -> tuple[float, float, float]:
-    """Return (em per size unit, baseline offset ratio, cell ascent ratio) for a bundled font."""
-    tt = TTFont(FONTS_DIR / FONT_FILES[font], lazy=True)
+    """Return (em per size unit, baseline offset ratio, cell ascent ratio) for a font."""
+    path, index = font_location(font)
+    tt = TTFont(path, lazy=True, fontNumber=index)
     upm = tt["head"].unitsPerEm
     os2 = tt["OS/2"]
     ascent, descent = os2.usWinAscent, os2.usWinDescent
@@ -81,7 +83,8 @@ def cell_ratio(font: str) -> tuple[float, float, float]:
 
 @lru_cache(maxsize=256)
 def _pil_font(font: str, em_px: int) -> ImageFont.FreeTypeFont:
-    return ImageFont.truetype(str(FONTS_DIR / FONT_FILES[font]), em_px)
+    path, index = font_location(font)
+    return ImageFont.truetype(str(path), em_px, index=index)
 
 
 def measure(text: str, font: str, size: float) -> float:
@@ -92,9 +95,50 @@ def measure(text: str, font: str, size: float) -> float:
     return reference.getlength(text) * em / 512
 
 
-def font_for_text(text: str, font: str) -> str:
-    """Latin display fonts have no Devanagari, so those words use the bundled Hind Bold."""
-    return "Hind" if DEVANAGARI.search(text) else font
+@lru_cache(maxsize=16)
+def _font_chars(font: str) -> frozenset[int]:
+    path, index = font_location(font)
+    tt = TTFont(path, lazy=True, fontNumber=index)
+    chars = frozenset(tt.getBestCmap())
+    tt.close()
+    return chars
+
+
+def covers(font: str, text: str) -> bool:
+    """Whether the font can draw every letter and digit. Punctuation does not decide the font."""
+    chars = _font_chars(font)
+    return all(ord(ch) in chars for ch in text if ch.isalnum())
+
+
+def _cjk_family(text: str, language: str | None) -> str:
+    """Han characters are drawn differently by region, so the detected language picks the face."""
+    if HANGUL.search(text):
+        return CJK_FACES["ko"][0]
+    if KANA.search(text):
+        return CJK_FACES["ja"][0]
+    return CJK_FACES.get(language or "ja", CJK_FACES["ja"])[0]
+
+
+def font_for_text(text: str, font: str, language: str | None = None) -> str:
+    """Display fonts only cover Latin. Other scripts use a fallback that really has the letters."""
+    if covers(font, text):
+        return font
+    if covers("Hind", text):
+        return "Hind"
+    if cjk_path().exists():
+        family = _cjk_family(text, language)
+        if covers(family, text):
+            return family
+    return font
+
+
+def undrawable_words(words: list[Word], preset: CaptionPreset, language: str | None = None) -> list[str]:
+    """Words no available font can draw. They would appear as empty boxes, so the job warns."""
+    missing = []
+    for word in words:
+        if not covers(font_for_text(word.text, preset.font, language), word.text):
+            missing.append(word.text)
+    return missing
 
 
 def classify_word(word: Word) -> str:
@@ -164,7 +208,7 @@ def anchor_y(preset: CaptionPreset, height: int, ratio: str) -> float:
 
 
 def layout_group(
-    group: WordGroup, preset: CaptionPreset, width: int, height: int, ratio: str
+    group: WordGroup, preset: CaptionPreset, width: int, height: int, ratio: str, language: str | None = None
 ) -> LaidOutGroup:
     """Place each word. Text is shrunk, and then wrapped, to stay inside the safe area."""
     margins = SAFE_MARGINS[ratio]
@@ -178,7 +222,7 @@ def layout_group(
 
     def word_font(word: StyledWord) -> str:
         font = preset.emphasis_font if word.kind == "emphasis" and preset.emphasis_font else preset.font
-        return font_for_text(word.text, font)
+        return font_for_text(word.text, font, language)
 
     def gap_between(left: StyledWord, right: StyledWord, scale: float) -> float:
         """Enough room that neither word touches the other at the peak of its pop, outline included.

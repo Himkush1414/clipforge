@@ -75,7 +75,16 @@ The large bottom margin at 9:16 keeps text clear of the buttons and captions tha
 
 ## Languages
 
-Devanagari words switch to the bundled Hind Bold automatically. Japanese, Chinese and Korean have no bundled font yet, so those captions depend on what libass can find on your system. This has not been tested.
+Captions use the language spoken in the video, and they are not translated. Each word uses a font that really has its letters:
+
+| Language | Font | How it was checked |
+|---|---|---|
+| Latin scripts | The preset's font | Automated tests on real renders |
+| Hindi and other Devanagari | Bundled Hind Bold | Looked at a real render |
+| Japanese, Korean, Chinese | Noto Sans CJK Bold, in the correct regional style | Automated tests on real renders |
+| Arabic, Hebrew | Not supported yet: words appear in the wrong order | Looked at a real render |
+
+`scripts/setup.sh` downloads the CJK font. If it is missing, or a language has no font, the job shows a warning instead of silently producing empty boxes. Whisper has only been run on English speech here, so transcription quality in other languages is untested.
 
 ## Rendering
 

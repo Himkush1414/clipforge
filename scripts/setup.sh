@@ -22,6 +22,18 @@ if ! command -v ffmpeg >/dev/null && [ ! -x "$WORK/tools/bin/ffmpeg" ]; then
   ln -sf ../ffmpeg/bin/ffprobe "$WORK/tools/bin/ffprobe"
 fi
 
+# Captions for Japanese, Korean and Chinese need this font. OFL licensed, about 20 MB.
+FONT="$WORK/data/fonts/NotoSansCJK-Bold.ttc"
+if [ ! -s "$FONT" ]; then
+  echo "Downloading the CJK caption font..."
+  mkdir -p "$WORK/data/fonts"
+  curl -fL --progress-bar -o "$FONT" \
+    "https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/OTC/NotoSansCJK-Bold.ttc" || {
+    rm -f "$FONT"
+    echo "Could not download it. Other languages still work, and jobs will warn about missing letters."
+  }
+fi
+
 echo "Installing the engine..."
 if command -v uv >/dev/null; then
   [ -d "$WORK/venv" ] || uv venv --python 3.12 "$WORK/venv"
