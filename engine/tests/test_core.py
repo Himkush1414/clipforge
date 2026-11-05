@@ -194,3 +194,24 @@ def test_cleanup_removes_only_stale_temp():
 def test_db_has_expected_tables():
     with session_scope() as s:
         assert s.exec(select(Clip)).all() == []
+
+
+def test_stale_database_stops_startup_with_a_clear_message_and_changes_nothing():
+    import sqlite3
+
+    from clipforge import db
+
+    path = get_settings().db_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE upload (id TEXT PRIMARY KEY, clip_id TEXT, keepme TEXT)")
+    conn.execute("INSERT INTO upload (id, keepme) VALUES ('a', 'data')")
+    conn.commit()
+    conn.close()
+    db.get_engine.cache_clear()
+    with pytest.raises(db.SchemaMismatch, match=r"older clipforge version .*upload\.made_for_kids"):
+        db.get_engine()
+    conn = sqlite3.connect(path)
+    assert conn.execute("SELECT keepme FROM upload").fetchone() == ("data",)
+    conn.close()
+    db.get_engine.cache_clear()
