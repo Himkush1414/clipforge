@@ -7,6 +7,7 @@ size. Measuring with the same rule is what lets words be placed by hand with exa
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from functools import lru_cache
 
@@ -15,7 +16,7 @@ from PIL import ImageFont
 
 from clipforge.analysis.scoring import EMOTION_WORDS, STOPWORDS
 from clipforge.analysis.transcribe import Word
-from clipforge.captions.presets import CJK_FACES, CaptionPreset, cjk_path, font_location
+from clipforge.captions.presets import CJK_FACES, FALLBACK_FILES, CaptionPreset, cjk_path, font_location
 
 # Fractions of the frame: everything visible must stay inside these. The bottom of a 9:16 frame
 # and its right edge are covered by the app's own buttons on Shorts, Reels and TikTok.
@@ -84,7 +85,18 @@ def cell_ratio(font: str) -> tuple[float, float, float]:
 @lru_cache(maxsize=256)
 def _pil_font(font: str, em_px: int) -> ImageFont.FreeTypeFont:
     path, index = font_location(font)
-    return ImageFont.truetype(str(path), em_px, index=index)
+    return ImageFont.truetype(str(path), em_px, index=index, layout_engine=ImageFont.Layout.RAQM)
+
+
+def is_rtl(text: str) -> bool:
+    """Decided by the first letter with a strong direction, as the Unicode bidi algorithm does."""
+    for char in text:
+        direction = unicodedata.bidirectional(char)
+        if direction in ("R", "AL"):
+            return True
+        if direction == "L":
+            return False
+    return False
 
 
 def measure(text: str, font: str, size: float) -> float:
@@ -92,7 +104,8 @@ def measure(text: str, font: str, size: float) -> float:
     em = size * cell_ratio(font)[0]
     # Measure at a fixed large size and scale, so rounding does not depend on the output size.
     reference = _pil_font(font, 512)
-    return reference.getlength(text) * em / 512
+    # Raqm shapes text the way libass does, which matters for joined scripts such as Arabic.
+    return reference.getlength(text, direction="rtl" if is_rtl(text) else "ltr") * em / 512
 
 
 @lru_cache(maxsize=16)
@@ -123,8 +136,9 @@ def font_for_text(text: str, font: str, language: str | None = None) -> str:
     """Display fonts only cover Latin. Other scripts use a fallback that really has the letters."""
     if covers(font, text):
         return font
-    if covers("Hind", text):
-        return "Hind"
+    for fallback in ("Hind", *FALLBACK_FILES):
+        if covers(fallback, text):
+            return fallback
     if cjk_path().exists():
         family = _cjk_family(text, language)
         if covers(family, text):
@@ -216,13 +230,15 @@ def layout_group(
     top, bottom = margins["top"] * height, (1 - margins["bottom"]) * height
     size = base_size(preset, width, height, ratio)
 
-    def word_size(word: StyledWord, scale: float) -> float:
-        factor = {"emphasis": preset.emphasis_scale, "filler": preset.filler_scale}.get(word.kind, 1.0)
-        return size * factor * scale
-
     def word_font(word: StyledWord) -> str:
         font = preset.emphasis_font if word.kind == "emphasis" and preset.emphasis_font else preset.font
         return font_for_text(word.text, font, language)
+
+    def word_size(word: StyledWord, scale: float) -> float:
+        factor = {"emphasis": preset.emphasis_scale, "filler": preset.filler_scale}.get(word.kind, 1.0)
+        # Some fallback fonts reserve a tall line box, which would draw their letters small.
+        match_letters = cell_ratio(preset.font)[0] / cell_ratio(word_font(word))[0]
+        return size * factor * scale * min(1.6, max(1.0, match_letters))
 
     def gap_between(left: StyledWord, right: StyledWord, scale: float) -> float:
         """Enough room that neither word touches the other at the peak of its pop, outline included.
@@ -260,6 +276,9 @@ def layout_group(
     line_top = center - total_height / 2
     for line, line_height in zip(lines, heights, strict=True):
         baseline = line_top + line_height * 0.82
+        # Right-to-left lines read from the right, so the first spoken word is placed last in x order.
+        if sum(is_rtl(w.text) for w in line) * 2 > len(line):
+            line = list(reversed(line))
         widths = [measure(w.text, word_font(w), word_size(w, scale)) for w in line]
         gaps = [gap_between(a, b, scale) for a, b in zip(line, line[1:], strict=False)]
         x = width / 2 - (sum(widths) + sum(gaps)) / 2

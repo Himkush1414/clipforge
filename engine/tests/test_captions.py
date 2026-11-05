@@ -13,6 +13,7 @@ from clipforge.captions.layout import (
     classify_word,
     font_for_text,
     group_words,
+    is_rtl,
     layout_group,
     measure,
     undrawable_words,
@@ -147,8 +148,143 @@ def test_without_the_cjk_font_japanese_is_reported_not_silently_boxed():
     assert undrawable_words(words, CaptionPreset(), "ja") == ["今日は"]
 
 
-def test_right_to_left_text_is_reported():
-    assert undrawable_words([Word("مرحبا", 0, 1)], CaptionPreset()) == ["مرحبا"]
+def test_arabic_and_hebrew_have_fonts():
+    assert font_for_text("مرحبا", "Anton") == "Noto Sans Arabic"
+    assert font_for_text("שלום", "Anton") == "Noto Sans Hebrew"
+    assert font_for_text("سلام", "Anton") == "Noto Sans Arabic"  # Persian and Urdu share this script.
+    assert undrawable_words([Word("مرحبا", 0, 1), Word("שלום", 1, 2)], CaptionPreset()) == []
+
+
+def test_text_no_font_can_draw_is_reported():
+    assert undrawable_words([Word("ሰላም", 0, 1)], CaptionPreset()) == ["ሰላም"]  # Amharic
+
+
+@pytest.mark.parametrize(
+    "text,rtl",
+    [
+        ("مرحبا", True),
+        ("שלום", True),
+        ("hello", False),
+        ("123", False),
+        ("", False),
+        ("(مرحبا)", True),
+        ("٣٤", False),
+    ],
+)
+def test_direction_detection(text, rtl):
+    assert is_rtl(text) is rtl
+
+
+RTL_WORDS = {
+    "arabic": ["مرحبا", "بكم", "اليوم"],
+    "hebrew": ["שלום", "לכולם", "היום"],
+}
+
+
+@pytest.mark.parametrize("language", sorted(RTL_WORDS))
+def test_rtl_words_are_placed_right_to_left_and_keep_spoken_order(language):
+    preset = CaptionPreset(uppercase=True)
+    tokens = RTL_WORDS[language]
+    words = [Word(t, i * 0.5, i * 0.5 + 0.45) for i, t in enumerate(tokens)]
+    group = group_words(words, preset, "9:16")[0]
+    placed = layout_group(group, preset, 1080, 1920, "9:16").words
+    by_text = {p.word.text: p.x for p in placed}
+    assert by_text[tokens[0]] > by_text[tokens[1]] > by_text[tokens[2]]
+
+
+def _green_center(path):
+    arr = np.asarray(Image.open(path).convert("RGB")).astype(int)
+    green = (arr[:, :, 1] > 180) & (arr[:, :, 0] < 90) & (arr[:, :, 2] < 90)
+    return np.where(green)[1].mean() if green.any() else None
+
+
+@pytest.mark.parametrize("language", sorted(RTL_WORDS))
+def test_rtl_active_word_moves_from_right_to_left_on_real_renders(language, tmp_path):
+    preset = CaptionPreset(
+        active_color="#00FF00", text_color="#FF0000", outline=0, shadow=0, animation="none", active_pop=1.0
+    )
+    tokens = RTL_WORDS[language]
+    words = [Word(t, i * 0.6, i * 0.6 + 0.55) for i, t in enumerate(tokens)]
+    centers = []
+    for index in range(3):
+        out = render_preview(
+            preset,
+            tmp_path / f"{index}.png",
+            "9:16",
+            at=0.2 + index * 0.6,
+            words=words,
+            size=(1080, 1920),
+            background=BG.format(w=1080, h=1920),
+        )
+        centers.append(_green_center(out))
+    assert all(c is not None for c in centers)
+    assert centers[0] > centers[1] > centers[2]
+
+
+@pytest.mark.parametrize(
+    "text,font_expected",
+    [("مرحبا", "Noto Sans Arabic"), ("شكرا", "Noto Sans Arabic"), ("שלום", "Noto Sans Hebrew")],
+)
+def test_rtl_width_prediction_matches_libass_including_joined_letters(text, font_expected, tmp_path):
+    preset = plain(size=0.1, uppercase=False)
+    words = [Word(text, 0, 2)]
+    out = render_preview(
+        preset,
+        tmp_path / "w.png",
+        "9:16",
+        at=1.0,
+        words=words,
+        size=(1080, 1920),
+        background=BG.format(w=1080, h=1920),
+    )
+    x0, _, x1, _ = bbox(out)
+    placed = layout_group(group_words(words, preset, "9:16")[0], preset, 1080, 1920, "9:16").words[0]
+    assert placed.font == font_expected
+    drawn = x1 - x0 + 1
+    assert abs(drawn - placed.width) / drawn < 0.1, (drawn, placed.width)
+    assert (
+        abs((x0 + x1) / 2 - 540) < 1080 * 0.02
+    )  # Side bearings grow with the text, so relative to the frame.
+
+
+def test_arabic_letters_are_actually_joined(tmp_path):
+    """Joined letters draw narrower than the same letters kept apart. Boxes or unshaped text would not."""
+    preset = plain(size=0.1, uppercase=False)
+
+    def drawn_width(text):
+        out = render_preview(
+            preset,
+            tmp_path / "a.png",
+            "9:16",
+            at=1.0,
+            words=[Word(text, 0, 2)],
+            size=(1080, 1920),
+            background=BG.format(w=1080, h=1920),
+        )
+        x0, _, x1, _ = bbox(out)
+        return x1 - x0
+
+    joined = drawn_width("سلم")
+    apart = drawn_width("س\u200cل\u200cم")  # Zero-width non-joiners prevent the letters from joining.
+    assert joined < apart
+
+
+@pytest.mark.parametrize("name", sorted(BUILTIN_PRESETS))
+def test_rtl_captions_stay_inside_safe_margins(name, tmp_path):
+    preset = BUILTIN_PRESETS[name].model_copy(update={"glow": 0, "glow_color": None})
+    words = [Word("والمستخدمين", 0.0, 1.0), Word("المعلومات", 1.0, 2.0), Word("التكنولوجيا", 2.0, 3.0)]
+    out = render_preview(
+        preset,
+        tmp_path / "s.png",
+        "9:16",
+        at=1.5,
+        words=words,
+        size=(1080, 1920),
+        background=BG.format(w=1080, h=1920),
+    )
+    x0, _, x1, _ = bbox(out)
+    assert x0 >= 1080 * SAFE_MARGINS["9:16"]["side"] - 24
+    assert x1 <= 1080 * (1 - SAFE_MARGINS["9:16"]["side"]) + 24
 
 
 @needs_cjk

@@ -82,9 +82,9 @@ Captions use the language spoken in the video, and they are not translated. Each
 | Latin scripts | The preset's font | Automated tests on real renders |
 | Hindi and other Devanagari | Bundled Hind Bold | Looked at a real render |
 | Japanese, Korean, Chinese | Noto Sans CJK Bold, in the correct regional style | Automated tests on real renders |
-| Arabic, Hebrew | Not supported yet: words appear in the wrong order | Looked at a real render |
+| Arabic, Persian, Urdu, Hebrew | Bundled Noto Sans Arabic and Hebrew Bold. Words run right to left, in spoken order. | Automated tests on real renders: word order, highlight order, joined letters, width and safe margins |
 
-`scripts/setup.sh` downloads the CJK font. If it is missing, or a language has no font, the job shows a warning instead of silently producing empty boxes. Whisper has only been run on English speech here, so transcription quality in other languages is untested.
+`scripts/setup.sh` downloads the CJK font. If it is missing, or a language has no font, the job shows a warning instead of silently producing empty boxes.
 
 ## Rendering
 

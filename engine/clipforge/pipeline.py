@@ -278,7 +278,7 @@ def run_job(ctx: JobContext) -> None:
             notes.append(
                 f"{len(missing)} caption words use letters no installed font can draw, such as "
                 f'"{missing[0]}", so they may appear as empty boxes. Japanese, Korean and Chinese need '
-                "the font from scripts/setup.sh. Right-to-left languages such as Arabic are not supported."
+                "the font from scripts/setup.sh."
             )
     templates = channel.settings if channel else {}
     corpus = " ".join(w.text for w in analysis.words)
