@@ -43,7 +43,7 @@ function ClaimPanel({ upload, clip, onChange }: { upload: Upload; clip: Clip; on
     <div role="alert" className="mt-2 space-y-3 rounded-lg border border-bad/40 bg-bad/10 p-3 text-xs">
       <div>
         <p className="font-semibold text-bad">Copyright claim: uploads from this video have stopped</p>
-        <p className="mt-1 text-muted">
+        <p className="mt-1 text-muted first-letter:uppercase">
           {upload.claim.reason}
           {upload.claim.note ? `. ${upload.claim.note}` : ""}. Nothing will be re-uploaded automatically.
         </p>
