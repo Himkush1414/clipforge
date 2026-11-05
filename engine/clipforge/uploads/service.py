@@ -260,6 +260,24 @@ def run_upload(upload_id: str) -> None:
         _fail(upload_id, "The upload failed unexpectedly. See the log for details.")
 
 
+def recover_interrupted_uploads() -> int:
+    """After a crash, an "uploading" row would block its clip's 24-hour cleanup forever.
+
+    It is marked failed and never resumed automatically: you decide whether to send it again.
+    """
+    with session_scope() as session:
+        rows = session.exec(select(Upload).where(Upload.status == UploadStatus.uploading.value)).all()
+        for row in rows:
+            row.status = UploadStatus.failed.value
+            row.error = (
+                "clipforge closed during this upload. Check the platform, then send it again if needed."
+            )
+            row.updated_at = utcnow()
+            session.add(row)
+        session.commit()
+        return len(rows)
+
+
 def _fail(upload_id: str, message: str) -> None:
     with session_scope() as session:
         row = session.get(Upload, upload_id)
@@ -279,8 +297,11 @@ def refresh_upload(upload_id: str) -> Upload:
         channel = session.get(Channel, row.channel_id)
     if row.status != UploadStatus.processing.value or not row.remote_id or channel is None:
         return row
-    with http_client() as http:
-        apply_state(upload_id, _check(http, channel, row))
+    try:
+        with http_client() as http:
+            apply_state(upload_id, _check(http, channel, row))
+    except httpx.HTTPError as exc:
+        raise UploadError(f"Could not reach {channel.platform}: {exc}") from exc
     with session_scope() as session:
         fresh = session.get(Upload, upload_id)
         assert fresh is not None
@@ -298,6 +319,7 @@ class UploadWorker(threading.Thread):
         self._last_status_check = 0.0
 
     def run(self) -> None:
+        recover_interrupted_uploads()
         while not self._stop_event.is_set():
             try:
                 self.step()
@@ -325,7 +347,7 @@ class UploadWorker(threading.Thread):
         for upload_id in processing:
             try:
                 refresh_upload(upload_id)
-            except (UploadError, httpx.HTTPError) as exc:
+            except UploadError as exc:
                 log.warning("Status check failed for %s: %s", upload_id, exc)
 
     def stop(self) -> None:
