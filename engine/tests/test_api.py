@@ -5,8 +5,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from clipforge import jobs, pipeline
-from clipforge.api.app import create_app, windows_to_wsl
+from clipforge.api.app import create_app
 from clipforge.db import session_scope
+from clipforge.folders import windows_to_wsl
 from clipforge.metadata import build_metadata, credit_line, make_title
 from clipforge.models import Clip, Job, utcnow
 from clipforge.schemas import JobCreate

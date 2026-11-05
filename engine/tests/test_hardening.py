@@ -2,7 +2,6 @@ import json
 import os
 import subprocess
 import time
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -290,18 +289,14 @@ def test_job_list_counts_clips_without_a_query_per_job():
     assert row["source_filename"] == "a.mp4"
 
 
-def test_crash_leftovers_are_removed_only_when_old():
-    renders = get_settings().renders_dir
-    (renders / "job1").mkdir(parents=True)
-    old_part = renders / "job1" / ".clip.part.mp4"
-    old_part.write_bytes(b"x")
-    new_dir = renders / "job2"
-    new_dir.mkdir()
-    new_part = new_dir / ".clip.part.mp4"
-    new_part.write_bytes(b"x")
+def test_stale_temp_is_removed_only_when_old():
+    tmp = get_settings().tmp_dir
+    old_dir = tmp / "render-old"
+    old_dir.mkdir(parents=True)
+    (old_dir / "partial.mp4").write_bytes(b"x")
+    fresh = tmp / "render-new"
+    fresh.mkdir()
     old = time.time() - 7 * 3600
-    os.utime(old_part, (old, old))
-    cleanup.cleanup_stale_temp()
-    assert not old_part.exists()
-    assert new_part.exists()
-    assert Path(new_dir).exists()
+    os.utime(old_dir, (old, old))
+    assert cleanup.cleanup_stale_temp() == ["render-old"]
+    assert fresh.exists()

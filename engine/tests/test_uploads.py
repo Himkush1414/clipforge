@@ -1,5 +1,6 @@
 import json
 import logging
+import shutil
 import stat
 import subprocess
 from datetime import timedelta
@@ -85,6 +86,14 @@ def clip_file(tmp_path):
         check=True,
     )
     return path
+
+
+def in_unassigned(clip_file):
+    folder = get_settings().unassigned_dir
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / clip_file.name
+    shutil.copyfile(clip_file, target)
+    return target
 
 
 def make_clip(
@@ -579,6 +588,7 @@ def test_only_youtube_gets_a_privacy_choice(clip_file):
 
 
 def test_clip_is_not_deleted_while_uploading_even_when_expired(clip_file):
+    clip_file = in_unassigned(clip_file)
     clip_id, _ = make_clip(clip_file)
     channel_id = make_channel("youtube")
     upload = service.queue_upload(clip_id, [channel_id], "private", False)[0]
@@ -741,7 +751,7 @@ def test_network_failure_marks_failed_and_does_not_crash(clip_file, monkeypatch)
 
 
 def test_upload_interrupted_by_a_crash_is_marked_failed_and_stops_blocking_cleanup(clip_file):
-    clip_id, _ = make_clip(clip_file)
+    clip_id, _ = make_clip(in_unassigned(clip_file))
     upload = service.queue_upload(clip_id, [make_channel("youtube")], "private", False)[0]
     with session_scope() as s:
         row = s.get(Upload, upload.id)
