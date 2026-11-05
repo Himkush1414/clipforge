@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Installs everything outside the repo, under CLIPFORGE_WORK_DIR (default ~/clipforge-work).
 set -euo pipefail
-for tool in curl tar node npm; do
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/use-linux-node.sh
+. "$ROOT/scripts/use-linux-node.sh"
+use_linux_node
+for tool in curl tar npm; do
   command -v "$tool" >/dev/null || { echo "Please install $tool first."; exit 1; }
 done
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="${CLIPFORGE_WORK_DIR:-$HOME/clipforge-work}"
 mkdir -p "$WORK/tools/bin" "$WORK/web" "$WORK/cache"
 
