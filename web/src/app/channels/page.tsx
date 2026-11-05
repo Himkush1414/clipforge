@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge, EmptyState, ErrorNote, Field, PageHeader, Panel, Segmented } from "@/components/ui";
+import { PlatformSetup } from "@/components/platform-setup";
 import { api, usePoll, type Channel, type ChannelSettings, type Preset } from "@/lib/api";
 
 const PLATFORMS = { youtube: "YouTube", instagram: "Instagram", facebook: "Facebook" } as const;
@@ -76,6 +77,24 @@ function ChannelCard({ channel, presets, selected, onSelect, onChange }: { chann
           Save settings
         </button>
         {saved && <span className="text-sm text-ok">Saved.</span>}
+        {channel.connected ? (
+          <button type="button" className="btn" onClick={() => run(() => api(`/api/channels/${channel.id}/disconnect`, { method: "POST" }))}>
+            Disconnect
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() =>
+              run(async () => {
+                const { auth_url } = await api<{ auth_url: string }>(`/api/channels/${channel.id}/connect`, { method: "POST" });
+                window.open(auth_url, "_blank", "noopener");
+              })
+            }
+          >
+            Connect
+          </button>
+        )}
         <button type="button" className="btn btn-danger ml-auto" onClick={() => run(() => api(`/api/channels/${channel.id}`, { method: "DELETE" }))}>
           Remove
         </button>
@@ -85,7 +104,8 @@ function ChannelCard({ channel, presets, selected, onSelect, onChange }: { chann
 }
 
 export default function ChannelsPage() {
-  const { data: channels, error, refresh } = usePoll<Channel[]>("/api/channels", 0);
+  // Polls so a channel shows as connected right after the sign-in tab finishes.
+  const { data: channels, error, refresh } = usePoll<Channel[]>("/api/channels", 4000);
   const { data: presets } = usePoll<Preset[]>("/api/presets", 0);
   const [name, setName] = useState("");
   const [platform, setPlatform] = useState<Channel["platform"]>("youtube");
@@ -118,6 +138,7 @@ export default function ChannelsPage() {
     <>
       <PageHeader title="Channels" subtitle="Each channel keeps its own defaults. Linked channels can receive the same clip." />
       <div className="space-y-4">
+        <PlatformSetup />
         <Panel title="Add a channel">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-48 flex-1">
