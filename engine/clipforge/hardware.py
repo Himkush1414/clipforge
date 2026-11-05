@@ -39,7 +39,9 @@ def _gpu() -> tuple[str | None, int | None]:
     try:
         out = subprocess.run(
             ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
     except (OSError, subprocess.TimeoutExpired):
         return None, None
@@ -52,9 +54,20 @@ def _gpu() -> tuple[str | None, int | None]:
 def _encoder_works(encoder: str, height: int) -> bool:
     width = height * 16 // 9
     cmd = [
-        find_tool("ffmpeg"), "-hide_banner", "-loglevel", "error", "-nostdin",
-        "-f", "lavfi", "-i", f"color=c=black:s={width}x{height}:r=30:d=0.2",
-        "-c:v", encoder, "-f", "null", "-",
+        find_tool("ffmpeg"),
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostdin",
+        "-f",
+        "lavfi",
+        "-i",
+        f"color=c=black:s={width}x{height}:r=30:d=0.2",
+        "-c:v",
+        encoder,
+        "-f",
+        "null",
+        "-",
     ]
     try:
         return subprocess.run(cmd, capture_output=True, timeout=60).returncode == 0

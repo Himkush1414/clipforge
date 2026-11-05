@@ -41,9 +41,31 @@ def scene_video(tmp_path_factory) -> Path:
         "sine=f=440:d=6:r=48000,volume='if(between(t,2,3),0,1)':eval=frame[au]"
     )
     subprocess.run(
-        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-filter_complex", filt,
-         "-map", "[v]", "-map", "[au]", "-c:v", "libx264", "-preset", "ultrafast",
-         "-pix_fmt", "yuv420p", "-g", "30", "-c:a", "aac", str(out)],
-        check=True, env={**os.environ, "PATH": tools},
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-filter_complex",
+            filt,
+            "-map",
+            "[v]",
+            "-map",
+            "[au]",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-pix_fmt",
+            "yuv420p",
+            "-g",
+            "30",
+            "-c:a",
+            "aac",
+            str(out),
+        ],
+        check=True,
+        env={**os.environ, "PATH": tools},
     )
     return out

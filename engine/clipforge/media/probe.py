@@ -50,8 +50,10 @@ def probe(path: Path | str) -> MediaInfo:
     """Read stream info. Raises FFmpegError when the file is not playable video."""
     cmd = [
         find_tool("ffprobe"),
-        "-v", "error",
-        "-print_format", "json",
+        "-v",
+        "error",
+        "-print_format",
+        "json",
         "-show_format",
         "-show_streams",
         str(path),

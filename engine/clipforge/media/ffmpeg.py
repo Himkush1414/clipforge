@@ -61,7 +61,16 @@ def run_ffmpeg(
     """Run ffmpeg, return its stderr. Reports progress 0..1 when a duration is given."""
     str_args = [str(a) for a in args]
     assert_allowed_graph(str_args)
-    cmd = [find_tool("ffmpeg"), "-hide_banner", "-nostdin", "-y", "-progress", "pipe:1", "-nostats", *str_args]
+    cmd = [
+        find_tool("ffmpeg"),
+        "-hide_banner",
+        "-nostdin",
+        "-y",
+        "-progress",
+        "pipe:1",
+        "-nostats",
+        *str_args,
+    ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace")
     stderr_tail: deque[str] = deque(maxlen=400)
 
