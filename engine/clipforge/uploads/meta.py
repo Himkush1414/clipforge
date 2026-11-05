@@ -7,7 +7,6 @@ Instagram documents no copyright signal, so that case relies on the manual "repo
 
 from __future__ import annotations
 
-import secrets
 from urllib.parse import urlencode
 
 import httpx
@@ -50,7 +49,7 @@ def begin_auth(platform: str, state: str) -> tuple[str, str]:
             "state": state,
         }
     )
-    return f"{AUTH_URL}?{query}", secrets.token_urlsafe(8)
+    return f"{AUTH_URL}?{query}", ""  # Meta's flow uses no PKCE verifier.
 
 
 def _raise_for(res: httpx.Response, prefix: str) -> None:
@@ -172,7 +171,7 @@ def upload_facebook(http: httpx.Client, channel_id: str, request: UploadRequest)
                 "file_size": str(request.size_bytes),
                 "Content-Type": "application/octet-stream",
             },
-            content=handle.read(),
+            content=handle,  # Streamed: a long clip must not load fully into RAM.
         )
     _raise_for(res, "Facebook failed during upload")
     # Not published yet. check_facebook publishes only after the copyright check comes back clean.
@@ -263,7 +262,7 @@ def upload_instagram(http: httpx.Client, channel_id: str, request: UploadRequest
         res = http.post(
             f"{RUPLOAD}/ig-api-upload/{GRAPH_VERSION}/{container}",
             headers={**_auth(target["token"]), "offset": "0", "file_size": str(request.size_bytes)},
-            content=handle.read(),
+            content=handle,  # Streamed: a long clip must not load fully into RAM.
         )
     _raise_for(res, "Instagram failed during upload")
     return RemoteState("processing", remote_id=container, detail={"container": container})

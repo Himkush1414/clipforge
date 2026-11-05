@@ -391,9 +391,9 @@ def test_youtube_other_rejection_is_a_failure_not_a_claim(clip_file, monkeypatch
 
 
 # ---------- claim rules ----------
-def _claimed_upload(clip_file, monkeypatch):
+def _claimed_upload(clip_file, monkeypatch, **clip_facts):
     use_platform(monkeypatch, youtube_ok({"uploadStatus": "rejected", "rejectionReason": "copyright"}))
-    clip_id, source_id = make_clip(clip_file)
+    clip_id, source_id = make_clip(clip_file, **clip_facts)
     channel_id = make_channel("youtube")
     upload_id = service.queue_upload(clip_id, [channel_id], "private", False)[0].id
     service.run_upload(upload_id)
@@ -488,7 +488,10 @@ def test_replace_audio_only_after_a_claim_and_with_a_licence(client, clip_file, 
     params = {"filename": "t.wav", "licence": "Bought from Example Music"}
     assert client.put(f"/api/clips/{clean}/replace-audio", params=params, content=data).status_code == 409
 
-    clip_id, source_id, channel_id, upload_id = _claimed_upload(clip_file, monkeypatch)
+    # The real facts of this file: the new clip goes through real quality checks.
+    clip_id, source_id, channel_id, upload_id = _claimed_upload(
+        clip_file, monkeypatch, width=108, height=192, duration=4.0
+    )
     blank = {"filename": "t.wav", "licence": " "}
     assert client.put(f"/api/clips/{clip_id}/replace-audio", params=blank, content=data).status_code == 422
     assert (
@@ -507,6 +510,10 @@ def test_replace_audio_only_after_a_claim_and_with_a_licence(client, clip_file, 
     info = probe(path)
     assert info.has_audio
     assert abs(info.duration - probe(clip_file).duration) < 0.2
+    assert fresh["qc"]["checks"]
+    assert fresh["qc"]["encoder"] == "video copied"
+    assert fresh["qc"]["status"] != "fail", fresh["qc"]
+    assert fresh["thumb_url"] is None  # The test clip has no thumbnail to copy.
     with pytest.raises(service.UploadBlocked, match="stopped by a copyright claim"):
         service.queue_upload(fresh["id"], [channel_id], "private", False)
     service.resolve_claim(upload_id, "replace_audio", "")
@@ -731,6 +738,80 @@ def test_network_failure_marks_failed_and_does_not_crash(clip_file, monkeypatch)
     upload_id = service.queue_upload(clip_id, [make_channel("instagram")], "public", False)[0].id
     service.run_upload(upload_id)
     assert upload_row(upload_id).status == UploadStatus.failed.value
+
+
+def test_upload_interrupted_by_a_crash_is_marked_failed_and_stops_blocking_cleanup(clip_file):
+    clip_id, _ = make_clip(clip_file)
+    upload = service.queue_upload(clip_id, [make_channel("youtube")], "private", False)[0]
+    with session_scope() as s:
+        row = s.get(Upload, upload.id)
+        row.status = UploadStatus.uploading.value
+        s.add(row)
+        clip = s.get(Clip, clip_id)
+        clip.expires_at = utcnow() - timedelta(seconds=1)
+        s.add(clip)
+        s.commit()
+    assert cleanup.cleanup_expired_clips() == []
+    assert service.recover_interrupted_uploads() == 1
+    row = upload_row(upload.id)
+    assert row.status == UploadStatus.failed.value and "closed during" in row.error
+    assert cleanup.cleanup_expired_clips() == [clip_id]
+
+
+def test_clip_cannot_be_deleted_mid_upload(client, clip_file):
+    clip_id, _ = make_clip(clip_file)
+    upload = service.queue_upload(clip_id, [make_channel("youtube")], "private", False)[0]
+    with session_scope() as s:
+        row = s.get(Upload, upload.id)
+        row.status = UploadStatus.uploading.value
+        s.add(row)
+        s.commit()
+    assert client.delete(f"/api/clips/{clip_id}").status_code == 409
+    assert clip_file.exists()
+
+
+def test_meta_upload_streams_the_file(clip_file, monkeypatch):
+    seen = []
+
+    def handler(request):
+        if request.url.host == "rupload.facebook.com":
+            seen.append(len(request.read()))
+            return httpx.Response(200, json={"success": True})
+        return _instagram_handler()(request)
+
+    use_platform(monkeypatch, handler)
+    clip_id, _ = make_clip(clip_file)
+    upload_id = service.queue_upload(clip_id, [make_channel("instagram")], "public", False)[0].id
+    service.run_upload(upload_id)
+    assert upload_row(upload_id).status == UploadStatus.processing.value
+    assert seen == [clip_file.stat().st_size]
+
+
+def test_youtube_strips_characters_it_refuses(clip_file, monkeypatch):
+    fake = use_platform(monkeypatch, youtube_ok())
+    clip_id, _ = make_clip(clip_file, description="a <b> c")
+    with session_scope() as s:
+        row = s.get(Clip, clip_id)
+        row.title = "Title <x>"
+        s.add(row)
+        s.commit()
+    service.run_upload(service.queue_upload(clip_id, [make_channel("youtube")], "private", False)[0].id)
+    snippet = json.loads(fake.requests[0].content)["snippet"]
+    assert snippet == {"title": "Title x", "description": "a b c"}
+
+
+def test_refresh_network_failure_is_a_clear_message(client, clip_file, monkeypatch):
+    use_platform(monkeypatch, youtube_ok())
+    clip_id, _ = make_clip(clip_file)
+    upload_id = service.queue_upload(clip_id, [make_channel("youtube")], "private", False)[0].id
+    service.run_upload(upload_id)
+
+    def handler(request):
+        raise httpx.ConnectError("no route")
+
+    use_platform(monkeypatch, handler)
+    res = client.post(f"/api/uploads/{upload_id}/refresh")
+    assert res.status_code == 409 and "Could not reach youtube" in res.json()["detail"]
 
 
 def test_upload_error_never_contains_a_token():
