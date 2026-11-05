@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { NoChannelDialog } from "@/components/no-channel-dialog";
 import { ErrorNote, Field, PageHeader, Panel, ProgressBar, Segmented, Toggle } from "@/components/ui";
 import {
   api,
@@ -57,6 +58,7 @@ export default function NewJobPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showNoChannel, setShowNoChannel] = useState(false);
 
   const source = sources?.find((s) => s.id === sourceId) ?? null;
   const detailRequired = rights === "creative_commons" || rights === "written_permission";
@@ -98,8 +100,19 @@ export default function NewJobPage() {
     if (channel.settings.preset_id) setPresetId(channel.settings.preset_id);
   }
 
-  async function submit() {
+  /** Warns first when nothing is connected, so you choose where the clips should wait. */
+  function requestStart() {
     if (blocker) return;
+    if (!channels?.some((c) => c.connected)) {
+      setShowNoChannel(true);
+      return;
+    }
+    void submit("unassigned");
+  }
+
+  async function submit(destination: "unassigned" | "queued") {
+    if (blocker) return;
+    setShowNoChannel(false);
     setSubmitting(true);
     setError(null);
     try {
@@ -108,6 +121,7 @@ export default function NewJobPage() {
         body: JSON.stringify({
           source_id: sourceId,
           mode,
+          destination,
           rights: { type: rights, detail: rightsDetail },
           channel_id: channelId || null,
           manual:
@@ -350,30 +364,35 @@ export default function NewJobPage() {
                 ]}
               />
               <Toggle label="Tighten pacing by removing long pauses" checked={pacing} onChange={setPacing} />
-              {!!channels?.length && (
-                <Field label="Channel (optional)" hint="Applies that channel's format, ratio, preset and templates.">
-                  <select className="field" value={channelId} onChange={(e) => applyChannel(e.target.value)}>
-                    <option value="">No channel</option>
-                    {channels.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.platform})
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              )}
+              <Field label="Channel" hint="A channel applies its format, ratio, preset and templates.">
+                <select className="field" value={channelId} onChange={(e) => applyChannel(e.target.value)}>
+                  <option value="">No channel: just make the clips</option>
+                  {channels?.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.platform}){c.connected ? "" : ", not connected"}
+                    </option>
+                  ))}
+                </select>
+              </Field>
             </div>
           </Panel>
 
           <ErrorNote message={error} />
           <div className="flex items-center justify-end gap-3">
             {blocker && <p className="text-sm text-muted">{blocker}</p>}
-            <button type="button" className="btn btn-primary" disabled={!!blocker || submitting} onClick={submit}>
+            <button type="button" className="btn btn-primary" disabled={!!blocker || submitting} onClick={requestStart}>
               {submitting ? "Starting…" : "Start job"}
             </button>
           </div>
         </div>
       </div>
+      {showNoChannel && (
+        <NoChannelDialog
+          onJustMake={() => void submit("unassigned")}
+          onLater={() => void submit("queued")}
+          onCancel={() => setShowNoChannel(false)}
+        />
+      )}
     </>
   );
 }

@@ -4,6 +4,11 @@
 
 ### Added
 
+- Works with no channel: a "No channel" option, a warning with three choices when nothing is connected, and three clip folders (Unassigned, Queued, Saved)
+- Per-clip and multi-select actions: Move to Saved, Move to Queued, Upload to channel, Download, Delete
+- A "clips are waiting to upload" banner once a channel is connected
+- A Settings page for the Saved path and disk limits, plus disk warnings and a refusal to start jobs when space is low
+- A repeatable real-browser test, `e2e/run.sh`, which covers the clip player and drag and drop
 - Engine core: FFmpeg wrapper, media probe, hardware detection by real test encodes, SQLite models, restart-safe job queue, 24-hour clip cleanup
 - Word-level transcription with GPU and CPU fallback
 - Frame-exact scene cut and motion analysis, audio energy and silence analysis
@@ -15,6 +20,11 @@
 - Web UI: new job, jobs, clips with countdown, preset editor, channels
 - Auto mode that explains each decision
 - Official API uploads for YouTube, Facebook and Instagram, with a hard stop on copyright claims
+
+### Changed
+
+- The automatic cleanup can now delete only inside the Unassigned folder, using real-path checks, and logs every deletion and refusal
+- Renders write to the temp folder first, so clip folders never hold partial files
 
 ### Fixed
 

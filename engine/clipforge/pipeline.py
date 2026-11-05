@@ -25,10 +25,11 @@ from clipforge.config import get_settings
 from clipforge.db import session_scope
 from clipforge.export.plan import Segment, to_frame_segments
 from clipforge.export.render import RenderSpec, make_thumbnail, render_clip
+from clipforge.folders import folder_dir
 from clipforge.jobs import JobContext
 from clipforge.media.probe import MediaInfo, probe
 from clipforge.metadata import build_metadata
-from clipforge.models import Channel, Clip, Job, Preset, RightsType, Source, utcnow
+from clipforge.models import Channel, Clip, ClipFolder, Job, Preset, RightsType, Source, utcnow
 from clipforge.qc import run_qc
 
 log = logging.getLogger("clipforge.pipeline")
@@ -281,7 +282,8 @@ def run_job(ctx: JobContext) -> None:
             )
     templates = channel.settings if channel else {}
     corpus = " ".join(w.text for w in analysis.words)
-    out_dir = settings.renders_dir / job.id
+    destination = job.settings.get("destination", ClipFolder.unassigned.value)
+    out_dir = folder_dir(destination)
     numbered = options.get("part_numbering", False) and len(planned) > 1
 
     for index, (moment, segments) in enumerate(planned):
@@ -363,8 +365,14 @@ def run_job(ctx: JobContext) -> None:
                     thumb_path=str(thumb),
                     preset_id=edit.get("preset_id") or options.get("auto_preset"),
                     qc={**qc, "encoder": result.encoder},
+                    folder=destination,
                     created_at=now,
-                    expires_at=now + timedelta(hours=settings.clip_ttl_hours),
+                    # Only Unassigned has a timer. Queued waits for a channel, however long that takes.
+                    expires_at=(
+                        now + timedelta(hours=settings.clip_ttl_hours)
+                        if destination == ClipFolder.unassigned.value
+                        else None
+                    ),
                 )
             )
             session.commit()

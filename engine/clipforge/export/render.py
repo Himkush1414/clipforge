@@ -343,7 +343,8 @@ def render_clip(
     spec.output.parent.mkdir(parents=True, exist_ok=True)
     settings.tmp_dir.mkdir(parents=True, exist_ok=True)
     tmp = Path(tempfile.mkdtemp(prefix="render-", dir=settings.tmp_dir))
-    partial = spec.output.with_name(f".{spec.output.stem}.part{spec.output.suffix}")
+    # Inside the temp folder, so a crash never leaves a half-written file in a clip folder.
+    partial = tmp / f"partial{spec.output.suffix}"
     try:
         ass_path = None
         if spec.preset is not None:
@@ -418,13 +419,12 @@ def render_clip(
             log.warning("%s failed, falling back to %s: %s", encoder, fallback, str(exc)[:200])
             encoder = fallback
             encode(encoder)
-        partial.replace(spec.output)
+        shutil.move(partial, spec.output)
         return RenderResult(
             spec.output, timeline.total_frames, timeline.duration, encoder, out_w, out_h, notes
         )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-        partial.unlink(missing_ok=True)
 
 
 def replace_audio(video: Path, audio: Path, out: Path, duration: float) -> Path:

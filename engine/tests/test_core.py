@@ -128,9 +128,11 @@ def test_run_one_records_failure_and_cancel():
 
 
 def _clip(session, job_id, tmp_path, name, expires_delta):
-    path = tmp_path / name
+    folder = get_settings().unassigned_dir
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / name
     path.write_bytes(b"x")
-    thumb = tmp_path / f"{name}.jpg"
+    thumb = folder / f"{name}.jpg"
     thumb.write_bytes(b"x")
     clip = Clip(
         job_id=job_id,
@@ -151,9 +153,10 @@ def test_cleanup_removes_only_expired_clips(tmp_path):
         old = _clip(s, job.id, tmp_path, "old.mp4", timedelta(seconds=-1))
         fresh = _clip(s, job.id, tmp_path, "fresh.mp4", timedelta(hours=23))
     assert cleanup.cleanup_expired_clips() == [old.id]
-    assert not (tmp_path / "old.mp4").exists()
-    assert not (tmp_path / "old.mp4.jpg").exists()
-    assert (tmp_path / "fresh.mp4").exists()
+    folder = get_settings().unassigned_dir
+    assert not (folder / "old.mp4").exists()
+    assert not (folder / "old.mp4.jpg").exists()
+    assert (folder / "fresh.mp4").exists()
     with session_scope() as s:
         assert s.get(Clip, old.id).status == ClipStatus.expired.value
         assert s.get(Clip, old.id).path is None
@@ -169,7 +172,7 @@ def test_cleanup_waits_for_active_upload(tmp_path):
         s.add(up)
         s.commit()
     assert cleanup.cleanup_expired_clips() == []
-    assert (tmp_path / "busy.mp4").exists()
+    assert (get_settings().unassigned_dir / "busy.mp4").exists()
     with session_scope() as s:
         row = s.get(Upload, up.id)
         row.status = UploadStatus.published.value

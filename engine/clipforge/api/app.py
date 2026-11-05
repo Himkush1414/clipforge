@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import html
 import logging
-import re
 import secrets
 import shutil
 import tempfile
@@ -27,13 +26,24 @@ from sqlalchemy import func
 from sqlmodel import Session, col, select, update
 
 from clipforge import __version__
+from clipforge.appsettings import AppSettings, load_app_settings, save_app_settings
 from clipforge.captions.layout import cell_ratio
 from clipforge.captions.presets import BUILTIN_PRESETS, FONT_FILES, FONTS_DIR, CaptionPreset
 from clipforge.captions.preview import PREVIEW_SIZES, render_preview, sample_words
 from clipforge.cleanup import CleanupThread, cleanup_expired_clips, remove_clip_files
+from clipforge.clip_files import move_clip
 from clipforge.config import get_settings
 from clipforge.db import get_session, session_scope
 from clipforge.export.render import replace_audio
+from clipforge.folders import (
+    FolderError,
+    LowDisk,
+    low_disk_message,
+    saved_dir,
+    storage_report,
+    validate_saved_dir,
+    windows_to_wsl,
+)
 from clipforge.hardware import detect
 from clipforge.jobs import Worker
 from clipforge.media.ffmpeg import FFmpegError
@@ -54,10 +64,13 @@ from clipforge.models import (
 from clipforge.pipeline import run_job
 from clipforge.qc import run_qc
 from clipforge.schemas import (
+    BulkClipAction,
+    BulkUpload,
     ChannelCreate,
     ChannelSettings,
     ClaimReport,
     ClaimResolve,
+    ClipMove,
     FrameCut,
     JobCreate,
     PlatformCredentials,
@@ -108,15 +121,6 @@ def seed_presets() -> None:
         session.commit()
 
 
-def windows_to_wsl(raw: str) -> Path:
-    """Accept a pasted Windows path such as D:\\videos\\a.mp4."""
-    text = raw.strip().strip('"')
-    match = re.match(r"^([A-Za-z]):[\\/](.*)$", text)
-    if match:
-        return Path(f"/mnt/{match.group(1).lower()}") / match.group(2).replace("\\", "/")
-    return Path(text)
-
-
 def source_json(source: Source) -> dict:
     return {
         "id": source.id,
@@ -127,11 +131,13 @@ def source_json(source: Source) -> dict:
     }
 
 
-def clip_json(clip: Clip) -> dict:
-    left = max(0.0, (clip.expires_at - utcnow()).total_seconds())
+def clip_json(clip: Clip, job: Job | None = None) -> dict:
+    left = None if clip.expires_at is None else round(max(0.0, (clip.expires_at - utcnow()).total_seconds()))
     return {
         **clip.model_dump(exclude={"path", "thumb_path"}),
-        "seconds_left": round(left),
+        "seconds_left": left,
+        "rights_type": job.rights_type if job else None,
+        "rights_detail": job.rights_detail if job else None,
         "file_url": f"/api/clips/{clip.id}/file" if clip.path else None,
         "thumb_url": f"/api/clips/{clip.id}/thumb" if clip.thumb_path else None,
     }
@@ -229,6 +235,14 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.exception_handler(LowDisk)
+    async def low_disk_error(_request: Request, exc: LowDisk):
+        return JSONResponse({"detail": str(exc)}, status_code=507)
+
+    @app.exception_handler(FolderError)
+    async def folder_error(_request: Request, exc: FolderError):
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+
     @app.exception_handler(UploadError)
     async def upload_error(_request: Request, exc: UploadError):
         return JSONResponse({"detail": str(exc)[:800]}, status_code=409)
@@ -248,15 +262,23 @@ def create_app() -> FastAPI:
 
     @app.get("/api/storage")
     def storage() -> dict:
-        def size(path: Path) -> int:
-            return sum(p.stat().st_size for p in path.rglob("*") if p.is_file()) if path.exists() else 0
+        return storage_report()
 
-        return {
-            "media_bytes": size(settings.media_dir),
-            "renders_bytes": size(settings.renders_dir),
-            "tmp_bytes": size(settings.tmp_dir),
-            "free_bytes": shutil.disk_usage(settings.work_dir).free,
-        }
+    @app.get("/api/settings")
+    def read_settings() -> dict:
+        values = load_app_settings()
+        return {**values.model_dump(), "saved_path": str(saved_dir())}
+
+    @app.put("/api/settings")
+    def write_settings(body: AppSettings) -> dict:
+        update = body.model_copy()
+        if body.saved_dir and body.saved_dir.strip():
+            # Clips already in Saved stay where they are. Only new moves use the new path.
+            update.saved_dir = str(validate_saved_dir(body.saved_dir))
+        else:
+            update.saved_dir = None
+        save_app_settings(update)
+        return {**update.model_dump(), "saved_path": str(saved_dir())}
 
     @app.post("/api/cleanup/run")
     def run_cleanup() -> dict:
@@ -347,13 +369,16 @@ def create_app() -> FastAPI:
             raise HTTPException(422, f"This machine cannot export {body.manual.resolution}.")
         if body.edit.preset_id and session.get(Preset, body.edit.preset_id) is None:
             raise HTTPException(422, "Caption preset not found.")
+        low = low_disk_message()
+        if low:
+            raise HTTPException(507, low)
         job = Job(
             source_id=body.source_id,
             channel_id=body.channel_id,
             mode=body.mode,
             rights_type=body.rights.type.value,
             rights_detail=body.rights.detail,
-            settings=body.model_dump(mode="json", include={"manual", "edit", "frame_cuts"}),
+            settings=body.model_dump(mode="json", include={"manual", "edit", "frame_cuts", "destination"}),
         )
         session.add(job)
         session.commit()
@@ -373,7 +398,7 @@ def create_app() -> FastAPI:
     def get_job(job_id: str, session: Session = Depends(get_session)) -> dict:
         job = require(session, Job, job_id, "Job")
         clips = session.exec(select(Clip).where(Clip.job_id == job_id)).all()
-        return {**job_json(job, len(clips)), "clips": [clip_json(c) for c in clips]}
+        return {**job_json(job, len(clips)), "clips": [clip_json(c, job) for c in clips]}
 
     @app.post("/api/jobs/{job_id}/cancel")
     def cancel_job(job_id: str, session: Session = Depends(get_session)) -> dict:
@@ -399,16 +424,28 @@ def create_app() -> FastAPI:
         return job_json(require(session, Job, job_id, "Job"))
 
     # ---------- clips ----------
+    def job_of(session: Session, clip: Clip) -> Job | None:
+        return session.get(Job, clip.job_id)
+
     @app.get("/api/clips")
-    def list_clips(include_expired: bool = False, session: Session = Depends(get_session)) -> list[dict]:
+    def list_clips(
+        include_expired: bool = False, folder: str | None = None, session: Session = Depends(get_session)
+    ) -> list[dict]:
         query = select(Clip).order_by(col(Clip.created_at).desc())
         if not include_expired:
             query = query.where(Clip.status == ClipStatus.ready.value)
-        return [clip_json(c) for c in session.exec(query.limit(500)).all()]
+        if folder:
+            query = query.where(Clip.folder == folder)
+        rows = session.exec(query.limit(500)).all()
+        jobs = {
+            j.id: j for j in session.exec(select(Job).where(col(Job.id).in_({c.job_id for c in rows}))).all()
+        }
+        return [clip_json(c, jobs.get(c.job_id)) for c in rows]
 
     @app.get("/api/clips/{clip_id}")
     def get_clip(clip_id: str, session: Session = Depends(get_session)) -> dict:
-        return clip_json(require(session, Clip, clip_id, "Clip"))
+        clip = require(session, Clip, clip_id, "Clip")
+        return clip_json(clip, job_of(session, clip))
 
     @app.patch("/api/clips/{clip_id}")
     def patch_clip(clip_id: str, body: ClipPatch, session: Session = Depends(get_session)) -> dict:
@@ -419,7 +456,59 @@ def create_app() -> FastAPI:
             clip.description = body.description
         session.add(clip)
         session.commit()
-        return clip_json(clip)
+        return clip_json(clip, job_of(session, clip))
+
+    @app.post("/api/clips/{clip_id}/move")
+    def move_one_clip(clip_id: str, body: ClipMove, session: Session = Depends(get_session)) -> dict:
+        moved = move_clip(clip_id, body.folder)
+        return clip_json(moved, job_of(session, moved))
+
+    def delete_one(session: Session, clip_id: str) -> None:
+        clip = require(session, Clip, clip_id, "Clip")
+        uploading = session.exec(
+            select(Upload).where(Upload.clip_id == clip_id, Upload.status == UploadStatus.uploading.value)
+        ).first()
+        if uploading:
+            raise FolderError("This clip is uploading. Delete it when the upload has finished.")
+        remove_clip_files(clip)
+        clip.status = ClipStatus.deleted.value
+        session.add(clip)
+        session.commit()
+
+    @app.post("/api/clips/bulk")
+    def bulk_clips(body: BulkClipAction, session: Session = Depends(get_session)) -> dict:
+        """Each clip succeeds or fails on its own, so one problem cannot hide the others."""
+        done, failed = [], []
+        for clip_id in dict.fromkeys(body.clip_ids):
+            try:
+                if body.action == "delete":
+                    delete_one(session, clip_id)
+                else:
+                    move_clip(clip_id, "saved" if body.action == "move_saved" else "queued")
+                done.append(clip_id)
+            except (FolderError, HTTPException, OSError) as exc:
+                failed.append({"clip_id": clip_id, "error": str(getattr(exc, "detail", exc))[:300]})
+        return {"done": done, "failed": failed}
+
+    @app.post("/api/uploads/bulk", status_code=201)
+    def bulk_upload(body: BulkUpload, session: Session = Depends(get_session)) -> dict:
+        if body.link_group:
+            channel_ids = list(
+                session.exec(select(Channel.id).where(Channel.link_group == body.link_group)).all()
+            )
+            if not channel_ids:
+                raise HTTPException(404, "No channels in that group.")
+        else:
+            assert body.channel_id
+            channel_ids = [body.channel_id]
+        done, failed = [], []
+        for clip_id in dict.fromkeys(body.clip_ids):
+            try:
+                service.queue_upload(clip_id, channel_ids, body.privacy, body.made_for_kids)
+                done.append(clip_id)
+            except UploadError as exc:
+                failed.append({"clip_id": clip_id, "error": str(exc)[:300]})
+        return {"done": done, "failed": failed}
 
     @app.get("/api/clips/{clip_id}/file")
     def clip_file(clip_id: str, download: bool = False, session: Session = Depends(get_session)):
@@ -438,16 +527,7 @@ def create_app() -> FastAPI:
 
     @app.delete("/api/clips/{clip_id}")
     def delete_clip(clip_id: str, session: Session = Depends(get_session)) -> dict:
-        clip = require(session, Clip, clip_id, "Clip")
-        uploading = session.exec(
-            select(Upload).where(Upload.clip_id == clip_id, Upload.status == UploadStatus.uploading.value)
-        ).first()
-        if uploading:
-            raise HTTPException(409, "This clip is uploading. Delete it when the upload has finished.")
-        remove_clip_files(clip)
-        clip.status = ClipStatus.deleted.value
-        session.add(clip)
-        session.commit()
+        delete_one(session, clip_id)
         return {"deleted": clip_id}
 
     @app.post("/api/clips/{clip_id}/recut", status_code=201)
@@ -479,6 +559,7 @@ def create_app() -> FastAPI:
                 },
                 "edit": old.settings.get("edit", {}),
                 "frame_cuts": [cut.model_dump()],
+                "destination": "queued" if clip.folder == "queued" else "unassigned",
             },
         )
         session.add(job)
@@ -807,11 +888,13 @@ def create_app() -> FastAPI:
             description=f"{clip.description}\n\nAudio: {licence.strip()}",
             reasons={"replaced_audio_licence": licence.strip(), "from_clip": clip_id},
             created_at=now,
-            expires_at=now + timedelta(hours=settings.clip_ttl_hours),
+            expires_at=now + timedelta(hours=settings.clip_ttl_hours)
+            if clip.folder == "unassigned"
+            else None,
         )
         session.add(fresh)
         session.commit()
-        return clip_json(fresh)
+        return clip_json(fresh, job_of(session, fresh))
 
     return app
 
@@ -828,6 +911,10 @@ def setup_logging() -> None:
             RotatingFileHandler(log_dir / "clipforge.log", maxBytes=5_000_000, backupCount=3),
         ],
     )
+    # Every deletion and refused deletion gets its own permanent record as well.
+    deletion_log = RotatingFileHandler(log_dir / "deletions.log", maxBytes=5_000_000, backupCount=5)
+    deletion_log.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    logging.getLogger("clipforge.deletions").addHandler(deletion_log)
     # httpx logs full request URLs at INFO, and sign-in URLs must never reach a log file.
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)

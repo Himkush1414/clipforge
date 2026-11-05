@@ -34,8 +34,24 @@ class Settings(BaseSettings):
         return self.work_dir / "models"
 
     @property
-    def renders_dir(self) -> Path:
-        return self.work_dir / "renders"
+    def clips_dir(self) -> Path:
+        return self.work_dir / "clips"
+
+    @property
+    def unassigned_dir(self) -> Path:
+        return self.clips_dir / "unassigned"
+
+    @property
+    def queued_dir(self) -> Path:
+        return self.clips_dir / "queued"
+
+    @property
+    def default_saved_dir(self) -> Path:
+        return self.clips_dir / "saved"
+
+    @property
+    def app_settings_path(self) -> Path:
+        return self.data_dir / "settings.json"
 
     @property
     def tmp_dir(self) -> Path:
@@ -65,7 +81,8 @@ class Settings(BaseSettings):
         for path in (
             self.media_dir,
             self.models_dir,
-            self.renders_dir,
+            self.unassigned_dir,
+            self.queued_dir,
             self.tmp_dir,
             self.analysis_dir,
         ):

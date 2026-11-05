@@ -52,8 +52,11 @@ export type Clip = {
   frames: number;
   size_bytes: number;
   status: string;
+  folder: "unassigned" | "queued" | "saved";
+  rights_type: string | null;
+  rights_detail: string | null;
   qc: { status?: "ok" | "warn" | "fail"; checks?: QcCheck[]; encoder?: string };
-  seconds_left: number;
+  seconds_left: number | null;
   file_url: string | null;
   thumb_url: string | null;
 };
@@ -227,7 +230,7 @@ export function formatDuration(seconds: number): string {
 export function formatBytes(bytes: number): string {
   if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
   if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
-  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${bytes ? Math.max(1, Math.round(bytes / 1024)) : 0} KB`;
 }
 
 export const RIGHTS_LABELS: Record<string, string> = {
@@ -260,3 +263,21 @@ export type Upload = {
 };
 
 export type PlatformInfo = { group: "google" | "meta"; configured: boolean; redirect_uri: string };
+
+export type StorageReport = {
+  folders: { unassigned: number; queued: number; saved: number };
+  saved_path: string;
+  free_bytes: number;
+  saved_free_bytes: number;
+  warnings: string[];
+};
+
+export type AppSettings = {
+  saved_dir: string | null;
+  saved_path: string;
+  queued_limit_gb: number;
+  saved_limit_gb: number;
+  low_disk_gb: number;
+};
+
+export type BulkResult = { done: string[]; failed: { clip_id: string; error: string }[] };

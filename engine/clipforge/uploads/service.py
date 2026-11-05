@@ -10,6 +10,7 @@ from pathlib import Path
 import httpx
 from sqlmodel import col, select
 
+from clipforge.clip_files import start_timer_after_upload
 from clipforge.db import session_scope
 from clipforge.metadata import credit_line
 from clipforge.models import Channel, Clip, ClipStatus, Job, RightsType, Upload, UploadStatus, utcnow
@@ -171,6 +172,8 @@ def apply_state(upload_id: str, state: RemoteState) -> None:
         session.commit()
     if state.state == "claimed":
         record_claim(upload_id, state.claim)
+    elif state.state == "published":
+        start_timer_after_upload(row.clip_id)
 
 
 def record_claim(upload_id: str, claim: dict) -> None:
