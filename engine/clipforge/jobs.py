@@ -81,6 +81,19 @@ def requeue_interrupted_jobs() -> int:
         return len(jobs)
 
 
+def friendly_error(exc: Exception) -> str:
+    """Say what to do about common failures. The full details are in the log file."""
+    text = str(exc)
+    lowered = text.lower()
+    if "no space left" in lowered:
+        return "The disk is full. Free some space, then run this job again."
+    if "invalid data found" in lowered or "moov atom not found" in lowered:
+        return "This video file looks damaged, so FFmpeg could not read it."
+    if isinstance(exc, MemoryError) or "cannot allocate memory" in lowered:
+        return "The computer ran out of memory. Close other programs, then run this job again."
+    return text[:2000]
+
+
 def run_one(job_id: str, runner: JobRunner) -> None:
     ctx = JobContext(job_id)
     final_status, error = JobStatus.done, None
@@ -90,7 +103,7 @@ def run_one(job_id: str, runner: JobRunner) -> None:
         final_status = JobStatus.cancelled
     except Exception as exc:
         log.exception("Job %s failed", job_id)
-        final_status, error = JobStatus.failed, str(exc)[:2000]
+        final_status, error = JobStatus.failed, friendly_error(exc)
     with session_scope() as session:
         job = session.get(Job, job_id)
         if job is None:
@@ -115,11 +128,16 @@ class Worker(threading.Thread):
     def run(self) -> None:
         requeue_interrupted_jobs()
         while not self._stop_event.is_set():
-            job_id = claim_next_job()
-            if job_id is None:
+            try:
+                job_id = claim_next_job()
+                if job_id is None:
+                    self._stop_event.wait(self.poll_seconds)
+                    continue
+                run_one(job_id, self.runner)
+            except Exception:
+                # The worker must outlive any one failure, or every later job would sit queued forever.
+                log.exception("Worker loop error; continuing")
                 self._stop_event.wait(self.poll_seconds)
-                continue
-            run_one(job_id, self.runner)
 
     def stop(self) -> None:
         self._stop_event.set()
