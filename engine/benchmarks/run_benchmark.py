@@ -298,6 +298,7 @@ def bench_loudness(tmp: Path) -> dict:
         "loud clipped": "anoisesrc=d=20:c=white:r=48000:a=1.0:seed=1,volume=12dB,alimiter=limit=1:level=false",
         "wide range": "anoisesrc=d=20:c=pink:r=48000:a=0.3:seed=1,volume='if(lt(t,10),0.02,1)':eval=frame",
     }
+    speech = Path.home() / "clipforge-work" / "media" / "sample_workshop.mp4"
     for index, (name, audio) in enumerate(cases.items()):
         source = tmp / f"loud-{index}.mp4"
         ff(
@@ -332,6 +333,41 @@ def bench_loudness(tmp: Path) -> dict:
         lufs = float(checks["loudness"]["detail"].split()[0])
         peak = float(checks["true_peak"]["detail"].split()[0])
         results[name] = {"lufs": lufs, "lufs_error": round(abs(lufs + 14), 2), "true_peak_dbfs": peak}
+    if speech.exists():  # Generated voice, when scripts/make_sample.py has been run.
+        source = tmp / "loud-speech.mp4"
+        for name, channels in (("generated speech, mono", 1), ("generated speech, stereo", 2)):
+            ff(
+                "-ss",
+                5,
+                "-t",
+                30,
+                "-i",
+                speech,
+                "-ac",
+                channels,
+                "-c:v",
+                "copy",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "256k",
+                source,
+            )
+            info = probe(source)
+            out = tmp / "loudout-speech.mp4"
+            result = render_clip(
+                RenderSpec(source, info, [Segment(0, 800)], "16:9", "1080p", out, fit="crop")
+            )
+            checks = {
+                c["name"]: c
+                for c in run_qc(out, result.width, result.height, result.duration, info.fps, True)["checks"]
+            }
+            lufs = float(checks["loudness"]["detail"].split()[0])
+            results[name] = {
+                "lufs": lufs,
+                "lufs_error": round(abs(lufs + 14), 2),
+                "true_peak_dbfs": float(checks["true_peak"]["detail"].split()[0]),
+            }
     return results
 
 
