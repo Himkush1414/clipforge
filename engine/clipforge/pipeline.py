@@ -18,6 +18,7 @@ from clipforge.analysis.boundaries import refine, remove_pauses
 from clipforge.analysis.scenes import SceneAnalysis, analyze_scenes
 from clipforge.analysis.scoring import Moment, find_moments
 from clipforge.analysis.transcribe import Word, extract_audio, transcribe, words_from_dicts
+from clipforge.autopilot import decide
 from clipforge.captions.presets import BUILTIN_PRESETS, CaptionPreset
 from clipforge.config import get_settings
 from clipforge.db import session_scope
@@ -160,21 +161,16 @@ def load_preset(preset_id: str | None) -> CaptionPreset:
     raise ValueError(f"Caption preset not found: {key}")
 
 
-def resolve_options(job: Job, analysis: Analysis, info: MediaInfo) -> tuple[dict, dict]:
+def resolve_options(
+    job: Job, analysis: Analysis, info: MediaInfo, video: Path, channel: Channel | None
+) -> tuple[dict, dict]:
     """Return (options, decisions). Manual mode uses what the user chose."""
-    settings = job.settings
     if job.mode == "manual":
-        return dict(settings["manual"]), {}
-    from clipforge.autopilot import decide
-
-    decision = decide(analysis.words, analysis.audio, analysis.scenes, info, Path(job_source_path(job)))
+        return dict(job.settings["manual"]), {}
+    decision = decide(
+        analysis.words, analysis.audio, analysis.scenes, info, video, channel.settings if channel else None
+    )
     return decision.options(), decision.report()
-
-
-def job_source_path(job: Job) -> str:
-    with session_scope() as session:
-        source = session.get(Source, job.source_id)
-        return source.path if source else ""
 
 
 def _plan_clips(
@@ -202,6 +198,11 @@ def _plan_clips(
         options["clip_duration"],
         options["clip_count"],
     )
+    ratio = options.get("min_score_ratio")
+    if ratio and moments:
+        # Auto mode keeps quality over quantity: drop moments far weaker than the best one.
+        best = max(m.score for m in moments)
+        moments = [m for m in moments if m.score >= best * ratio]
     planned = []
     cut_times = analysis.scenes.cut_times
     for moment in moments:
@@ -238,12 +239,12 @@ def run_job(ctx: JobContext) -> None:
     analysis = load_or_analyze(source, info, edit.get("language"), ctx)
 
     ctx.update(stage="choosing moments", progress=ANALYSIS_SHARE)
-    options, decisions = resolve_options(job, analysis, info)
+    options, decisions = resolve_options(job, analysis, info, Path(source.path), channel)
     planned = _plan_clips(job, options, analysis, info)
 
     notes = []
     wanted = options["clip_count"]
-    if not job.settings.get("frame_cuts") and len(planned) < wanted:
+    if job.mode == "manual" and not job.settings.get("frame_cuts") and len(planned) < wanted:
         notes.append(
             f"Asked for {wanted} clips, but this video only has {len(planned)} good non-overlapping moments."
         )
@@ -342,7 +343,7 @@ def run_job(ctx: JobContext) -> None:
                     size_bytes=result.path.stat().st_size,
                     path=str(result.path),
                     thumb_path=str(thumb),
-                    preset_id=edit.get("preset_id"),
+                    preset_id=edit.get("preset_id") or options.get("auto_preset"),
                     qc={**qc, "encoder": result.encoder},
                     created_at=now,
                     expires_at=now + timedelta(hours=settings.clip_ttl_hours),
