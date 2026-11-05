@@ -87,22 +87,22 @@ class Decision:
 
 def animation_score(video: Path, duration: float) -> float:
     """Drawn pictures have large flat areas and hard edges; camera footage has fine texture."""
-    step = max(duration / SAMPLE_FRAMES, 0.5)
-    cmd = [
-        find_tool("ffmpeg"), "-hide_banner", "-loglevel", "error", "-nostdin", "-i", str(video),
-        "-map", "0:v:0", "-vf", f"fps=1/{step:.3f},scale={SAMPLE_W}:{SAMPLE_H},format=gray",
-        "-frames:v", str(SAMPLE_FRAMES), "-f", "rawvideo", "-",
-    ]  # fmt: skip
-    out = subprocess.run(cmd, capture_output=True, timeout=1800)
+    # One seek per frame: decoding the whole file took 73 s on a one-hour video.
     size = SAMPLE_W * SAMPLE_H
-    count = len(out.stdout) // size
-    if count == 0:
-        return 0.0
-    frames = (
-        np.frombuffer(out.stdout[: count * size], np.uint8)
-        .reshape(count, SAMPLE_H, SAMPLE_W)
-        .astype(np.int16)
-    )
+    samples = []
+    for index in range(SAMPLE_FRAMES):
+        at = duration * (index + 0.5) / SAMPLE_FRAMES
+        cmd = [
+            find_tool("ffmpeg"), "-hide_banner", "-loglevel", "error", "-nostdin", "-threads", "4",
+            "-ss", f"{at:.3f}", "-i", str(video), "-map", "0:v:0", "-frames:v", "1",
+            "-vf", f"scale={SAMPLE_W}:{SAMPLE_H},format=gray", "-f", "rawvideo", "-",
+        ]  # fmt: skip
+        out = subprocess.run(cmd, capture_output=True, timeout=120)
+        if len(out.stdout) >= size:
+            samples.append(
+                np.frombuffer(out.stdout[:size], np.uint8).reshape(SAMPLE_H, SAMPLE_W).astype(np.int16)
+            )
+    frames = samples
     scores = []
     for frame in frames:
         if frame.std() < 6:  # A blank or fading frame says nothing about the art style.

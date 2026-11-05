@@ -254,7 +254,12 @@ def run_job(ctx: JobContext) -> None:
         raise ValueError(
             f"No clip fits these settings. Try another clip length (the video lasts {info.duration:.0f} s)."
         )
-    decisions = {**decisions, "language": analysis.language, "notes": notes, "words": len(analysis.words)}
+    decisions = {
+        **decisions,
+        "language": analysis.language,
+        "notes": list(notes),
+        "words": len(analysis.words),
+    }
     with session_scope() as session:
         row = session.get(Job, job.id)
         assert row is not None
@@ -300,6 +305,7 @@ def run_job(ctx: JobContext) -> None:
             on_progress=_clip_progress(ctx, base, step),
             should_cancel=ctx.should_cancel,
         )
+        notes.extend(n for n in result.notes if n not in notes)
         ctx.update(stage=f"checking clip {index + 1} of {len(planned)}")
         qc = run_qc(
             result.path,
@@ -353,5 +359,12 @@ def run_job(ctx: JobContext) -> None:
                     expires_at=now + timedelta(hours=settings.clip_ttl_hours),
                 )
             )
+            session.commit()
+    if notes != decisions["notes"]:
+        with session_scope() as session:
+            row = session.get(Job, job.id)
+            assert row is not None
+            row.decisions = {**row.decisions, "notes": notes}
+            session.add(row)
             session.commit()
     log.info("Job %s finished: %s", job.id, json.dumps({"clips": len(planned)}))
