@@ -53,11 +53,27 @@ def cleanup_expired_clips() -> list[str]:
     return removed
 
 
+def _remove_render_leftovers(cutoff: float) -> None:
+    """A crash mid-render leaves a hidden partial file. Empty job folders also go."""
+    renders = get_settings().renders_dir
+    if not renders.exists():
+        return
+    for folder in renders.iterdir():
+        if not folder.is_dir():
+            continue
+        for partial in folder.glob(".*.part.*"):
+            if partial.stat().st_mtime < cutoff:
+                partial.unlink(missing_ok=True)
+        if not any(folder.iterdir()) and folder.stat().st_mtime < cutoff:
+            folder.rmdir()
+
+
 def cleanup_stale_temp() -> list[str]:
     """Remove temp dirs left by a crash. Normal renders remove their own temp at once."""
     settings = get_settings()
     cutoff = time.time() - settings.temp_max_age_hours * 3600
     removed: list[str] = []
+    _remove_render_leftovers(cutoff)
     if not settings.tmp_dir.exists():
         return removed
     for entry in settings.tmp_dir.iterdir():
