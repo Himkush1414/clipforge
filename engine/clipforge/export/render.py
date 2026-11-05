@@ -337,6 +337,30 @@ def render_clip(
         partial.unlink(missing_ok=True)
 
 
+def replace_audio(video: Path, audio: Path, out: Path, duration: float) -> Path:
+    """Offered only after a claim, with a track the user holds a licence for. The picture is copied."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    partial = out.with_name(f".{out.stem}.part{out.suffix}")
+    # The new track is padded or cut to the clip's length, so picture and duration stay as they were.
+    fit = f"apad,atrim=duration={duration:.6f},asetpts=PTS-STARTPTS"
+    args: list[str | Path] = ["-i", video, "-i", audio, "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy"]
+    measure = f"{fit},loudnorm=I={TARGET_LUFS}:TP={TARGET_PEAK}:LRA={TARGET_LRA}:print_format=json"
+    stderr = run_ffmpeg(["-i", audio, "-af", measure, "-f", "null", "-"])
+    match = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", stderr, re.S)
+    stats = json.loads(match.group(0)) if match else None
+    silent = stats is None or stats["input_i"] in ("-inf", "inf", "nan") or float(stats["input_i"]) < -70
+    final = fit if silent else f"{fit},{loudnorm_filter(stats)}"
+    try:
+        run_ffmpeg(
+            [*args, "-af", f"{final},aresample=48000,aformat=channel_layouts=stereo",
+             "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", partial]
+        )  # fmt: skip
+        partial.replace(out)
+    finally:
+        partial.unlink(missing_ok=True)
+    return out
+
+
 def make_thumbnail(video: Path, out: Path, at: float) -> Path:
     run_ffmpeg(["-ss", f"{at:.3f}", "-i", video, "-frames:v", "1", "-vf", "scale=480:-2", "-q:v", "4", out])
     return out

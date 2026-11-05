@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Badge, EmptyState, ErrorNote, PageHeader } from "@/components/ui";
-import { api, apiUrl, formatBytes, formatDuration, usePoll, type Clip } from "@/lib/api";
+import { UploadPanel } from "@/components/upload-panel";
+import { api, apiUrl, formatBytes, formatDuration, usePoll, type Channel, type Clip, type Upload } from "@/lib/api";
 
 function useNow() {
   const [now, setNow] = useState(() => Date.now());
@@ -23,7 +24,7 @@ function Countdown({ expiresAt }: { expiresAt: number }) {
   return <Badge tone={left < 3600 ? "fail" : left < 6 * 3600 ? "warn" : "neutral"}>Deleted in {text}</Badge>;
 }
 
-function ClipCard({ clip, onChange }: { clip: Clip; onChange: () => void }) {
+function ClipCard({ clip, channels, uploads, onChange }: { clip: Clip; channels: Channel[]; uploads: Upload[]; onChange: () => void }) {
   const [title, setTitle] = useState(clip.title);
   const [description, setDescription] = useState(clip.description);
   const [startFrame, setStartFrame] = useState("");
@@ -129,6 +130,7 @@ function ClipCard({ clip, onChange }: { clip: Clip; onChange: () => void }) {
             </button>
           </div>
         </details>
+        <UploadPanel clip={clip} channels={channels} uploads={uploads} onChange={onChange} />
         <ErrorNote message={error} />
         {message && <p className="text-sm text-ok">{message}</p>}
         <div className="flex flex-wrap gap-2">
@@ -158,13 +160,26 @@ function ClipCard({ clip, onChange }: { clip: Clip; onChange: () => void }) {
 
 export default function ClipsPage() {
   const { data: clips, error, refresh } = usePoll<Clip[]>("/api/clips", 5000);
+  const { data: channels } = usePoll<Channel[]>("/api/channels", 15000);
+  const { data: uploads, refresh: refreshUploads } = usePoll<Upload[]>("/api/uploads", 4000);
   return (
     <>
       <PageHeader title="Clips" subtitle="Every exported clip is deleted automatically 24 hours after it is made. Download or upload what you want to keep." />
       <ErrorNote message={error} />
       {clips?.length === 0 && <EmptyState title="No clips right now">Finished clips appear here.</EmptyState>}
       <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {clips?.map((clip) => <ClipCard key={clip.id} clip={clip} onChange={refresh} />)}
+        {clips?.map((clip) => (
+          <ClipCard
+            key={clip.id}
+            clip={clip}
+            channels={channels ?? []}
+            uploads={uploads?.filter((u) => u.clip_id === clip.id) ?? []}
+            onChange={() => {
+              void refresh();
+              void refreshUploads();
+            }}
+          />
+        ))}
       </div>
     </>
   );

@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -14,12 +15,16 @@ def isolated_work_dir(tmp_path, monkeypatch):
     from clipforge import config, db, hardware
 
     monkeypatch.setenv("CLIPFORGE_WORK_DIR", str(tmp_path / "work"))
+    # /mnt drives ignore chmod, so secrets go on a real Linux disk, as they must in real use.
+    secrets_root = Path(tempfile.mkdtemp(prefix="cf-test-", dir=Path.home()))
+    monkeypatch.setenv("CLIPFORGE_SECRETS_DIR", str(secrets_root / "secrets"))
     monkeypatch.setenv("CLIPFORGE_START_BACKGROUND", "false")
     if SHARED_TOOLS.exists():
         monkeypatch.setenv("PATH", f"{SHARED_TOOLS}{os.pathsep}{os.environ['PATH']}")
     config.get_settings.cache_clear()
     db.get_engine.cache_clear()
     yield
+    shutil.rmtree(secrets_root, ignore_errors=True)
     config.get_settings.cache_clear()
     db.get_engine.cache_clear()
     hardware.detect.cache_clear()

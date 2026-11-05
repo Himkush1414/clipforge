@@ -236,3 +236,27 @@ export const RIGHTS_LABELS: Record<string, string> = {
   creative_commons: "Creative Commons",
   written_permission: "Written permission",
 };
+
+export type ClaimMatch = {
+  title?: string | null;
+  policy?: string | null;
+  actions?: string[];
+  segments?: { start: number; duration: number; type: string }[];
+};
+
+export type Upload = {
+  id: string;
+  clip_id: string;
+  channel_id: string;
+  channel_name: string | null;
+  platform: Channel["platform"] | null;
+  status: "pending" | "uploading" | "processing" | "published" | "failed" | "claimed" | "stopped";
+  privacy: string;
+  url: string | null;
+  error: string | null;
+  claim: { platform?: string; reason?: string; note?: string; matches?: ClaimMatch[] };
+  claim_resolution: "trim" | "replace_audio" | "dispute" | null;
+  claim_note: string;
+};
+
+export type PlatformInfo = { group: "google" | "meta"; configured: boolean; redirect_uri: string };
