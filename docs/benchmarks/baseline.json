@@ -1,0 +1,151 @@
+{
+ "label": "baseline, before any replacement",
+ "machine": {
+  "gpu": "NVIDIA GeForce RTX 3050",
+  "cpu_threads": 28,
+  "ram_gb": 7.6
+ },
+ "ffmpeg": "n8.1.3-34-ga35157abb9-20261104",
+ "scoring": {
+  "clips_chosen": 30,
+  "clips_capturing_a_planted_moment": 24,
+  "capture_rate": 0.8,
+  "mean_share_of_clip_on_planted": 0.48,
+  "planted_share_of_video": 0.09
+ },
+ "loudness": {
+  "quiet speech-like": {
+   "lufs": -14.7,
+   "lufs_error": 0.7,
+   "true_peak_dbfs": -3.1
+  },
+  "normal music-like": {
+   "lufs": -14.4,
+   "lufs_error": 0.4,
+   "true_peak_dbfs": -3.4
+  },
+  "loud clipped": {
+   "lufs": -15.1,
+   "lufs_error": 1.1,
+   "true_peak_dbfs": -9.6
+  },
+  "wide range": {
+   "lufs": -13.6,
+   "lufs_error": 0.4,
+   "true_peak_dbfs": -3.8
+  }
+ },
+ "sync": {
+  "3 segments (direct)": {
+   "flashes_found": 3,
+   "worst_offset_ms": 15.0,
+   "drift_first_to_last_ms": 0.0,
+   "duration_error_ms": 0.0
+  },
+  "12 segments (one by one)": {
+   "flashes_found": 12,
+   "worst_offset_ms": 15.0,
+   "drift_first_to_last_ms": 10.0,
+   "duration_error_ms": 0.0
+  },
+  "40 segments (one by one)": {
+   "flashes_found": 40,
+   "worst_offset_ms": 15.0,
+   "drift_first_to_last_ms": 10.0,
+   "duration_error_ms": 0.0
+  }
+ },
+ "cuts": {
+  "30 fps, long GOP": {
+   "cuts_checked": 11,
+   "cuts_wrong": 0,
+   "worst_frame_offset": 0
+  },
+  "29.97 fps": {
+   "cuts_checked": 11,
+   "cuts_wrong": 0,
+   "worst_frame_offset": 0
+  },
+  "60 fps": {
+   "cuts_checked": 11,
+   "cuts_wrong": 0,
+   "worst_frame_offset": 0
+  },
+  "23.976 fps": {
+   "cuts_checked": 11,
+   "cuts_wrong": 0,
+   "worst_frame_offset": 0
+  }
+ },
+ "render": {
+  "9:16 1080p": {
+   "encoder": "h264_nvenc",
+   "seconds_for_30s_clip": 3.8,
+   "speed_x_realtime": 7.9,
+   "peak_ram_gb": 0.72,
+   "peak_gpu_mb": 488
+  },
+  "16:9 4K": {
+   "encoder": "h264_nvenc",
+   "seconds_for_30s_clip": 12.6,
+   "speed_x_realtime": 2.4,
+   "peak_ram_gb": 1.0,
+   "peak_gpu_mb": 729
+  },
+  "9:16 8K": {
+   "encoder": "hevc_nvenc",
+   "seconds_for_30s_clip": 49.1,
+   "speed_x_realtime": 0.6,
+   "peak_ram_gb": 1.81,
+   "peak_gpu_mb": 1730
+  }
+ },
+ "silence": {
+  "gaps_truth": 4,
+  "gaps_found": 4,
+  "worst_edge_error_ms": 150.0,
+  "mean_edge_error_ms": 37.5
+ },
+ "scenes": {
+  "hard_cuts": {
+   "found": 6,
+   "true_positives": 6,
+   "missed": 0,
+   "false_alarms": 0,
+   "worst_offset_frames": 0,
+   "truth": 6,
+   "fps_processed": 3118
+  },
+  "fast_motion_and_flash": {
+   "false_alarms": 1
+  },
+  "dissolves": {
+   "found": 0,
+   "true_positives": 0,
+   "missed": 2,
+   "false_alarms": 0,
+   "worst_offset_frames": 0,
+   "truth": 2
+  }
+ },
+ "captions": {
+  "9:16": {
+   "frames_checked": 28,
+   "outside_safe_area": 0,
+   "tightest_margin_px": 17.6,
+   "frame": "1080x1920"
+  },
+  "1:1": {
+   "frames_checked": 28,
+   "outside_safe_area": 0,
+   "tightest_margin_px": 17.4,
+   "frame": "1080x1080"
+  },
+  "16:9": {
+   "frames_checked": 28,
+   "outside_safe_area": 0,
+   "tightest_margin_px": 10.0,
+   "frame": "1920x1080"
+  }
+ }
+}
