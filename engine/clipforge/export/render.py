@@ -51,6 +51,7 @@ class RenderSpec:
     transition: str = "cut"  # cut or crossfade
     transition_seconds: float = 0.3
     cuts: list[float] = field(default_factory=list)
+    language: str | None = None
 
 
 @dataclass
@@ -348,7 +349,9 @@ def render_clip(
         if spec.preset is not None:
             words = timeline.remap_words(spec.words)
             if words:
-                ass_path = write_ass(tmp / "captions.ass", words, spec.preset, out_w, out_h, spec.ratio)
+                ass_path = write_ass(
+                    tmp / "captions.ass", words, spec.preset, out_w, out_h, spec.ratio, spec.language
+                )
 
         encoder = pick_encoder(out_w, out_h)
         final_progress = on_progress

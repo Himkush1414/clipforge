@@ -155,17 +155,25 @@ def _box_event(placed: PlacedWord, preset: CaptionPreset, start: float, end: flo
     return f"Dialogue: 1,{ass_time(start)},{ass_time(end)},Word,,0,0,0,,{{{tags}}}{path}{{\\p0}}"
 
 
-def build_ass(words: list[Word], preset: CaptionPreset, width: int, height: int, ratio: str) -> str:
+def build_ass(
+    words: list[Word], preset: CaptionPreset, width: int, height: int, ratio: str, language: str | None = None
+) -> str:
     lines = [_header(preset, width, height)]
     for group in group_words(words, preset, ratio):
-        laid = layout_group(group, preset, width, height, ratio)
+        laid = layout_group(group, preset, width, height, ratio, language)
         for position, placed in enumerate(laid.words):
             lines.extend(event + "\n" for event in _word_events(laid, placed, position, preset))
     return "".join(lines)
 
 
 def write_ass(
-    path: Path, words: list[Word], preset: CaptionPreset, width: int, height: int, ratio: str
+    path: Path,
+    words: list[Word],
+    preset: CaptionPreset,
+    width: int,
+    height: int,
+    ratio: str,
+    language: str | None = None,
 ) -> Path:
-    path.write_text(build_ass(words, preset, width, height, ratio), encoding="utf-8")
+    path.write_text(build_ass(words, preset, width, height, ratio, language), encoding="utf-8")
     return path

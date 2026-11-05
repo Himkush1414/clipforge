@@ -8,6 +8,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from clipforge.config import get_settings
+
 FONTS_DIR = Path(__file__).resolve().parent.parent / "assets" / "fonts"
 
 # Family name as libass sees it -> file. All are SIL OFL, see docs/CREDITS.md.
@@ -21,6 +23,35 @@ FONT_FILES: dict[str, str] = {
     "Poppins Black": "Poppins-Black.ttf",
     "Poppins ExtraBold": "Poppins-ExtraBold.ttf",
 }
+
+# Not in the repo because of its size (20 MB). scripts/setup.sh downloads it. OFL, see docs/CREDITS.md.
+CJK_FILE = "NotoSansCJK-Bold.ttc"
+CJK_FACES = {"ja": ("Noto Sans CJK JP", 0), "ko": ("Noto Sans CJK KR", 1), "zh": ("Noto Sans CJK SC", 2)}
+CJK_FAMILIES = {family: index for family, index in CJK_FACES.values()}
+
+
+def fonts_dir() -> Path:
+    """The folder libass reads: bundled fonts linked beside the downloaded CJK font."""
+    folder = get_settings().data_dir / "fonts"
+    folder.mkdir(parents=True, exist_ok=True)
+    for filename in FONT_FILES.values():
+        link = folder / filename
+        if not link.exists():
+            link.unlink(missing_ok=True)  # A dangling link left by a moved repo.
+            link.symlink_to(FONTS_DIR / filename)
+    return folder
+
+
+def cjk_path() -> Path:
+    return get_settings().data_dir / "fonts" / CJK_FILE
+
+
+def font_location(family: str) -> tuple[Path, int]:
+    """File and face index for a family."""
+    if family in CJK_FAMILIES:
+        return cjk_path(), CJK_FAMILIES[family]
+    return FONTS_DIR / FONT_FILES[family], 0
+
 
 HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 

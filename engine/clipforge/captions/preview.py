@@ -8,7 +8,7 @@ from pathlib import Path
 
 from clipforge.analysis.transcribe import Word
 from clipforge.captions.ass import write_ass
-from clipforge.captions.presets import FONTS_DIR, CaptionPreset
+from clipforge.captions.presets import CaptionPreset, fonts_dir
 from clipforge.config import get_settings
 from clipforge.media.ffmpeg import escape_filter_path, run_ffmpeg
 
@@ -26,7 +26,7 @@ def sample_words(text: str = SAMPLE_LINE, seconds_per_word: float = 0.32) -> lis
 
 
 def ass_filter(ass_path: Path) -> str:
-    return f"ass=filename={escape_filter_path(ass_path)}:fontsdir={escape_filter_path(FONTS_DIR)}"
+    return f"ass=filename={escape_filter_path(ass_path)}:fontsdir={escape_filter_path(fonts_dir())}"
 
 
 def render_preview(

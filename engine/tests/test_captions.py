@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import numpy as np
 import pytest
 from PIL import Image
@@ -12,8 +15,17 @@ from clipforge.captions.layout import (
     group_words,
     layout_group,
     measure,
+    undrawable_words,
 )
-from clipforge.captions.presets import BUILTIN_PRESETS, FONT_FILES, FONTS_DIR, CaptionPreset
+from clipforge.captions.presets import (
+    BUILTIN_PRESETS,
+    CJK_FILE,
+    FONT_FILES,
+    FONTS_DIR,
+    CaptionPreset,
+    cjk_path,
+    fonts_dir,
+)
 from clipforge.captions.preview import render_preview, sample_words
 
 BG = "color=c=black:s={w}x{h}"
@@ -116,6 +128,85 @@ def test_mixed_sizes_big_emphasis_small_filler():
 def test_devanagari_uses_a_font_that_has_it():
     assert font_for_text("नमस्ते", "Anton") == "Hind"
     assert font_for_text("HELLO", "Anton") == "Anton"
+
+
+CJK_SOURCE = os.environ.get("CLIPFORGE_TEST_CJK_FONT") or str(
+    Path.home() / "clipforge-work" / "data" / "fonts" / CJK_FILE
+)
+needs_cjk = pytest.mark.skipif(not Path(CJK_SOURCE).exists(), reason="CJK font not downloaded")
+
+
+@pytest.fixture
+def cjk_font():
+    fonts_dir()
+    cjk_path().symlink_to(CJK_SOURCE)
+
+
+def test_without_the_cjk_font_japanese_is_reported_not_silently_boxed():
+    words = [Word("今日は", 0, 1), Word("hello", 1, 2)]
+    assert undrawable_words(words, CaptionPreset(), "ja") == ["今日は"]
+
+
+def test_right_to_left_text_is_reported():
+    assert undrawable_words([Word("مرحبا", 0, 1)], CaptionPreset()) == ["مرحبا"]
+
+
+@needs_cjk
+@pytest.mark.parametrize(
+    "text,language,family",
+    [
+        ("今日は", "ja", "Noto Sans CJK JP"),
+        ("오늘은", "ko", "Noto Sans CJK KR"),
+        ("今天", "zh", "Noto Sans CJK SC"),
+        ("今日", "ja", "Noto Sans CJK JP"),
+        ("カタカナ", None, "Noto Sans CJK JP"),
+        ("HELLO", "ja", "Anton"),
+    ],
+)
+def test_cjk_words_pick_the_right_regional_face(cjk_font, text, language, family):
+    assert font_for_text(text, "Anton", language) == family
+
+
+@needs_cjk
+def test_cjk_captions_draw_real_letters_not_empty_boxes(cjk_font, tmp_path):
+    """Every missing glyph draws the same box, so two different letters must look different."""
+    preset = CaptionPreset(outline=0, shadow=0, animation="none", active_pop=1.0, active_color="#FFFFFF")
+
+    def draw(letter):
+        out = render_preview(
+            preset,
+            tmp_path / f"{ord(letter)}.png",
+            "9:16",
+            at=0.5,
+            words=[Word(letter, 0, 2)],
+            size=(540, 960),
+            background=BG.format(w=540, h=960),
+        )
+        return np.asarray(Image.open(out).convert("L")).astype(int)
+
+    first, second = draw("今"), draw("鬱")
+    assert first.max() > 200
+    assert np.abs(first - second).sum() > 50_000
+
+
+@needs_cjk
+def test_cjk_width_prediction_matches_libass(cjk_font, tmp_path):
+    preset = plain(size=0.1)
+    words = [Word("今日はいい天気", 0, 2)]
+    out = render_preview(
+        preset,
+        tmp_path / "w.png",
+        "9:16",
+        at=1.0,
+        words=words,
+        size=(1080, 1920),
+        background=BG.format(w=1080, h=1920),
+    )
+    x0, _, x1, _ = bbox(out)
+    placed = layout_group(group_words(words, preset, "9:16")[0], preset, 1080, 1920, "9:16", "ja").words[0]
+    assert placed.font == "Noto Sans CJK JP"
+    drawn = x1 - x0 + 1
+    assert abs(drawn - measure(words[0].text.upper(), placed.font, placed.size)) / drawn < 0.05
 
 
 @pytest.mark.parametrize("font", sorted(set(FONT_FILES) - {"Hind"}))
