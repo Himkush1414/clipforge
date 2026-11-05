@@ -89,3 +89,34 @@ class ChannelCreate(BaseModel):
     platform: Literal["youtube", "instagram", "facebook"]
     settings: ChannelSettings = ChannelSettings()
     link_group: str | None = Field(default=None, max_length=80)
+
+
+class PlatformCredentials(BaseModel):
+    client_id: str = Field(min_length=1, max_length=500)
+    client_secret: str = Field(min_length=1, max_length=500)
+
+
+class UploadCreate(BaseModel):
+    channel_id: str | None = None
+    link_group: str | None = None
+    privacy: Literal["private", "unlisted", "public"] = "private"
+    made_for_kids: bool = False
+
+    @model_validator(mode="after")
+    def _one_target(self) -> UploadCreate:
+        if bool(self.channel_id) == bool(self.link_group):
+            raise ValueError("Choose one channel or one linked group.")
+        return self
+
+
+class ClaimResolve(BaseModel):
+    resolution: Literal["trim", "replace_audio", "dispute"]
+    note: str = Field(default="", max_length=2000)
+
+
+class ClaimReport(BaseModel):
+    details: str = Field(min_length=1, max_length=4000)
+
+
+class TargetChoice(BaseModel):
+    target_id: str = Field(min_length=1, max_length=200)

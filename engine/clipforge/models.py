@@ -46,6 +46,7 @@ class UploadStatus(StrEnum):
     published = "published"
     failed = "failed"
     claimed = "claimed"
+    stopped = "stopped"  # Held back because another upload of the same source was claimed.
 
 
 class Source(SQLModel, table=True):
@@ -129,6 +130,7 @@ class Upload(SQLModel, table=True):
     channel_id: str = Field(index=True)
     status: str = UploadStatus.pending.value
     privacy: str = "private"
+    made_for_kids: bool = False
     title: str = ""
     description: str = ""
     remote_id: str | None = None
@@ -136,5 +138,7 @@ class Upload(SQLModel, table=True):
     error: str | None = None
     claim: dict = Field(default_factory=dict, sa_column=Column(JSON))
     claim_resolution: str | None = None
+    claim_note: str = ""
+    detail: dict = Field(default_factory=dict, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)

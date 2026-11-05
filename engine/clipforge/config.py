@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
     whisper_model_cpu: str = "small"
     force_cpu: bool = False
     start_background: bool = True
+    secrets_override: Path | None = Field(default=None, validation_alias="CLIPFORGE_SECRETS_DIR")
 
     @property
     def media_dir(self) -> Path:
@@ -49,7 +51,7 @@ class Settings(BaseSettings):
 
     @property
     def secrets_dir(self) -> Path:
-        return self.work_dir / "secrets"
+        return self.secrets_override or self.work_dir / "secrets"
 
     @property
     def tools_bin(self) -> Path:
