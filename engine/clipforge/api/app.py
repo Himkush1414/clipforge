@@ -6,14 +6,17 @@ import logging
 import re
 import shutil
 import tempfile
+import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from logging.handlers import RotatingFileHandler
 from pathlib import Path, PurePosixPath
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import func
 from sqlmodel import Session, col, select
 
 from clipforge import __version__
@@ -134,6 +137,8 @@ def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         seed_presets()
+        # Encoder tests take seconds, so run them now and not during the first page load.
+        threading.Thread(target=detect, daemon=True).start()
         worker, cleaner = None, None
         if settings.start_background:
             worker, cleaner = Worker(run_job), CleanupThread()
@@ -145,13 +150,6 @@ def create_app() -> FastAPI:
             cleaner.stop()
 
     app = FastAPI(title="clipforge", version=__version__, lifespan=lifespan)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.web_origins,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
     allowed_hosts = {"127.0.0.1", "localhost", "testserver"}
 
     @app.middleware("http")
@@ -163,7 +161,19 @@ def create_app() -> FastAPI:
             return JSONResponse({"detail": "Host not allowed"}, status_code=403)
         if origin and origin not in settings.web_origins:
             return JSONResponse({"detail": "Origin not allowed"}, status_code=403)
-        return await call_next(request)
+        try:
+            return await call_next(request)
+        except Exception:
+            # Answered here, inside CORS, so the browser sees this message and not a network error.
+            log.exception("Unhandled error on %s %s", request.method, request.url.path)
+            return JSONResponse({"detail": "Something went wrong. See the log for details."}, status_code=500)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.web_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.exception_handler(FFmpegError)
     async def ffmpeg_error(_request: Request, exc: FFmpegError):
@@ -294,12 +304,12 @@ def create_app() -> FastAPI:
     @app.get("/api/jobs")
     def list_jobs(session: Session = Depends(get_session)) -> list[dict]:
         rows = session.exec(select(Job).order_by(col(Job.created_at).desc()).limit(100)).all()
-        out = []
-        for job in rows:
-            count = len(session.exec(select(Clip.id).where(Clip.job_id == job.id)).all())
-            source = session.get(Source, job.source_id)
-            out.append({**job_json(job, count), "source_filename": source.filename if source else None})
-        return out
+        counts = dict(session.exec(select(Clip.job_id, func.count()).group_by(Clip.job_id)).all())
+        names = dict(session.exec(select(Source.id, Source.filename)).all())
+        return [
+            {**job_json(job, counts.get(job.id, 0)), "source_filename": names.get(job.source_id)}
+            for job in rows
+        ]
 
     @app.get("/api/jobs/{job_id}")
     def get_job(job_id: str, session: Session = Depends(get_session)) -> dict:
@@ -508,10 +518,24 @@ def create_app() -> FastAPI:
     return app
 
 
+def setup_logging() -> None:
+    settings = get_settings()
+    log_dir = settings.data_dir / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            RotatingFileHandler(log_dir / "clipforge.log", maxBytes=5_000_000, backupCount=3),
+        ],
+    )
+
+
 def main() -> None:
     import uvicorn
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    setup_logging()
     settings = get_settings()
     uvicorn.run(create_app(), host=settings.api_host, port=settings.api_port)
 
