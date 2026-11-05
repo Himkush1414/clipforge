@@ -38,10 +38,10 @@ cookies*.txt
 *.pt
 *.onnx
 *.safetensors
-models/
-renders/
-media/
-work/
+/models/
+/renders/
+/media/
+/work/
 
 # Python
 __pycache__/
