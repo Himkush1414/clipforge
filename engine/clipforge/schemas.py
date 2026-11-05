@@ -68,6 +68,7 @@ class JobCreate(BaseModel):
     edit: EditOptions = EditOptions()
     channel_id: str | None = None
     frame_cuts: list[FrameCut] = Field(default_factory=list, max_length=50)
+    destination: Literal["unassigned", "queued"] = "unassigned"
 
     @model_validator(mode="after")
     def _manual_needs_options(self) -> JobCreate:
@@ -120,3 +121,26 @@ class ClaimReport(BaseModel):
 
 class TargetChoice(BaseModel):
     target_id: str = Field(min_length=1, max_length=200)
+
+
+class ClipMove(BaseModel):
+    folder: Literal["saved", "queued"]
+
+
+class BulkClipAction(BaseModel):
+    clip_ids: list[str] = Field(min_length=1, max_length=500)
+    action: Literal["move_saved", "move_queued", "delete"]
+
+
+class BulkUpload(BaseModel):
+    clip_ids: list[str] = Field(min_length=1, max_length=500)
+    channel_id: str | None = None
+    link_group: str | None = None
+    privacy: Literal["private", "unlisted", "public"] = "private"
+    made_for_kids: bool = False
+
+    @model_validator(mode="after")
+    def _one_target(self) -> BulkUpload:
+        if bool(self.channel_id) == bool(self.link_group):
+            raise ValueError("Choose one channel or one linked group.")
+        return self
