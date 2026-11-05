@@ -8,6 +8,7 @@ const STATUS_TONE = { queued: "neutral", running: "warn", done: "ok", failed: "f
 
 function Decisions({ job }: { job: Job }) {
   const reasons = job.decisions.reasons as Record<string, string> | undefined;
+  const labels: Record<string, string> = { clip_duration: "Clip length", clip_count: "Clips" };
   const notes = (job.decisions.notes as string[] | undefined) ?? [];
   if (!reasons && !notes.length) return null;
   return (
@@ -15,11 +16,12 @@ function Decisions({ job }: { job: Job }) {
       {reasons && (
         <>
           <h3 className="mb-2 text-xs font-semibold text-muted">What auto mode decided, and why</h3>
-          <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-[8rem_1fr]">
+          <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-[13rem_1fr]">
             {Object.entries(reasons).map(([key, why]) => (
               <div key={key} className="contents">
-                <dt className="font-medium capitalize">
-                  {key.replace("_", " ")}: {String((job.decisions as Record<string, unknown>)[key] ?? "")}
+                <dt className="font-medium">
+                  <span className="capitalize">{labels[key] ?? key}</span>: {String(job.decisions[key] ?? "")}
+                  {key === "clip_duration" ? " s" : ""}
                 </dt>
                 <dd className="text-muted">{why}</dd>
               </div>
