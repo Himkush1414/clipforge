@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Installs everything outside the repo, under CLIPFORGE_WORK_DIR (default ~/clipforge-work).
 set -euo pipefail
+for tool in curl tar node npm; do
+  command -v "$tool" >/dev/null || { echo "Please install $tool first."; exit 1; }
+done
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="${CLIPFORGE_WORK_DIR:-$HOME/clipforge-work}"
-mkdir -p "$WORK/tools/bin" "$WORK/web/node_modules" "$WORK/cache"
+mkdir -p "$WORK/tools/bin" "$WORK/web" "$WORK/cache"
 
 if ! command -v ffmpeg >/dev/null && [ ! -x "$WORK/tools/bin/ffmpeg" ]; then
   echo "Downloading a static FFmpeg build..."
@@ -31,6 +34,9 @@ fi
 
 echo "Installing the web app..."
 # node_modules lives in the work folder because /mnt drives are slow for many small files.
-[ -e "$ROOT/web/node_modules" ] || ln -s "$WORK/web/node_modules" "$ROOT/web/node_modules"
-(cd "$ROOT/web" && npm ci --no-audit --no-fund)
+# It is installed there and then linked, since npm replaces a symlink it finds in place.
+cp "$ROOT/web/package.json" "$ROOT/web/package-lock.json" "$WORK/web/"
+(cd "$WORK/web" && npm ci --no-audit --no-fund)
+rm -rf "$ROOT/web/node_modules"
+ln -s "$WORK/web/node_modules" "$ROOT/web/node_modules"
 echo "Done. Start clipforge with scripts/dev.sh"
