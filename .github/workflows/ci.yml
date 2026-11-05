@@ -24,18 +24,24 @@ jobs:
         run: mypy clipforge
       - name: Tests (no model or GPU)
         working-directory: engine
-        run: pytest -m "not model and not gpu"
+        # Exit code 5 means no tests were collected, which is fine on a scaffold-only branch.
+        run: pytest -m "not model and not gpu" || [ $? -eq 5 ]
   web:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('web/package.json') != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - run: npm ci
+      - name: Install
+        if: hashFiles('web/package.json') != ''
+        run: npm ci
         working-directory: web
-      - run: npm run lint
+      - name: Lint
+        if: hashFiles('web/package.json') != ''
+        run: npm run lint
         working-directory: web
-      - run: npm run build
+      - name: Build
+        if: hashFiles('web/package.json') != ''
+        run: npm run build
         working-directory: web
