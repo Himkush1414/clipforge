@@ -21,7 +21,8 @@ Drop in a video of any length. clipforge transcribes it, finds the strongest mom
 - **Editing.** Clean cuts or crossfades, pause removal, face- and motion-aware vertical reframing, and two-pass loudness normalization to -14 LUFS.
 - **Quality checks** on every export: duration, resolution, audio, black frames, frozen video, loudness and peak.
 - **Titles and descriptions** generated locally from the transcript, with no network and no AI service.
-- **24-hour cleanup.** Exported clips delete themselves 24 hours after creation, with a visible countdown. Temp files go right after each render.
+- **No channel needed.** Make clips first and connect a channel whenever you like.
+- **Three clip folders.** Unassigned clips delete themselves after 24 hours, with a visible countdown. Queued clips wait for a channel with the timer paused. Saved clips are kept until you delete them, in a folder you choose. Temp files go right after each render.
 - **Channels.** YouTube, Instagram and Facebook, each with its own defaults, and linked channels that can receive the same clip.
 - **Official API uploads only**, with a hard stop on copyright claims.
 
@@ -102,6 +103,22 @@ Open <http://localhost:3000>. The first job downloads the Whisper model.
 
 Choose **Auto** in step 3. clipforge decides the rest, and the **Jobs** page shows each decision with its reason. Weak moments are dropped, so you may get fewer clips than the cap. Linked channel defaults take priority over auto's format and ratio.
 
+### Where clips go
+
+| Folder | What happens | How clips get there |
+|---|---|---|
+| **Unassigned** | Deleted 24 hours after it was made, with a countdown on each clip | "Just make the clips", or a job with a connected channel |
+| **Queued** | Timer paused. When a channel is connected, a banner offers **Upload now**. A clip is deleted 24 hours after it uploads. | "Make now, upload later", or **Move to Queued** |
+| **Saved** | Never deleted automatically | **Move to Saved** |
+
+If nothing is connected when you start a job, clipforge asks which of these you want. Each clip has Move to Saved, Move to Queued, Upload to channel (once a channel exists), Download and Delete, and you can select many at once. Clips keep their source rights record wherever they go, and uploading later still requires it.
+
+The folders are under `~/clipforge-work/clips`. To keep Saved clips elsewhere, such as the D drive, set the path on the **Settings** page. Clips already in Saved stay where they are.
+
+**What the automatic cleanup can delete:** only files whose real location is inside Unassigned. It refuses symlinks and anything outside that folder, and stops entirely if the folder overlaps Saved, Queued or the repo. Every deletion and refusal is written to `data/logs/deletions.log`. A separate sweep removes crash leftovers from the temp folder and nothing else.
+
+**Disk space:** Settings has limits for Queued and Saved, which show a warning banner when passed, and a free-space limit below which new jobs are refused with a message. A disk that fills during a render fails the job with a clear message, never silently.
+
 ## Configuration
 
 Set these environment variables before starting:
@@ -110,12 +127,12 @@ Set these environment variables before starting:
 |---|---|---|
 | `CLIPFORGE_WORK_DIR` | `~/clipforge-work` | All media, models, renders and data |
 | `CLIPFORGE_API_PORT` | `8765` | Local API port |
-| `CLIPFORGE_CLIP_TTL_HOURS` | `24` | Hours before an exported clip is deleted |
+| `CLIPFORGE_CLIP_TTL_HOURS` | `24` | Hours before an Unassigned clip is deleted |
 | `CLIPFORGE_WHISPER_MODEL_GPU` | `large-v3-turbo` | Whisper model on GPU |
 | `CLIPFORGE_WHISPER_MODEL_CPU` | `small` | Whisper model on CPU |
 | `CLIPFORGE_FORCE_CPU` | `false` | Ignore the GPU |
 
-Hardware limits are measured with a real test encode, so 8K is offered only if your machine can do it.
+The Saved folder and the disk limits are on the **Settings** page. Hardware limits are measured with a real test encode, so 8K is offered only if your machine can do it.
 
 ## Folder structure
 
@@ -126,12 +143,14 @@ engine/clipforge/
   export/      output plan, reframing, renderer
   media/       FFmpeg wrapper and probe
   uploads/     YouTube, Meta, claim rules
+  folders.py   clip folders and every file deletion
   api/         FastAPI app
   assets/      bundled fonts and licences
 engine/tests/  test suite
 web/src/       Next.js UI
 docs/          architecture, captions, platforms, credits
 scripts/       setup, dev and sample generator
+e2e/           real browser test run
 ```
 
 ## Source rights and platform rules
@@ -160,6 +179,7 @@ Run the checks before opening a pull request:
 ```bash
 cd engine && ruff check . && mypy clipforge && pytest -m "not model and not gpu"
 cd web && npm run lint && npm run build
+e2e/run.sh   # real browser run, see e2e/README.md
 ```
 
 Keep changes small, add a test for new logic, and never commit media, models, databases or secrets.

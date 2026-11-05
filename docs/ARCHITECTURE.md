@@ -23,7 +23,7 @@ flowchart TD
 One Python process runs FastAPI and three daemon threads:
 
 - **Job worker.** Runs one job at a time, because renders are limited by GPU and RAM. Job state is in SQLite, so restarting requeues running jobs. Finished clips are skipped when a job resumes, and cached analysis is reused.
-- **Cleanup.** Every 60 seconds it deletes expired clips and old crash leftovers. A clip that is mid-upload waits for the next pass.
+- **Cleanup.** Every 60 seconds it deletes expired Unassigned clips and removes crash leftovers. A clip that is mid-upload waits for the next pass. See [Clip folders](#clip-folders).
 - **Upload worker.** Sends one upload at a time and polls processing status.
 
 ## Key decisions
@@ -38,13 +38,30 @@ One Python process runs FastAPI and three daemon threads:
 
 **Polling, not websockets.** There is one user on one machine, so the UI polls.
 
+## Clip folders
+
+A clip's file really lives in its folder (`clips/unassigned`, `clips/queued`, or the Saved path), and `Clip.folder` records which. Moving copies the file, checks its size, swaps it into place, then removes the source, so it is safe across drives.
+
+| Event | File moves to | Timer |
+|---|---|---|
+| Job with "Just make the clips" or a channel | Unassigned | 24 hours from creation |
+| Job with "Make now, upload later" | Queued | None |
+| Move to Saved or Queued | That folder | None |
+| Successful upload from Queued (the last one, for linked channels) | Unassigned | 24 hours from the upload |
+| Successful upload from Saved | Stays | None |
+| Failed or claimed upload | Stays | Unchanged |
+
+**All deletion goes through `folders.py`.** `delete_from_unassigned` resolves real paths and refuses a symlink, anything outside Unassigned, anything that is not a regular file, and everything at all if Unassigned is itself a symlink or overlaps a protected folder. `delete_by_user` backs the Delete button and only works inside clip folders. Refusals are logged and leave the file alone.
+
+Rendering writes to the temp folder first and moves the finished file in, so a clip folder never holds a partial file. A crash between rendering and recording can leave a file with no clip record; once older than the timer it is swept from Unassigned through the same checked delete.
+
 ## Data model
 
 | Table | Holds |
 |---|---|
 | `Source` | Video file, probe data, whether clipforge owns the copy |
 | `Job` | Mode, status, stage, settings, rights record, decisions |
-| `Clip` | Timing, exact frame segments, title, description, QC, file paths, expiry |
+| `Clip` | Folder, timing, exact frame segments, title, description, QC, file paths, expiry (empty when the timer is off) |
 | `Preset` | Caption style as JSON |
 | `Channel` | Platform, link group, defaults, connected state |
 | `Upload` | Status, remote ID, claim details and your decision |
