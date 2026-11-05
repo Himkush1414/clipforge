@@ -8,7 +8,7 @@ import re
 import shutil
 import tempfile
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from clipforge.analysis.transcribe import Word
@@ -31,6 +31,10 @@ SEEK_MARGIN = 2.0
 CLICK_FADE = 0.012
 MIN_LOUDNORM_SECONDS = 1.0
 DISK_RESERVE_BYTES = 1024**3
+# Each input is a whole decoder. Above this many, segments are rendered one at a time, because
+# 16 decoders at once got a 12-minute clip killed by the OOM killer on a 7.6 GB machine.
+MAX_DIRECT_SEGMENTS = 4
+INPUT_THREADS = "8"
 
 
 @dataclass
@@ -57,6 +61,7 @@ class RenderResult:
     encoder: str
     width: int
     height: int
+    notes: list[str] = field(default_factory=list)
 
 
 def pick_encoder(width: int, height: int) -> str:
@@ -78,6 +83,13 @@ def encoder_args(encoder: str) -> list[str]:
     if "hevc" in encoder or "265" in encoder:
         args += ["-tag:v", "hvc1"]
     return args
+
+
+def intermediate_args(encoder: str) -> list[str]:
+    """Near-lossless for temp files that get encoded once more."""
+    if encoder.endswith("_nvenc"):
+        return ["-c:v", encoder, "-preset", "p4", "-rc", "constqp", "-qp", "14"]
+    return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "12"]
 
 
 def _cover_crop(src_w: int, src_h: int, out_w: int, out_h: int) -> tuple[int, int]:
@@ -129,7 +141,7 @@ def _input_args(spec: RenderSpec) -> tuple[list[str], list[float]]:
         seeks.append(seek)
         if seek > 0:
             args += ["-ss", f"{seek:.6f}"]
-        args += ["-i", str(spec.source)]
+        args += ["-threads", INPUT_THREADS, "-i", str(spec.source)]
     return args, seeks
 
 
@@ -206,7 +218,7 @@ def build_audio_graph(spec: RenderSpec, seeks: list[float], final_filter: str | 
 def measure_loudness(
     spec: RenderSpec,
     input_args: list[str],
-    seeks: list[float],
+    audio_graph: Callable[[str | None], str],
     should_cancel: Callable[[], bool] | None = None,
 ) -> dict | None:
     """First loudnorm pass. Returns None when the audio is silent or too short to measure."""
@@ -216,9 +228,8 @@ def measure_loudness(
     if total < MIN_LOUDNORM_SECONDS:
         return None
     measure = f"loudnorm=I={TARGET_LUFS}:TP={TARGET_PEAK}:LRA={TARGET_LRA}:print_format=json"
-    graph = build_audio_graph(spec, seeks, measure)
     stderr = run_ffmpeg(
-        [*input_args, "-filter_complex", graph, "-map", "[aout]", "-f", "null", "-"],
+        [*input_args, "-filter_complex", audio_graph(measure), "-map", "[aout]", "-f", "null", "-"],
         should_cancel=should_cancel,
     )
     match = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", stderr, re.S)
@@ -228,6 +239,52 @@ def measure_loudness(
     if stats["input_i"] in ("-inf", "inf", "nan") or float(stats["input_i"]) < -70:
         return None
     return stats
+
+
+def _render_segments_one_by_one(
+    spec: RenderSpec,
+    tmp: Path,
+    out_w: int,
+    out_h: int,
+    encoder: str,
+    on_progress: Callable[[float], None] | None,
+    should_cancel: Callable[[], bool] | None,
+) -> Path:
+    """Write each segment to a high-quality temp file and return a concat list.
+
+    Memory stays flat however many cuts a clip has. These files are deleted with the temp folder.
+    """
+    lines = []
+    for index, segment in enumerate(spec.segments):
+        part = replace(spec, segments=[segment], preset=None, words=[])
+        inputs, seeks = _input_args(part)
+        graph = build_video_graph(part, seeks, out_w, out_h, None)
+        maps = ["-map", "[vout]"]
+        if spec.info.has_audio:
+            graph += ";" + build_audio_graph(part, seeks, None)
+            maps += ["-map", "[aout]", "-c:a", "pcm_s16le"]
+        output = tmp / f"segment-{index:04d}.mkv"
+        run_ffmpeg(
+            [
+                *inputs,
+                "-filter_complex",
+                graph,
+                *maps,
+                *intermediate_args(encoder),
+                "-frames:v",
+                str(segment.frames),
+                "-pix_fmt",
+                "yuv420p",
+                output,
+            ],  # fmt: skip
+            should_cancel=should_cancel,
+        )
+        lines.append(f"file '{output.name}'\n")
+        if on_progress:
+            on_progress((index + 1) / len(spec.segments))
+    listing = tmp / "segments.txt"
+    listing.write_text("".join(lines))
+    return listing
 
 
 def loudnorm_filter(stats: dict | None) -> str | None:
@@ -266,13 +323,21 @@ def render_clip(
     settings = get_settings()
     out_w, out_h = output_size(spec.ratio, spec.resolution)
     fps = spec.info.fps
+    notes: list[str] = []
+    many_segments = len(spec.segments) > MAX_DIRECT_SEGMENTS
+    if many_segments and spec.transition == "crossfade":
+        # shortcut: crossfades need every segment open at once, so many-cut clips use clean cuts.
+        spec.transition = "cut"
+        notes.append(
+            "This clip has many cuts, so clean cuts were used in place of crossfades to save memory."
+        )
     transition_frames = 0
     if spec.transition == "crossfade" and len(spec.segments) > 1:
         shortest = min(s.frames for s in spec.segments)
         transition_frames = min(round(spec.transition_seconds * fps), max(1, shortest // 2))
         spec.transition_seconds = transition_frames / fps
     timeline = Timeline(spec.segments, fps, transition_frames)
-    check_disk_space(out_w, out_h, timeline.duration)
+    check_disk_space(out_w, out_h, timeline.duration * (3 if many_segments else 1))
 
     spec.output.parent.mkdir(parents=True, exist_ok=True)
     settings.tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -285,13 +350,34 @@ def render_clip(
             if words:
                 ass_path = write_ass(tmp / "captions.ass", words, spec.preset, out_w, out_h, spec.ratio)
 
-        input_args, seeks = _input_args(spec)
-        video_graph = build_video_graph(spec, seeks, out_w, out_h, ass_path)
+        encoder = pick_encoder(out_w, out_h)
+        final_progress = on_progress
+        if many_segments:
+            listing = _render_segments_one_by_one(
+                spec, tmp, out_w, out_h, encoder,
+                (lambda p: on_progress(p * 0.5)) if on_progress else None,
+                should_cancel,
+            )  # fmt: skip
+            final_progress = (lambda p: on_progress(0.5 + p * 0.5)) if on_progress else None
+            input_args = ["-f", "concat", "-safe", "0", "-i", str(listing)]
+            caption = ass_filter(ass_path) if ass_path else "null"
+            video_graph = f"[0:v:0]{caption}[vout]"
+
+            def audio_graph(final_filter: str | None) -> str:
+                tail = f"{final_filter}," if final_filter else ""
+                return f"[0:a:0]{tail}aresample=48000,aformat=channel_layouts=stereo[aout]"
+        else:
+            input_args, seeks = _input_args(spec)
+            video_graph = build_video_graph(spec, seeks, out_w, out_h, ass_path)
+
+            def audio_graph(final_filter: str | None) -> str:
+                return build_audio_graph(spec, seeks, final_filter)
+
         graph = video_graph
         maps = ["-map", "[vout]"]
         if spec.info.has_audio:
-            stats = measure_loudness(spec, input_args, seeks, should_cancel)
-            graph += ";" + build_audio_graph(spec, seeks, loudnorm_filter(stats))
+            stats = measure_loudness(spec, input_args, audio_graph, should_cancel)
+            graph += ";" + audio_graph(loudnorm_filter(stats))
             maps += ["-map", "[aout]", "-c:a", "aac", "-b:a", "192k"]
 
         def encode(encoder: str) -> None:
@@ -313,11 +399,10 @@ def render_clip(
                     partial,
                 ],  # fmt: skip
                 duration=timeline.duration,
-                on_progress=on_progress,
+                on_progress=final_progress,
                 should_cancel=should_cancel,
             )
 
-        encoder = pick_encoder(out_w, out_h)
         try:
             encode(encoder)
         except Cancelled:
@@ -331,7 +416,9 @@ def render_clip(
             encoder = fallback
             encode(encoder)
         partial.replace(spec.output)
-        return RenderResult(spec.output, timeline.total_frames, timeline.duration, encoder, out_w, out_h)
+        return RenderResult(
+            spec.output, timeline.total_frames, timeline.duration, encoder, out_w, out_h, notes
+        )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
         partial.unlink(missing_ok=True)
