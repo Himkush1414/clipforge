@@ -13,6 +13,8 @@ import stat
 import threading
 from pathlib import Path
 
+from sqlmodel import select
+
 from clipforge.appsettings import load_app_settings
 from clipforge.config import get_settings
 from clipforge.models import ClipFolder
@@ -230,12 +232,29 @@ def folder_bytes(path: Path) -> int:
     return total
 
 
+def clip_bytes_by_folder() -> dict[str, int]:
+    """Measured from the clip records: Saved clips can sit in an earlier Saved path too."""
+    from clipforge.db import session_scope  # Imported here: the database layer loads the models first.
+    from clipforge.models import Clip, ClipStatus
+
+    sizes = {folder.value: 0 for folder in ClipFolder}
+    with session_scope() as session:
+        rows = session.exec(
+            select(Clip.folder, Clip.path, Clip.thumb_path).where(Clip.status == ClipStatus.ready.value)
+        )
+        for folder, *paths in rows.all():
+            for value in paths:
+                if value and os.path.exists(value):
+                    sizes[folder] = sizes.get(folder, 0) + os.path.getsize(value)
+    return sizes
+
+
 def storage_report() -> dict:
     """Sizes, free space and plain-language warnings for the UI."""
     settings = get_settings()
     app = load_app_settings()
     gib = 1024**3
-    sizes = {folder.value: folder_bytes(folder_dir(folder.value)) for folder in ClipFolder}
+    sizes = clip_bytes_by_folder()
     saved = saved_dir()
     saved.mkdir(parents=True, exist_ok=True)
     work_free = shutil.disk_usage(settings.work_dir).free

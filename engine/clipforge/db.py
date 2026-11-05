@@ -52,7 +52,7 @@ def check_schema(engine: Engine, path: Path) -> None:
         raise SchemaMismatch(
             f"The database at {path} is from an older clipforge version (missing {', '.join(missing)}). "
             "Stop clipforge and move that file somewhere safe, and a new one will be created. "
-            "Jobs and clip records in it will no longer be listed."
+            "Jobs and clip records in it will no longer be listed, though clip files stay on disk."
         )
 
 

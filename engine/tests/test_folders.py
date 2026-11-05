@@ -361,6 +361,15 @@ def test_storage_warns_past_limits_and_when_disk_is_low(monkeypatch):
     assert report["folders"]["queued"] > 0
 
 
+def test_limit_counts_clips_left_at_an_earlier_saved_path(tmp_path):
+    clip_id, _, _ = make_clip("unassigned", expires=HOUR)
+    clip_files.move_clip(clip_id, "saved")
+    save_app_settings(AppSettings(saved_dir=str(tmp_path / "new"), saved_limit_gb=1e-9))
+    report = storage_report()
+    assert report["folders"]["saved"] > 0
+    assert any("Saved folder is" in w for w in report["warnings"])
+
+
 def test_no_warnings_when_everything_is_fine():
     assert storage_report()["warnings"] == []
 
