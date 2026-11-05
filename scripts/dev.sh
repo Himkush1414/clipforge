@@ -3,6 +3,9 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="${CLIPFORGE_WORK_DIR:-$HOME/clipforge-work}"
+# shellcheck source=scripts/use-linux-node.sh
+. "$ROOT/scripts/use-linux-node.sh"
+use_linux_node
 export PATH="$WORK/tools/bin:$PATH"
 export HF_HOME="$WORK/models/hf"
 
