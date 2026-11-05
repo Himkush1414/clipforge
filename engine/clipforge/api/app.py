@@ -188,10 +188,10 @@ def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         seed_presets()
-        # Encoder tests take seconds, so run them now and not during the first page load.
-        threading.Thread(target=detect, daemon=True).start()
         worker, cleaner, uploader = None, None, None
         if settings.start_background:
+            # Encoder tests take seconds, so run them now and not during the first page load.
+            threading.Thread(target=detect, daemon=True).start()
             worker, cleaner, uploader = Worker(run_job), CleanupThread(), service.UploadWorker()
             worker.start()
             cleaner.start()
