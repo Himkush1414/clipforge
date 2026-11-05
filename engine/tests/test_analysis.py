@@ -187,3 +187,27 @@ def test_remove_pauses_keeps_every_word():
     assert segments == [(1, 3.2), (5.8, 8)]
     for word in words:
         assert any(a <= word.start and word.end <= b for a, b in segments)
+
+
+def test_static_silent_video_still_gets_clips_of_about_the_right_length():
+    audio, scenes = _fake_analysis(120)
+    audio.silences = [(0.0, 120.0)]
+    moments = find_moments([], audio, scenes, 120, "other", 20, 3)
+    assert len(moments) == 3
+    assert all(14 <= m.end - m.start <= 26 for m in moments)
+
+
+def test_very_long_sentences_fall_back_to_whole_sentences():
+    """Target 5 s, every sentence 15 s: still whole sentences, never a mid-sentence cut."""
+    words = []
+    t = 0.0
+    for _ in range(6):
+        words += words_from("word " * 37 + "end.", t)
+        t = words[-1].end + 1.0
+    audio, scenes = _fake_analysis(t)
+    moments = find_moments(words, audio, scenes, t, "other", 5, 2)
+    sentences = split_sentences(words)
+    assert moments
+    assert all(
+        m.start in {s.start for s in sentences} and m.end in {s.end for s in sentences} for m in moments
+    )

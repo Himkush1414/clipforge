@@ -204,14 +204,23 @@ def build_curves(
     return FeatureCurves(speech, emotion, topic, action, voice)
 
 
-def _nonverbal_units(audio: AudioAnalysis, scenes: SceneAnalysis, duration: float) -> list[Sentence]:
-    """Video with little or no speech: natural units are the spans between silences and cuts."""
+def _nonverbal_units(
+    audio: AudioAnalysis, scenes: SceneAnalysis, duration: float, target: float
+) -> list[Sentence]:
+    """Little or no speech: units run between silences and cuts. Long spans are split evenly,
+    since with no words to protect any point is safe, and a static shot must still yield clips."""
     marks = sorted({0.0, duration, *scenes.cut_times, *(s[1] for s in audio.silences)})
     merged = [marks[0]]
     for mark in marks[1:]:
         if mark - merged[-1] >= 1.5 or mark == duration:
             merged.append(mark)
-    return [Sentence(a, b, []) for a, b in zip(merged, merged[1:], strict=False) if b > a]
+    step = max(target / 3, 0.5)
+    units: list[Sentence] = []
+    for a, b in zip(merged, merged[1:], strict=False):
+        pieces = max(1, math.ceil((b - a) / step))
+        width = (b - a) / pieces
+        units.extend(Sentence(a + i * width, a + (i + 1) * width, []) for i in range(pieces))
+    return units
 
 
 def score_moment(curves: FeatureCurves, weights: dict[str, float], start: float, end: float) -> Moment:
@@ -288,8 +297,11 @@ def find_moments(
     curves = build_curves(words, sentences, audio, scenes, duration)
     weights = GENRE_WEIGHTS.get(genre, GENRE_WEIGHTS["other"])
     speech_share = sum(s.end - s.start for s in sentences) / max(duration, 1e-3)
-    units = sentences if speech_share >= 0.1 else _nonverbal_units(audio, scenes, duration)
-    candidates = generate_candidates(units, curves, weights, target_seconds)
-    if not candidates:  # Sentences never land in the band: widen it before giving up.
-        candidates = generate_candidates(units, curves, weights, target_seconds, tolerance=0.75)
+    units = sentences if speech_share >= 0.1 else _nonverbal_units(audio, scenes, duration, target_seconds)
+    # Sentences may never land near the target. Whole sentences matter more than exact length,
+    # so the band widens until the closest whole-sentence span is found.
+    for tolerance in (0.3, 0.75, 4.0):
+        candidates = generate_candidates(units, curves, weights, target_seconds, tolerance)
+        if candidates:
+            break
     return select_moments(candidates, count)
