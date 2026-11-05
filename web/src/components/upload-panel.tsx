@@ -186,6 +186,9 @@ export function UploadPanel({ clip, channels, uploads, onChange }: { clip: Clip;
   const channel = connected.find((c) => c.id === target);
   const showsPrivacy = isGroup || channel?.platform === "youtube";
 
+  // Nothing to upload to and nothing to report yet, so there is no control to show.
+  if (connected.length === 0 && uploads.length === 0) return null;
+
   async function send() {
     setError(null);
     try {
@@ -206,7 +209,7 @@ export function UploadPanel({ clip, channels, uploads, onChange }: { clip: Clip;
 
   return (
     <details className="text-sm" open={uploads.length > 0}>
-      <summary className="cursor-pointer font-medium">Upload{uploads.length ? ` (${uploads.length})` : ""}</summary>
+      <summary className="cursor-pointer font-medium">Upload to channel{uploads.length ? ` (${uploads.length})` : ""}</summary>
       <div className="mt-2 space-y-2">
         {connected.length === 0 ? (
           <p className="text-xs text-muted">Connect a channel on the Channels page first.</p>

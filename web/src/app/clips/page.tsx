@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge, EmptyState, ErrorNote, PageHeader } from "@/components/ui";
+import { BulkBar, QueuedBanner } from "@/components/clip-actions";
 import { UploadPanel } from "@/components/upload-panel";
 import { api, apiUrl, formatBytes, formatDuration, usePoll, type Channel, type Clip, type Upload } from "@/lib/api";
 
@@ -24,7 +25,21 @@ function Countdown({ expiresAt }: { expiresAt: number }) {
   return <Badge tone={left < 3600 ? "fail" : left < 6 * 3600 ? "warn" : "neutral"}>Deleted in {text}</Badge>;
 }
 
-function ClipCard({ clip, channels, uploads, onChange }: { clip: Clip; channels: Channel[]; uploads: Upload[]; onChange: () => void }) {
+function ClipCard({
+  clip,
+  channels,
+  uploads,
+  selected,
+  onSelect,
+  onChange,
+}: {
+  clip: Clip;
+  channels: Channel[];
+  uploads: Upload[];
+  selected: boolean;
+  onSelect: (on: boolean) => void;
+  onChange: () => void;
+}) {
   const [title, setTitle] = useState(clip.title);
   const [description, setDescription] = useState(clip.description);
   const [startFrame, setStartFrame] = useState("");
@@ -32,9 +47,13 @@ function ClipCard({ clip, channels, uploads, onChange }: { clip: Clip; channels:
   const [showQc, setShowQc] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [expiresAt] = useState(() => Date.now() + clip.seconds_left * 1000);
+  const [expiresAt] = useState(() => (clip.seconds_left === null ? null : Date.now() + clip.seconds_left * 1000));
   const dirty = title !== clip.title || description !== clip.description;
   const qc = clip.qc.status ?? "warn";
+
+  function moveTo(folder: "saved" | "queued") {
+    return api(`/api/clips/${clip.id}/move`, { method: "POST", body: JSON.stringify({ folder }) });
+  }
 
   async function run(action: () => Promise<unknown>, done?: string) {
     setError(null);
@@ -49,7 +68,17 @@ function ClipCard({ clip, channels, uploads, onChange }: { clip: Clip; channels:
   }
 
   return (
-    <article className="overflow-hidden rounded-xl border border-line bg-panel">
+    <article className={`overflow-hidden rounded-xl border bg-panel ${selected ? "border-accent" : "border-line"}`}>
+      <label className="flex cursor-pointer items-center gap-2 border-b border-line px-4 py-2 text-sm">
+        <input
+          type="checkbox"
+          className="size-4 accent-[var(--accent)]"
+          aria-label={`Select ${clip.title}`}
+          checked={selected}
+          onChange={(e) => onSelect(e.target.checked)}
+        />
+        Select
+      </label>
       <div className="flex justify-center bg-black">
         {clip.file_url && (
           <video
@@ -72,7 +101,11 @@ function ClipCard({ clip, channels, uploads, onChange }: { clip: Clip; channels:
           <button type="button" className="cursor-pointer" aria-expanded={showQc} onClick={() => setShowQc(!showQc)}>
             <Badge tone={qc}>Quality: {qc}</Badge>
           </button>
-          <Countdown expiresAt={expiresAt} />
+          {expiresAt !== null ? (
+            <Countdown expiresAt={expiresAt} />
+          ) : (
+            <Badge tone="ok">{clip.folder === "saved" ? "Kept until you delete it" : "Timer paused"}</Badge>
+          )}
         </div>
         {showQc && (
           <ul className="space-y-1 rounded-lg bg-panel-2 p-3 text-xs">
@@ -144,6 +177,16 @@ function ClipCard({ clip, channels, uploads, onChange }: { clip: Clip; channels:
           >
             Save text
           </button>
+          {clip.folder !== "saved" && (
+            <button type="button" className="btn" onClick={() => run(() => moveTo("saved"), "Moved to Saved. It will not be deleted automatically.")}>
+              Move to Saved
+            </button>
+          )}
+          {clip.folder !== "queued" && (
+            <button type="button" className="btn" onClick={() => run(() => moveTo("queued"), "Moved to Queued. The timer is paused.")}>
+              Move to Queued
+            </button>
+          )}
           {clip.file_url && (
             <a className="btn" href={apiUrl(`${clip.file_url}?download=true`)}>
               Download
@@ -158,26 +201,75 @@ function ClipCard({ clip, channels, uploads, onChange }: { clip: Clip; channels:
   );
 }
 
+const TABS = [
+  { value: "unassigned", label: "Unassigned", help: "Every clip here is deleted 24 hours after it was made." },
+  { value: "queued", label: "Queued", help: "The timer is paused until upload. A clip is deleted 24 hours after it uploads." },
+  { value: "saved", label: "Saved", help: "Never deleted automatically." },
+] as const;
+
 export default function ClipsPage() {
   const { data: clips, error, refresh } = usePoll<Clip[]>("/api/clips", 5000);
   const { data: channels } = usePoll<Channel[]>("/api/channels", 15000);
   const { data: uploads, refresh: refreshUploads } = usePoll<Upload[]>("/api/uploads", 4000);
+  const [tab, setTab] = useState<Clip["folder"]>("unassigned");
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const shown = clips?.filter((c) => c.folder === tab) ?? [];
+  const queued = clips?.filter((c) => c.folder === "queued") ?? [];
+  const help = TABS.find((t) => t.value === tab)?.help;
+  const visibleSelected = selected.filter((id) => shown.some((c) => c.id === id));
+
+  function refreshAll() {
+    void refresh();
+    void refreshUploads();
+  }
+
   return (
     <>
-      <PageHeader title="Clips" subtitle="Every exported clip is deleted automatically 24 hours after it is made. Download or upload what you want to keep." />
+      <PageHeader title="Clips" subtitle="Your exported clips, by where they are kept." />
       <ErrorNote message={error} />
-      {clips?.length === 0 && <EmptyState title="No clips right now">Finished clips appear here.</EmptyState>}
+      <QueuedBanner queued={queued} channels={channels ?? []} uploads={uploads ?? []} onChange={refreshAll} />
+      <div role="tablist" aria-label="Clip folders" className="mb-2 flex flex-wrap gap-1 border-b border-line">
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.value}
+            onClick={() => {
+              setTab(t.value);
+              setSelected([]);
+            }}
+            className={`cursor-pointer border-b-2 px-3 py-2 text-sm font-medium ${
+              tab === t.value ? "border-accent text-text" : "border-transparent text-muted hover:text-text"
+            }`}
+          >
+            {t.label} ({clips?.filter((c) => c.folder === t.value).length ?? 0})
+          </button>
+        ))}
+      </div>
+      <p className="mb-4 text-sm text-muted">{help}</p>
+      <BulkBar
+        clips={shown}
+        selected={visibleSelected}
+        channels={channels ?? []}
+        onSelectAll={(on) => setSelected(on ? shown.map((c) => c.id) : [])}
+        onDone={() => {
+          setSelected([]);
+          refreshAll();
+        }}
+      />
+      {clips && shown.length === 0 && <EmptyState title={`Nothing in ${TABS.find((t) => t.value === tab)?.label} right now`} />}
       <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {clips?.map((clip) => (
+        {shown.map((clip) => (
           <ClipCard
-            key={clip.id}
+            key={`${clip.id}-${clip.folder}`}
             clip={clip}
             channels={channels ?? []}
             uploads={uploads?.filter((u) => u.clip_id === clip.id) ?? []}
-            onChange={() => {
-              void refresh();
-              void refreshUploads();
-            }}
+            selected={selected.includes(clip.id)}
+            onSelect={(on) => setSelected((s) => (on ? [...s, clip.id] : s.filter((id) => id !== clip.id)))}
+            onChange={refreshAll}
           />
         ))}
       </div>
