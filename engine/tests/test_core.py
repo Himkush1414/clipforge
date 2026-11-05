@@ -130,8 +130,14 @@ def _clip(session, job_id, tmp_path, name, expires_delta):
     path.write_bytes(b"x")
     thumb = tmp_path / f"{name}.jpg"
     thumb.write_bytes(b"x")
-    clip = Clip(job_id=job_id, start=0, end=1, path=str(path), thumb_path=str(thumb),
-                expires_at=utcnow() + expires_delta)
+    clip = Clip(
+        job_id=job_id,
+        start=0,
+        end=1,
+        path=str(path),
+        thumb_path=str(thumb),
+        expires_at=utcnow() + expires_delta,
+    )
     session.add(clip)
     session.commit()
     return clip
