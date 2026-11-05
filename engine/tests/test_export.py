@@ -453,3 +453,27 @@ def test_captions_render_when_the_work_folder_has_awkward_characters(tmp_path, m
         BUILTIN_PRESETS["anime-impact"], tmp_path / "p.png", "9:16", words=sample_words("hello there")
     )
     assert Image.open(out).size == (540, 960)
+
+
+def test_plain_gain_when_peaks_allow_and_limiter_when_they_do_not():
+    from clipforge.export.render import loudnorm_filter
+
+    stats = {
+        "input_i": "-24.0",
+        "input_tp": "-12.0",
+        "input_lra": "5",
+        "input_thresh": "-34",
+        "target_offset": "0",
+    }
+    assert loudnorm_filter(stats) == "volume=10.00dB"
+    assert loudnorm_filter({**stats, "input_tp": "-3.0"}).startswith("loudnorm=")
+    assert loudnorm_filter(None) is None
+
+
+def test_loudness_is_measured_after_converting_to_the_final_format():
+    from clipforge.export.render import finish_audio
+
+    chain = finish_audio("volume=1dB")
+    assert chain.index("aformat=channel_layouts=stereo") < chain.index("volume=1dB")
+    assert chain.endswith("aformat=channel_layouts=stereo")
+    assert finish_audio(None) == "aresample=48000,aformat=channel_layouts=stereo"
