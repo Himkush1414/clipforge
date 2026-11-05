@@ -293,10 +293,10 @@ def bench_loudness(tmp: Path) -> dict:
     """Target -14 LUFS, -1 dBTP. Sources range from very quiet to clipped."""
     results = {}
     cases = {
-        "quiet speech-like": "anoisesrc=d=20:c=pink:r=48000:a=0.02,tremolo=f=3:d=0.9",
-        "normal music-like": "anoisesrc=d=20:c=pink:r=48000:a=0.2,tremolo=f=2:d=0.5",
-        "loud clipped": "anoisesrc=d=20:c=white:r=48000:a=1.0,volume=12dB,alimiter=limit=1:level=false",
-        "wide range": "anoisesrc=d=20:c=pink:r=48000:a=0.3,volume='if(lt(t,10),0.02,1)':eval=frame",
+        "quiet speech-like": "anoisesrc=d=20:c=pink:r=48000:a=0.02:seed=1,tremolo=f=3:d=0.9",
+        "normal music-like": "anoisesrc=d=20:c=pink:r=48000:a=0.2:seed=1,tremolo=f=2:d=0.5",
+        "loud clipped": "anoisesrc=d=20:c=white:r=48000:a=1.0:seed=1,volume=12dB,alimiter=limit=1:level=false",
+        "wide range": "anoisesrc=d=20:c=pink:r=48000:a=0.3:seed=1,volume='if(lt(t,10),0.02,1)':eval=frame",
     }
     for index, (name, audio) in enumerate(cases.items()):
         source = tmp / f"loud-{index}.mp4"
@@ -589,7 +589,7 @@ def bench_silence(tmp: Path) -> dict:
         "-f",
         "lavfi",
         "-i",
-        f"anoisesrc=d=20:c=pink:r=16000:a=0.3,volume='if({expr},0,1)':eval=frame",
+        f"anoisesrc=d=20:c=pink:r=16000:a=0.3:seed=1,volume='if({expr},0,1)':eval=frame",
         "-ac",
         1,
         "-c:a",
