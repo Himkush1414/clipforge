@@ -30,6 +30,7 @@ TARGET_LRA = 11.0
 SEEK_MARGIN = 2.0
 CLICK_FADE = 0.012
 MIN_LOUDNORM_SECONDS = 1.0
+DISK_RESERVE_BYTES = 1024**3
 
 
 @dataclass
@@ -122,7 +123,6 @@ def _input_args(spec: RenderSpec) -> tuple[list[str], list[float]]:
     seeks: list[float] = []
     fps = spec.info.fps
     for segment in spec.segments:
-        start = segment.start_frame / fps
         seek_frame = max(0, segment.start_frame - round(SEEK_MARGIN * fps))
         # Half a frame early: the wanted frame's timestamp is safely past the seek point.
         seek = max(0.0, (seek_frame - 0.5) / fps) if seek_frame > 0 else 0.0
@@ -130,7 +130,6 @@ def _input_args(spec: RenderSpec) -> tuple[list[str], list[float]]:
         if seek > 0:
             args += ["-ss", f"{seek:.6f}"]
         args += ["-i", str(spec.source)]
-        _ = start
     return args, seeks
 
 
@@ -204,7 +203,12 @@ def build_audio_graph(spec: RenderSpec, seeks: list[float], final_filter: str | 
     return ";".join(parts)
 
 
-def measure_loudness(spec: RenderSpec, input_args: list[str], seeks: list[float]) -> dict | None:
+def measure_loudness(
+    spec: RenderSpec,
+    input_args: list[str],
+    seeks: list[float],
+    should_cancel: Callable[[], bool] | None = None,
+) -> dict | None:
     """First loudnorm pass. Returns None when the audio is silent or too short to measure."""
     if not spec.info.has_audio:
         return None
@@ -213,7 +217,10 @@ def measure_loudness(spec: RenderSpec, input_args: list[str], seeks: list[float]
         return None
     measure = f"loudnorm=I={TARGET_LUFS}:TP={TARGET_PEAK}:LRA={TARGET_LRA}:print_format=json"
     graph = build_audio_graph(spec, seeks, measure)
-    stderr = run_ffmpeg([*input_args, "-filter_complex", graph, "-map", "[aout]", "-f", "null", "-"])
+    stderr = run_ffmpeg(
+        [*input_args, "-filter_complex", graph, "-map", "[aout]", "-f", "null", "-"],
+        should_cancel=should_cancel,
+    )
     match = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", stderr, re.S)
     if not match:
         return None
@@ -234,6 +241,21 @@ def loudnorm_filter(stats: dict | None) -> str | None:
     )
 
 
+def estimated_bytes(width: int, height: int, seconds: float) -> int:
+    """Generous size guess (about 12 Mbit/s at 1080p), used only to warn before a disk fills."""
+    return int(width * height * 5.8 * seconds / 8) + 50_000_000
+
+
+def check_disk_space(width: int, height: int, seconds: float) -> None:
+    free = shutil.disk_usage(get_settings().work_dir).free
+    needed = estimated_bytes(width, height, seconds) + DISK_RESERVE_BYTES
+    if free < needed:
+        raise FFmpegError(
+            f"Not enough disk space: this clip needs about {needed / 1024**3:.1f} GB "
+            f"and {free / 1024**3:.1f} GB is free."
+        )
+
+
 def render_clip(
     spec: RenderSpec,
     on_progress: Callable[[float], None] | None = None,
@@ -250,6 +272,7 @@ def render_clip(
         transition_frames = min(round(spec.transition_seconds * fps), max(1, shortest // 2))
         spec.transition_seconds = transition_frames / fps
     timeline = Timeline(spec.segments, fps, transition_frames)
+    check_disk_space(out_w, out_h, timeline.duration)
 
     spec.output.parent.mkdir(parents=True, exist_ok=True)
     settings.tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -267,7 +290,7 @@ def render_clip(
         graph = video_graph
         maps = ["-map", "[vout]"]
         if spec.info.has_audio:
-            stats = measure_loudness(spec, input_args, seeks)
+            stats = measure_loudness(spec, input_args, seeks, should_cancel)
             graph += ";" + build_audio_graph(spec, seeks, loudnorm_filter(stats))
             maps += ["-map", "[aout]", "-c:a", "aac", "-b:a", "192k"]
 
