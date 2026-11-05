@@ -49,7 +49,7 @@ def render_preview(
         ass_path = write_ass(tmp / "p.ass", words, preset, width, height, ratio)
         bg = (
             background
-            or f"gradients=s={width}x{height}:c0=0x1f2937:c1=0x4c1d95:x0=0:y0=0:x1={width}:y1={height}:speed=0"
+            or f"gradients=s={width}x{height}:c0=0x1f2937:c1=0x4c1d95:x1={width}:y1={height}:speed=0"
         )
         graph = f"{ass_filter(ass_path)}"
         args: list = [
