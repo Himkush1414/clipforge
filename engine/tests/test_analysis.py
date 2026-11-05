@@ -1,3 +1,5 @@
+import subprocess
+
 import numpy as np
 import pytest
 
@@ -16,6 +18,7 @@ from clipforge.analysis.scoring import (
     topic_change_curve,
 )
 from clipforge.analysis.transcribe import Word, extract_audio, sanitize_words
+from clipforge.media.ffmpeg import find_tool
 
 
 def words_from(text, start=0.0, step=0.4):
@@ -211,3 +214,66 @@ def test_very_long_sentences_fall_back_to_whole_sentences():
     assert all(
         m.start in {s.start for s in sentences} and m.end in {s.end for s in sentences} for m in moments
     )
+
+
+def test_flash_is_not_a_cut_but_a_very_short_shot_is(tmp_path):
+    video = tmp_path / "flash.mp4"
+    graph = (
+        "color=c=0x404040:s=320x180:r=30:d=4,"
+        "drawbox=c=white:t=fill:enable='between(n,30,31)',"  # A two-frame flash.
+        "drawbox=c=0xc02020:t=fill:enable='gte(n,60)',"  # A real cut at frame 60.
+        "drawbox=c=0x2020c0:t=fill:enable='gte(n,90)'"  # And a real cut at frame 90.
+    )
+    subprocess.run(
+        [
+            find_tool("ffmpeg"),
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            graph,
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-qp",
+            "10",
+            "-pix_fmt",
+            "yuv420p",
+            str(video),
+        ],
+        check=True,
+    )
+    assert analyze_scenes(video, fps=30, duration=4).cut_frames == [60, 90]
+
+
+def test_eight_frame_shot_keeps_both_cuts(tmp_path):
+    video = tmp_path / "short.mp4"
+    graph = "color=c=0x404040:s=320x180:r=30:d=3,drawbox=c=0xc02020:t=fill:enable='between(n,30,37)',drawbox=c=0x20c020:t=fill:enable='gte(n,38)'"
+    subprocess.run(
+        [
+            find_tool("ffmpeg"),
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            graph,
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-qp",
+            "10",
+            "-pix_fmt",
+            "yuv420p",
+            str(video),
+        ],
+        check=True,
+    )
+    assert analyze_scenes(video, fps=30, duration=3).cut_frames == [30, 38]
