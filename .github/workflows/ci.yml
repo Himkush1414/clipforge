@@ -1,0 +1,47 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install engine
+        run: pip install -e "engine[dev,ml]"
+      - name: Lint
+        working-directory: engine
+        run: ruff check .
+      - name: Types
+        working-directory: engine
+        run: mypy clipforge
+      - name: Tests (no model or GPU)
+        working-directory: engine
+        # Exit code 5 means no tests were collected, which is fine on a scaffold-only branch.
+        run: pytest -m "not model and not gpu" || [ $? -eq 5 ]
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install
+        if: hashFiles('web/package.json') != ''
+        run: npm ci
+        working-directory: web
+      - name: Lint
+        if: hashFiles('web/package.json') != ''
+        run: npm run lint
+        working-directory: web
+      - name: Build
+        if: hashFiles('web/package.json') != ''
+        run: npm run build
+        working-directory: web
