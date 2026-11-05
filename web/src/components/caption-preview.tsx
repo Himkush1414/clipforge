@@ -9,6 +9,7 @@ const EMPHASIS = /incredible|absolutely|expected/i;
 const FRAME = { "9:16": { w: 270, h: 480, lower: 0.66, top: 0.12 }, "1:1": { w: 360, h: 360, lower: 0.8, top: 0.08 }, "16:9": { w: 480, h: 270, lower: 0.84, top: 0.08 } };
 const RATIO_FACTOR = { "9:16": 1, "1:1": 0.9, "16:9": 0.72 };
 const WORD_MS = 320;
+const RTL_TEXT = /[\u0590-\u08ff]/;
 
 export type PreviewRatio = keyof typeof FRAME;
 
@@ -50,6 +51,7 @@ export function CaptionPreview({ preset, ratio, fonts, text }: { preset: PresetD
         <style key={f.file}>{`@font-face{font-family:"${f.family}";src:url("${apiUrl(`/api/fonts/${f.file}`)}");font-display:swap}`}</style>
       ))}
       <div
+        dir={RTL_TEXT.test(words[0] ?? "") ? "rtl" : "ltr"}
         className="absolute inset-x-[8%] flex flex-wrap items-baseline justify-center"
         style={{ top: `${y * 100}%`, transform: "translateY(-50%)", columnGap: em * preset.word_gap }}
       >
