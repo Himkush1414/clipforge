@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, col, select
 
 from clipforge import __version__
+from clipforge.captions.layout import cell_ratio
 from clipforge.captions.presets import BUILTIN_PRESETS, FONT_FILES, FONTS_DIR, CaptionPreset
 from clipforge.captions.preview import PREVIEW_SIZES, render_preview, sample_words
 from clipforge.cleanup import CleanupThread, cleanup_expired_clips, remove_clip_files
@@ -449,7 +450,10 @@ def create_app() -> FastAPI:
 
     @app.get("/api/fonts")
     def list_fonts() -> list[dict]:
-        return [{"family": family, "file": file} for family, file in FONT_FILES.items()]
+        return [
+            {"family": family, "file": file, "em_ratio": round(cell_ratio(family)[0], 4)}
+            for family, file in FONT_FILES.items()
+        ]
 
     @app.get("/api/fonts/{filename}")
     def font_file(filename: str):
