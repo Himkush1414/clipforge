@@ -188,7 +188,9 @@ def _plan_clips(
                 raise ValueError(f"Cut starts past the end of the video ({info.frame_count} frames).")
             start, end = segment.start_frame / info.fps, segment.end_frame / info.fps
             text = " ".join(w.text for w in analysis.words if start <= w.start and w.end <= end)
-            planned.append((Moment(start, end, 0.0, {}, text), [segment]))
+            planned.append(
+                (Moment(start, end, 0.0, {}, text, "You chose this part by frame number."), [segment])
+            )
         return planned
 
     moments = find_moments(
@@ -199,6 +201,7 @@ def _plan_clips(
         options["genre"],
         options["clip_duration"],
         options["clip_count"],
+        analysis.language,
     )
     ratio = options.get("min_score_ratio")
     if ratio and moments:
@@ -350,7 +353,7 @@ def run_job(ctx: JobContext) -> None:
                     end=moment.end,
                     segments=[[s.start_frame, s.end_frame] for s in segments],
                     score=moment.score,
-                    reasons=moment.reasons,
+                    reasons={**moment.reasons, "why": moment.why},
                     title=title,
                     description=description,
                     format=options["format"],

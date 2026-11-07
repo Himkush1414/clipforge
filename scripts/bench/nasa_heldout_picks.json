@@ -1,0 +1,37 @@
+{
+  "_about": [
+    "Held-out test for pick_eval.py. Public domain NASA podcast episodes 403 and 389, first 15 minutes each.",
+    "Chosen by Claude from the transcripts before any scorer had run on them, and never used to tune anything. Score here only to check a finished change. One AI editor's taste, not a person's."
+  ],
+  "videos": [
+    {
+      "path": "~/clipforge-work/bench/real-speech/Ep403_Positive_Impacts.mp3",
+      "genre": "podcast",
+      "clip_seconds": 45,
+      "limit_seconds": 900,
+      "picks": [
+        {"start": 183, "end": 246, "note": "a brief history of the universe"},
+        {"start": 340, "end": 368, "note": "debugging antennas in a shipping container in the Outback"},
+        {"start": 384, "end": 447, "note": "from astrophysics to volunteer firefighter"},
+        {"start": 520, "end": 582, "note": "the same maths in a telescope and a cancer scan"},
+        {"start": 633, "end": 698, "note": "training: every single day is different"},
+        {"start": 790, "end": 811, "note": "his wife does the harder job"}
+      ]
+    },
+    {
+      "path": "~/clipforge-work/bench/real-speech/Ep389_Runway_to_the_Stars.mp3",
+      "genre": "podcast",
+      "clip_seconds": 45,
+      "limit_seconds": 900,
+      "picks": [
+        {"start": 91, "end": 137, "note": "seeing an F-15 go straight up at an air show"},
+        {"start": 270, "end": 292, "note": "the T-38 flies like a little sports car"},
+        {"start": 515, "end": 549, "note": "the Guppy is the only one flying in the world"},
+        {"start": 593, "end": 626, "note": "you don't need a pilot's licence"},
+        {"start": 644, "end": 694, "note": "the whole nose swings open"},
+        {"start": 788, "end": 826, "note": "two T-38s fit inside the Guppy"},
+        {"start": 873, "end": 900, "note": "a U-2 on steroids"}
+      ]
+    }
+  ]
+}

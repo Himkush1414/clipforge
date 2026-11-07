@@ -17,7 +17,7 @@ Most test material is generated, so the correct answers are known exactly. That 
 | Frame cuts | FFmpeg, own planning | Known answers only | 44 of 44 exact | Kept |
 | Audio sync | FFmpeg, own planning | Known answers only | Worst 15 ms over 40 cuts | Kept |
 | Captions | libass, own layout | Known answers only | 84 renders, none outside the safe area | Kept |
-| Clip scoring | Own scoring | Known answers only | 80% of clips caught a planted moment | Kept |
+| Clip selection | Own scoring plus editor pass | Random windows, chosen clips | Held-out recall 0.62, up from 0.48, against 0.34 for random | **Added editor** |
 | Silence | Own threshold | Known answers only | 2 false gaps and a 200 ms edge error | Kept, **open finding** |
 
 "Known answers only" means no alternative tool was compared, so those rows show that the stage works, not that it is the best choice.
@@ -155,9 +155,24 @@ Time for a 30-second clip, five runs. The 7.9x in the baseline was a difference 
 | Loudness, generated speech | 0.0 LU from -14 LUFS |
 | Loudness, other material | 0.3 to 1.0 LU off, worst on clipped noise |
 
-## Clip scoring
+## Clip selection
 
-On a generated video with moments planted at known times, 24 of 30 clips (80%) caught one. Those moments fill 9% of the video and 48% of the average clip's time. This shows the scorer finds what it was built to find. It says nothing about whether a person would choose the same clips, which needs real footage and a human eye.
+Two passes. The scorer finds lively moments, then an editor pass (`engine/clipforge/analysis/editor.py`) asks four questions of each candidate: does it open with a hook, make sense with no earlier context, finish its thought, and hold to one topic? Filler at either end is trimmed, as an editor would trim it, and candidates that still fail are dropped. If nothing passes, the best one is kept with a reason that says what is wrong. Word lists exist for English and Spanish. Other languages are judged on structure alone.
+
+Measured by `scripts/bench/pick_eval.py`, as overlap with chosen clips. Raw results: [benchmarks/selection.json](benchmarks/selection.json).
+
+| Test set | Measure | Random windows | Scorer alone | With editor |
+|---|---|---|---|---|
+| **Held-out: 2 NASA episodes** | **Pick recall** | **0.34** | **0.48** | **0.62** |
+| | Mean IoU | 0.21 | 0.20 | **0.37** |
+| Tuning set: 3 NASA episodes | Pick recall | 0.27 | 0.25 | **0.48** |
+| | Mean IoU | 0.17 | 0.13 | **0.33** |
+| Generated talk (8 good, 8 bad passages) | Pick recall | 0.49 | 0.50 | **1.00** |
+| | Mean IoU | 0.35 | 0.49 | **0.95** |
+
+The held-out episodes are the honest figure. They were labelled before any scorer ran on them and never used for tuning, while the editor's word lists were adjusted after seeing the tuning set. They hold only 13 picks, so treat the gain as promising, not settled.
+
+The picks were chosen by Claude from the transcripts, so they are one AI's taste, not a person's. The earlier figure of 80% of clips catching a planted moment overstated quality, since those moments differ from plain talk in ways real speech does not. On that old test, capture rose from 0.80 to 0.83. The editor adds about 2 seconds on 2 hours of speech.
 
 ## Silence (open finding)
 

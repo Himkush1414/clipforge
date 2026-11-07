@@ -75,5 +75,159 @@
    "mean_mean_iou": 0.488,
    "mean_random_mean_iou": 0.353
   }
+ },
+ "editor": {
+  "note": "Editor pass added. Same picks and test sets as the baseline.",
+  "nasa": {
+   "scorer": "editor",
+   "videos": [
+    {
+     "video": "ep393.mp3",
+     "picks": 6,
+     "clips": 6,
+     "pick_recall": 0.833,
+     "clip_precision": 0.833,
+     "mean_iou": 0.557,
+     "random": {
+      "pick_recall": 0.268,
+      "clip_precision": 0.27,
+      "mean_iou": 0.184
+     }
+    },
+    {
+     "video": "Ep378_Pursuit_of_Lifelong_Learning.mp3",
+     "picks": 7,
+     "clips": 7,
+     "pick_recall": 0.286,
+     "clip_precision": 0.286,
+     "mean_iou": 0.145,
+     "random": {
+      "pick_recall": 0.311,
+      "clip_precision": 0.311,
+      "mean_iou": 0.19
+     }
+    },
+    {
+     "video": "Ep370_Spaceflight_Adaptation.mp3",
+     "picks": 6,
+     "clips": 6,
+     "pick_recall": 0.333,
+     "clip_precision": 0.333,
+     "mean_iou": 0.295,
+     "random": {
+      "pick_recall": 0.231,
+      "clip_precision": 0.232,
+      "mean_iou": 0.152
+     }
+    }
+   ],
+   "mean_pick_recall": 0.484,
+   "mean_random_pick_recall": 0.27,
+   "mean_clip_precision": 0.484,
+   "mean_random_clip_precision": 0.271,
+   "mean_mean_iou": 0.332,
+   "mean_random_mean_iou": 0.175
+  },
+  "generated": {
+   "scorer": "editor",
+   "videos": [
+    {
+     "video": "generated-talk.wav",
+     "picks": 8,
+     "clips": 8,
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951,
+     "random": {
+      "pick_recall": 0.488,
+      "clip_precision": 0.488,
+      "mean_iou": 0.347
+     }
+    }
+   ],
+   "mean_pick_recall": 1.0,
+   "mean_random_pick_recall": 0.488,
+   "mean_clip_precision": 1.0,
+   "mean_random_clip_precision": 0.488,
+   "mean_mean_iou": 0.951,
+   "mean_random_mean_iou": 0.347
+  }
+ },
+ "heldout": {
+  "note": "Two further NASA episodes, labelled before any scorer ran on them and never used for tuning.",
+  "heuristic": {
+   "scorer": "heuristic",
+   "videos": [
+    {
+     "video": "Ep403_Positive_Impacts.mp3",
+     "picks": 6,
+     "clips": 6,
+     "pick_recall": 0.667,
+     "clip_precision": 0.667,
+     "mean_iou": 0.245,
+     "random": {
+      "pick_recall": 0.4,
+      "clip_precision": 0.406,
+      "mean_iou": 0.227
+     }
+    },
+    {
+     "video": "Ep389_Runway_to_the_Stars.mp3",
+     "picks": 7,
+     "clips": 7,
+     "pick_recall": 0.286,
+     "clip_precision": 0.286,
+     "mean_iou": 0.155,
+     "random": {
+      "pick_recall": 0.302,
+      "clip_precision": 0.302,
+      "mean_iou": 0.198
+     }
+    }
+   ],
+   "mean_pick_recall": 0.477,
+   "mean_random_pick_recall": 0.351,
+   "mean_clip_precision": 0.477,
+   "mean_random_clip_precision": 0.354,
+   "mean_mean_iou": 0.2,
+   "mean_random_mean_iou": 0.213
+  },
+  "editor": {
+   "scorer": "editor",
+   "videos": [
+    {
+     "video": "Ep403_Positive_Impacts.mp3",
+     "picks": 6,
+     "clips": 6,
+     "pick_recall": 0.667,
+     "clip_precision": 0.667,
+     "mean_iou": 0.347,
+     "random": {
+      "pick_recall": 0.398,
+      "clip_precision": 0.405,
+      "mean_iou": 0.226
+     }
+    },
+    {
+     "video": "Ep389_Runway_to_the_Stars.mp3",
+     "picks": 7,
+     "clips": 7,
+     "pick_recall": 0.571,
+     "clip_precision": 0.571,
+     "mean_iou": 0.387,
+     "random": {
+      "pick_recall": 0.289,
+      "clip_precision": 0.289,
+      "mean_iou": 0.191
+     }
+    }
+   ],
+   "mean_pick_recall": 0.619,
+   "mean_random_pick_recall": 0.344,
+   "mean_clip_precision": 0.619,
+   "mean_random_clip_precision": 0.347,
+   "mean_mean_iou": 0.367,
+   "mean_random_mean_iou": 0.209
+  }
  }
 }
