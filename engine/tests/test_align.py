@@ -222,3 +222,27 @@ def test_bad_aligned_times_still_come_out_increasing(monkeypatch, tmp_path):
     words = transcribe._run(_wav(tmp_path), 1.0, "cpu", None, None, None)["words"]
     assert words[0]["end"] <= words[1]["start"] < words[1]["end"]
     assert words[0]["start"] >= 0.0
+
+
+def test_a_word_moved_implausibly_far_keeps_whispers_times():
+    aligned = [Word("a", 1.0, 1.2), Word("b", 9.0, 9.3), Word("c", 2.1, 2.4)]
+    original = [Word("a", 1.1, 1.3), Word("b", 1.6, 1.9), Word("c", 2.0, 2.3)]
+    out, kept = align.guard(aligned, original)
+    assert kept == 1
+    assert [(w.start, w.end) for w in out] == [(1.0, 1.2), (1.6, 1.9), (2.1, 2.4)]
+
+
+def test_ordinary_corrections_pass_the_guard():
+    aligned = [Word("a", 1.0, 1.2), Word("b", 2.9, 3.3)]
+    original = [Word("a", 1.4, 1.6), Word("b", 2.0, 2.3)]
+    assert align.guard(aligned, original) == (aligned, 0)
+
+
+def test_the_guard_is_applied_and_logged_during_alignment(monkeypatch, caplog):
+    # The audio puts the word near the end of the window, far from where Whisper said it was.
+    plan = [BLANK] * 200 + [A, A] + [BLANK] * 5
+    use_session(monkeypatch, FakeSession([plan]))
+    audio = np.zeros(int(16000 * len(plan) * FRAME), np.float32)
+    words, _ = align_segments(audio, [Segment(0.0, 4.0, [Word("a", 0.1, 0.4)])], "en")
+    assert (words[0].start, words[0].end) == (0.1, 0.4)
+    assert "moved more than" in caplog.text

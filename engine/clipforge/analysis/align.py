@@ -38,6 +38,9 @@ END_SHIFT = 0.03
 # Mean letter probability along the path. On the benchmark samples, correct text scored 0.27 or more and
 # wrong text or noise 0.084 or less. Below this, the segment keeps Whisper's times.
 MIN_CONFIDENCE = 0.15
+# On the 100-word benchmarks, correct aligned words moved at most 1.02 s from Whisper's own start, while
+# a real misalignment moved one 4.8 s. Past this, the aligner is the likelier one to be wrong.
+GUARD_SECONDS = 1.5
 
 
 @dataclass
@@ -220,6 +223,19 @@ def align_segment(
     )
 
 
+def guard(aligned: list[Word], original: list[Word], limit: float = GUARD_SECONDS) -> tuple[list[Word], int]:
+    """Keep Whisper's times for any word the aligner moved implausibly far. Returns (words, count)."""
+    kept = 0
+    out: list[Word] = []
+    for new, old in zip(aligned, original, strict=True):
+        if abs(new.start - old.start) > limit:
+            kept += 1
+            out.append(Word(new.text, old.start, old.end, new.probability))
+        else:
+            out.append(new)
+    return out, kept
+
+
 def align_segments(
     samples: np.ndarray,
     segments: list[Segment],
@@ -243,6 +259,7 @@ def align_segments(
         return words, "whisper"
     aligned: list[Word] = []
     kept = 0
+    guarded = 0
     floor = 0.0
     for index, segment in enumerate(segments):
         if should_cancel and should_cancel():
@@ -253,6 +270,16 @@ def align_segments(
             log.warning("Alignment failed on a segment, keeping Whisper's times: %s", exc)
             result = None
         kept += result is None
+        if result is not None:
+            result, moved = guard(result, segment.words)
+            if moved:
+                guarded += moved
+                log.warning(
+                    "Kept Whisper's times for %d word(s) the aligner moved more than %.1f s, near %.1f s",
+                    moved,
+                    GUARD_SECONDS,
+                    segment.start,
+                )
         aligned += result if result is not None else segment.words
         if aligned:
             floor = aligned[-1].end - (END_SHIFT if result is not None else 0.0)
@@ -260,4 +287,6 @@ def align_segments(
             on_progress((index + 1) / len(segments))
     if kept:
         log.info("Kept Whisper's times on %d of %d segments", kept, len(segments))
+    if guarded:
+        log.info("Kept Whisper's times for %d word(s) in total, as the aligner moved them too far", guarded)
     return aligned, "aligned"
