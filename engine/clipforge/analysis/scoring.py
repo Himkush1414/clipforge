@@ -273,9 +273,14 @@ def generate_candidates(
     return moments
 
 
-def select_moments(candidates: list[Moment], count: int, min_gap: float = 1.0) -> list[Moment]:
-    """Highest scores first, skipping overlaps, returned in story order for part numbering."""
-    chosen: list[Moment] = []
+def select_moments(
+    candidates: list[Moment], count: int, min_gap: float = 1.0, keep: list[Moment] | None = None
+) -> list[Moment]:
+    """Highest scores first, skipping overlaps, returned in story order for part numbering.
+
+    Moments in keep are already chosen, and the rest fill in around them.
+    """
+    chosen: list[Moment] = list(keep or [])
     for moment in sorted(candidates, key=lambda m: m.score, reverse=True):
         if len(chosen) >= count:
             break
@@ -291,10 +296,11 @@ def edited_candidates(
     duration: float,
     target: float,
     language: str | None,
+    fine: bool = False,
 ) -> list[Moment]:
     """Every way to build a clip from whole thoughts near the target length, judged by the editor."""
     lexicon = lexicon_for(language)
-    thoughts = split_thoughts(words)
+    thoughts = split_thoughts(words, fine)
     idf = inverse_document_frequency(thoughts)
     moments: list[Moment] = []
     for tolerance in (0.3, 0.75, 4.0):
@@ -343,6 +349,7 @@ def rank_moments(
     target_seconds: float,
     language: str | None = None,
     editor: bool = True,
+    fine: bool = False,
 ) -> list[Moment]:
     """All candidates, best first. Those failing the editor's checks come after every one that passes."""
     target_seconds = min(target_seconds, duration)
@@ -351,7 +358,7 @@ def rank_moments(
     weights = GENRE_WEIGHTS.get(genre, GENRE_WEIGHTS["other"])
     speech_share = sum(s.end - s.start for s in sentences) / max(duration, 1e-3)
     if editor and speech_share >= 0.1:
-        candidates = edited_candidates(words, curves, weights, duration, target_seconds, language)
+        candidates = edited_candidates(words, curves, weights, duration, target_seconds, language, fine)
         if candidates:
             return sorted(candidates, key=lambda m: (m.passed, m.score), reverse=True)
     units = sentences if speech_share >= 0.1 else _nonverbal_units(audio, scenes, duration, target_seconds)
@@ -389,8 +396,11 @@ def find_moments(
     editor: bool = True,
 ) -> list[Moment]:
     ranked = rank_moments(words, audio, scenes, duration, genre, target_seconds, language, editor)
-    passing = [m for m in ranked if m.passed]
-    chosen = select_moments(passing, count)
+    chosen = select_moments([m for m in ranked if m.passed], count)
+    if editor and len(chosen) < count:
+        # Too few whole thoughts near this length, usually because Whisper dropped the punctuation.
+        finer = rank_moments(words, audio, scenes, duration, genre, target_seconds, language, True, True)
+        chosen = select_moments([m for m in finer if m.passed], count, keep=chosen)
     if not chosen:
         # Nothing passed. A weak clip with an honest reason beats a failed job.
         chosen = select_moments(ranked, count)
