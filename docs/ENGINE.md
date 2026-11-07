@@ -87,6 +87,20 @@ Hindi's worst case is left out of the table because one run in three had a word 
 
 Hindi and Arabic rest on few scored words, 20-25 and 11-13, because Whisper's text and the script rarely match exactly in those samples. Treat them as weak evidence. Only English was checked on real speech.
 
+**Hindi, Arabic and Japanese on more words.** `scripts/bench/long_timing.py` scores 103 to 185 words per run, four runs each, with exact references. Words are matched by runs of at least four agreeing letters, not whole words. That handles Japanese, which has no spaces, and stops a misheard word from pairing with a real one elsewhere. Raw results: [benchmarks/long-timing.json](benchmarks/long-timing.json).
+
+| Language | Words scored | Start, median (Whisper → aligned) | Within 100 ms | Worst start |
+|---|---|---|---|---|
+| Hindi | 112-120 | 128-146 → **35-37 ms** | 18-23% → **96-98%** | 568-622 → 114-253 ms |
+| Arabic | 103-118 | 155-176 → **27-35 ms** | 7-19% → **88-91%** | 704-874 → 183-713 ms |
+| Japanese | 181-185 | 224-228 ms, Whisper only | 3-4% | 735-805 ms |
+
+The earlier Hindi "7 second error" was the benchmark, not the timing. Whisper heard "हूँ" as "के", and whole-word matching paired that with a real "के" further on. The aligned time was within 20 ms of the word actually spoken.
+
+**Guard.** Any aligned word that moved more than 1.5 s from Whisper's own start keeps Whisper's times, and the move is logged. On these runs, correct words moved at most 1.02 s. A real misalignment of 4.8 s happened in 1 of 15 Hindi runs, before the guard existed. The guard fired 0 times in the final 12 runs, so it changed none of the figures above.
+
+**Japanese stays on Whisper's times.** The Apache-licensed `XDcobra/wav2vec2-large-xlsr-53-japanese-ONNX` was tried. It recognises the speech, but spells it its own way, for example 皆 for みな. A letter-level aligner can only follow the exact characters Whisper wrote, so every segment scored about 0.0003 confidence and was rejected. A Japanese aligner would need to convert both sides to kana first.
+
 **Why not WhisperX.** It scored about the same in one reference run on the natural sample, at 139 ms worst start. It would add several GB of dependencies to a machine with 7.6 GB of RAM, and its default Spanish model is licensed CC BY-NC, which forbids commercial use.
 
 Limits: the exact samples are generated voices, which are cleaner than real recordings. The start and end shifts were set from the exact samples' median offsets, and the end shift was also chosen to avoid worsening the natural sample, so that sample is not fully independent of it.
