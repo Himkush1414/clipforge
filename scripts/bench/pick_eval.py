@@ -177,20 +177,31 @@ def chance(duration: float, clips: list[tuple[float, float]], picks: list[tuple[
     return {key: statistics.mean(t[key] for t in trials) for key in trials[0]}
 
 
-def score_heuristic(analysis: dict, genre: str, clip_seconds: float, count: int) -> list[dict]:
-    moments = find_moments(
-        analysis["words"], analysis["audio"], analysis["scenes"], analysis["duration"], genre, clip_seconds, count
-    )
-    return [{"start": m.start, "end": m.end, "score": m.score, "text": m.text} for m in moments]
+def score_with(editor: bool):
+    def score(analysis: dict, genre: str, clip_seconds: float, count: int) -> list[dict]:
+        moments = find_moments(
+            analysis["words"],
+            analysis["audio"],
+            analysis["scenes"],
+            analysis["duration"],
+            genre,
+            clip_seconds,
+            count,
+            analysis["language"],
+            editor,
+        )
+        return [{"start": m.start, "end": m.end, "score": m.score, "text": m.text, "why": m.why} for m in moments]
+
+    return score
 
 
-SCORERS = {"heuristic": score_heuristic}
+SCORERS = {"heuristic": score_with(False), "editor": score_with(True)}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("picks", type=Path)
-    parser.add_argument("--scorer", default="heuristic", choices=sorted(SCORERS))
+    parser.add_argument("--scorer", default="editor", choices=sorted(SCORERS))
     parser.add_argument("--count", type=int, help="clips per video. Defaults to the number of picks.")
     parser.add_argument("--transcript", action="store_true")
     parser.add_argument("--out", type=Path)
@@ -231,7 +242,7 @@ def main() -> int:
         if args.show_clips:
             for clip in chosen:
                 hit = "HIT " if any(lands_on((clip["start"], clip["end"]), p) for p in picks) else "miss"
-                print(f"  {hit} [{clip['start']:7.1f}-{clip['end']:7.1f}] {clip['text'][:170]}")
+                print(f"  {hit} [{clip['start']:7.1f}-{clip['end']:7.1f}] {clip['text'][:170]}\n       why: {clip.get('why', '')}")
     if report["videos"]:
         for key in ("pick_recall", "clip_precision", "mean_iou"):
             report[f"mean_{key}"] = round(statistics.mean(v[key] for v in report["videos"]), 3)
