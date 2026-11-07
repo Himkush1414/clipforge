@@ -1,0 +1,52 @@
+{
+  "_about": [
+    "Test data for pick_eval.py, on public domain NASA podcast episodes (Houston We Have a Podcast 393, 378, 370), first 20 minutes each.",
+    "These picks were chosen by Claude, the AI that wrote this code, from reading the transcripts before any scorer had run on them. They stand in until you add your own, so they measure agreement with one AI editor's taste, not with a person's.",
+    "Download the audio from images-assets.nasa.gov/audio/<id>/<id>~128k.mp3 (Ep393_Crew-11 as ep393.mp3)."
+  ],
+  "videos": [
+    {
+      "path": "~/clipforge-work/bench/real-speech/ep393.mp3",
+      "genre": "podcast",
+      "clip_seconds": 45,
+      "limit_seconds": 1200,
+      "picks": [
+        {"start": 333.0, "end": 390.3, "note": "exploring the sea vs space: be your own plumber"},
+        {"start": 397.6, "end": 439.9, "note": "never wanted to be an astronaut as a child"},
+        {"start": 508.9, "end": 582.6, "note": "the phone call, watching Apollo 13"},
+        {"start": 614.0, "end": 668.5, "note": "Michael Collins recites Paradise Lost"},
+        {"start": 794.4, "end": 839.8, "note": "losing her crew: spaceflight is not about me"},
+        {"start": 1017.8, "end": 1066.3, "note": "why station research matters on Earth"}
+      ]
+    },
+    {
+      "path": "~/clipforge-work/bench/real-speech/Ep378_Pursuit_of_Lifelong_Learning.mp3",
+      "genre": "podcast",
+      "clip_seconds": 45,
+      "limit_seconds": 1200,
+      "picks": [
+        {"start": 146.4, "end": 212.4, "note": "his mother's sacrifice"},
+        {"start": 256.3, "end": 289.0, "note": "no solid footing in either world"},
+        {"start": 618.3, "end": 666.6, "note": "the recruiter's quota makes him a medic"},
+        {"start": 752.2, "end": 773.4, "note": "life happens by accident"},
+        {"start": 846.7, "end": 896.2, "note": "a 26 year old SEAL among 18 year olds"},
+        {"start": 1033.0, "end": 1067.2, "note": "clean the team's gear first"},
+        {"start": 1141.8, "end": 1196.7, "note": "what really good leaders are"}
+      ]
+    },
+    {
+      "path": "~/clipforge-work/bench/real-speech/Ep370_Spaceflight_Adaptation.mp3",
+      "genre": "podcast",
+      "clip_seconds": 45,
+      "limit_seconds": 1200,
+      "picks": [
+        {"start": 372.1, "end": 411.1, "note": "radiation, the elephant in the room"},
+        {"start": 458.4, "end": 488.7, "note": "blood clots in the neck"},
+        {"start": 620.1, "end": 661.1, "note": "exercise helps the mind too"},
+        {"start": 739.1, "end": 782.3, "note": "Scott Kelly missed the rain"},
+        {"start": 844.3, "end": 925.3, "note": "100 signals vanish and you throw up"},
+        {"start": 1150.7, "end": 1187.9, "note": "stress and cold sores in orbit"}
+      ]
+    }
+  ]
+}

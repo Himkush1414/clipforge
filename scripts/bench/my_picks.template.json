@@ -1,0 +1,21 @@
+{
+  "_how_to": [
+    "Copy this file to my_picks.json. That name is ignored by git, so your own videos stay private.",
+    "Add one entry per video you own. List the clips you would post, with start and end times.",
+    "Times can be seconds (754.5), minutes (12:34.5) or hours (1:02:03).",
+    "Run: scripts/bench/pick_eval.py scripts/bench/my_picks.json",
+    "genre is one of: anime, movie, series, gameplay, podcast, other."
+  ],
+  "videos": [
+    {
+      "path": "/full/path/to/a/video/you/own.mp4",
+      "genre": "podcast",
+      "clip_seconds": 45,
+      "limit_seconds": null,
+      "picks": [
+        {"start": "12:34.5", "end": "13:20", "note": "the story about the broken rocket"},
+        {"start": "41:02", "end": "41:48", "note": ""}
+      ]
+    }
+  ]
+}
