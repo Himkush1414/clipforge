@@ -4,7 +4,14 @@ import Link from "next/link";
 import { Badge, EmptyState, ErrorNote, PageHeader, Panel, ProgressBar } from "@/components/ui";
 import { api, RIGHTS_LABELS, usePoll, type Job } from "@/lib/api";
 
-const STATUS_TONE = { queued: "neutral", running: "warn", done: "ok", failed: "fail", cancelled: "neutral" } as const;
+const STATUS_TONE = {
+  queued: "neutral",
+  running: "warn",
+  review: "warn",
+  done: "ok",
+  failed: "fail",
+  cancelled: "neutral",
+} as const;
 
 function Decisions({ job }: { job: Job }) {
   const reasons = job.decisions.reasons as Record<string, string> | undefined;
@@ -69,7 +76,12 @@ export default function JobsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Badge tone={STATUS_TONE[job.status]}>{job.status}</Badge>
-                {(job.status === "queued" || job.status === "running") && (
+                {job.status === "review" && (
+                  <Link className="btn btn-primary" href={`/review?job=${job.id}`}>
+                    Review clips
+                  </Link>
+                )}
+                {(job.status === "queued" || job.status === "running" || job.status === "review") && (
                   <button type="button" className="btn btn-danger" onClick={() => cancel(job.id)}>
                     Cancel
                   </button>

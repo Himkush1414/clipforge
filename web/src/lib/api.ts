@@ -32,6 +32,28 @@ export type Source = {
   created_at: string;
 };
 
+export type ReviewClip = {
+  key: string;
+  start_frame: number;
+  end_frame: number;
+  score: number;
+  why: string;
+  text: string;
+  rejected: boolean;
+  warnings: string[];
+};
+
+export type ReviewPlan = {
+  job_id: string;
+  mode: "manual" | "auto";
+  status: string;
+  fps: number;
+  frame_count: number;
+  clips: ReviewClip[];
+  alternates_left: number;
+  source_url: string | null;
+};
+
 export type QcCheck = { name: string; status: "ok" | "warn" | "fail"; detail: string };
 
 export type Clip = {
@@ -67,7 +89,7 @@ export type Job = {
   source_id: string;
   source_filename?: string | null;
   mode: string;
-  status: "queued" | "running" | "done" | "failed" | "cancelled";
+  status: "queued" | "running" | "review" | "done" | "failed" | "cancelled";
   stage: string;
   progress: number;
   message: string;

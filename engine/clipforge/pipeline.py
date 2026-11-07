@@ -16,7 +16,7 @@ import numpy as np
 from clipforge.analysis.audio import HOP_SECONDS, AudioAnalysis, analyze_audio
 from clipforge.analysis.boundaries import refine, remove_pauses
 from clipforge.analysis.scenes import SceneAnalysis, analyze_scenes
-from clipforge.analysis.scoring import Moment, find_moments
+from clipforge.analysis.scoring import Moment, find_moments, rank_moments
 from clipforge.analysis.transcribe import Word, extract_audio, transcribe, words_from_dicts
 from clipforge.autopilot import decide
 from clipforge.captions.layout import undrawable_words
@@ -31,6 +31,7 @@ from clipforge.media.probe import MediaInfo, probe
 from clipforge.metadata import build_metadata
 from clipforge.models import Channel, Clip, ClipFolder, Job, Preset, RightsType, Source, utcnow
 from clipforge.qc import run_qc
+from clipforge.review import AwaitingReview, build_plan
 
 log = logging.getLogger("clipforge.pipeline")
 
@@ -175,24 +176,23 @@ def resolve_options(
     return decision.options(), decision.report()
 
 
-def _plan_clips(
-    job: Job, options: dict, analysis: Analysis, info: MediaInfo
-) -> list[tuple[Moment, list[Segment]]]:
-    edit = job.settings.get("edit", {})
-    cuts = job.settings.get("frame_cuts") or []
-    if cuts:
-        planned = []
-        for cut in cuts:
-            segment = Segment(cut["start_frame"], min(cut["end_frame"], info.frame_count))
-            if segment.frames <= 0:
-                raise ValueError(f"Cut starts past the end of the video ({info.frame_count} frames).")
-            start, end = segment.start_frame / info.fps, segment.end_frame / info.fps
-            text = " ".join(w.text for w in analysis.words if start <= w.start and w.end <= end)
-            planned.append(
-                (Moment(start, end, 0.0, {}, text, "You chose this part by frame number."), [segment])
+def _approved_clips(job: Job, analysis: Analysis, info: MediaInfo) -> list[tuple[Moment, list[Segment]]]:
+    """Exactly the frames a person approved in the review step."""
+    planned = []
+    for clip in job.settings["approved"]:
+        start, end = clip["start_frame"] / info.fps, clip["end_frame"] / info.fps
+        moment = Moment(start, end, clip["score"], clip["reasons"], clip["text"], clip["why"])
+        if job.settings.get("edit", {}).get("remove_pauses"):
+            segments = to_frame_segments(
+                remove_pauses(start, end, analysis.words), info.fps, info.frame_count
             )
-        return planned
+        else:
+            segments = [Segment(clip["start_frame"], clip["end_frame"])]
+        planned.append((moment, segments))
+    return planned
 
+
+def _choose_moments(job: Job, options: dict, analysis: Analysis, info: MediaInfo) -> list[Moment]:
     moments = find_moments(
         analysis.words,
         analysis.audio,
@@ -208,13 +208,85 @@ def _plan_clips(
         # Auto mode keeps quality over quantity: drop moments far weaker than the best one.
         best = max(m.score for m in moments)
         moments = [m for m in moments if m.score >= best * ratio]
-    planned = []
     cut_times = analysis.scenes.cut_times
     for moment in moments:
-        start, end = refine(moment.start, moment.end, analysis.words, cut_times, info.fps, info.duration)
-        moment.start, moment.end = start, end
+        moment.start, moment.end = refine(
+            moment.start, moment.end, analysis.words, cut_times, info.fps, info.duration
+        )
         if not moment.text:  # Sparse speech uses non-verbal units, which carry no text of their own.
-            moment.text = " ".join(w.text for w in analysis.words if start <= w.start and w.end <= end)
+            moment.text = " ".join(
+                w.text for w in analysis.words if moment.start <= w.start and w.end <= moment.end
+            )
+    return moments
+
+
+def _stop_for_review(job: Job, options: dict, decisions: dict, analysis: Analysis, info: MediaInfo) -> None:
+    """Save the plan and hand the job to a person. Nothing is rendered until they approve it."""
+    chosen = _choose_moments(job, options, analysis, info)
+    if not chosen:
+        raise ValueError(
+            f"No clip fits these settings. Try another clip length (the video lasts {info.duration:.0f} s)."
+        )
+    # Whole thoughts first, then the finer cuts, so a short video still has something to swap in.
+    candidates = [
+        moment
+        for fine in (False, True)
+        for moment in rank_moments(
+            analysis.words,
+            analysis.audio,
+            analysis.scenes,
+            info.duration,
+            options["genre"],
+            options["clip_duration"],
+            analysis.language,
+            fine=fine,
+        )
+        if moment.passed
+    ]
+    cut_times = analysis.scenes.cut_times
+    for moment in candidates:
+        moment.start, moment.end = refine(
+            moment.start, moment.end, analysis.words, cut_times, info.fps, info.duration
+        )
+    plan = build_plan(chosen, candidates, info, options, decisions)
+    with session_scope() as session:
+        row = session.get(Job, job.id)
+        assert row is not None
+        row.settings = {**row.settings, "review": plan}
+        row.decisions = {
+            **decisions,
+            "language": analysis.language,
+            "words": len(analysis.words),
+            "notes": [],
+        }
+        session.add(row)
+        session.commit()
+    raise AwaitingReview
+
+
+def _plan_clips(
+    job: Job, options: dict, analysis: Analysis, info: MediaInfo
+) -> list[tuple[Moment, list[Segment]]]:
+    edit = job.settings.get("edit", {})
+    cuts = job.settings.get("frame_cuts") or []
+    if job.settings.get("approved"):
+        return _approved_clips(job, analysis, info)
+    if cuts:
+        planned = []
+        for cut in cuts:
+            segment = Segment(cut["start_frame"], min(cut["end_frame"], info.frame_count))
+            if segment.frames <= 0:
+                raise ValueError(f"Cut starts past the end of the video ({info.frame_count} frames).")
+            start, end = segment.start_frame / info.fps, segment.end_frame / info.fps
+            text = " ".join(w.text for w in analysis.words if start <= w.start and w.end <= end)
+            planned.append(
+                (Moment(start, end, 0.0, {}, text, "You chose this part by frame number."), [segment])
+            )
+        return planned
+
+    planned = []
+    for moment in _choose_moments(job, options, analysis, info):
+        start, end = moment.start, moment.end
         spans = [(start, end)]
         if edit.get("remove_pauses"):
             spans = remove_pauses(start, end, analysis.words)
@@ -246,12 +318,19 @@ def run_job(ctx: JobContext) -> None:
     analysis = load_or_analyze(source, info, edit.get("language"), ctx)
 
     ctx.update(stage="choosing moments", progress=ANALYSIS_SHARE)
-    options, decisions = resolve_options(job, analysis, info, Path(source.path), channel)
+    plan = job.settings.get("review")
+    if job.settings.get("approved") and plan:
+        options, decisions = plan["options"], plan["decisions"]  # Decided once, before the review.
+    else:
+        options, decisions = resolve_options(job, analysis, info, Path(source.path), channel)
+        if job.settings.get("wants_review") and not job.settings.get("frame_cuts"):
+            _stop_for_review(job, options, decisions, analysis, info)
     planned = _plan_clips(job, options, analysis, info)
 
     notes = []
     wanted = options["clip_count"]
-    if job.mode == "manual" and not job.settings.get("frame_cuts") and len(planned) < wanted:
+    reviewed = bool(job.settings.get("approved"))
+    if job.mode == "manual" and not job.settings.get("frame_cuts") and not reviewed and len(planned) < wanted:
         notes.append(
             f"Asked for {wanted} clips, but this video only has {len(planned)} good non-overlapping moments."
         )

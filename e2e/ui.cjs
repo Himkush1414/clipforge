@@ -29,7 +29,7 @@ async function pickRights(page) {
 async function waitForJobs(count) {
   for (let i = 0; i < 300; i++) {
     const jobs = await getJson('/api/jobs');
-    if (jobs.length >= count && jobs.every((j) => ['done', 'failed', 'cancelled'].includes(j.status))) return jobs;
+    if (jobs.length >= count && jobs.every((j) => ['done', 'failed', 'cancelled', 'review'].includes(j.status))) return jobs;
     await new Promise((r) => setTimeout(r, 1000));
   }
   throw new Error('jobs did not finish');
@@ -116,8 +116,72 @@ async function waitForJobs(count) {
   await page.waitForTimeout(2000);
   await shot(page, 'job-running');
   let jobs = await waitForJobs(1);
-  check('job finished', jobs[0].status === 'done', jobs[0].error || '');
+  check('job stops for review before rendering', jobs[0].status === 'review', jobs[0].error || jobs[0].status);
+  check('nothing is rendered before review', (await getJson('/api/clips')).length === 0);
+
+  // ---------- review clips ----------
+  await page.getByRole('link', { name: 'Review clips' }).click();
+  await page.waitForURL('**/review?job=*');
+  const firstClip = page.getByRole('article', { name: 'Clip 1' });
+  await firstClip.waitFor();
+  const reviewPlan = async () => getJson(`/api/jobs/${jobs[0].id}/review`);
+  let plan = await reviewPlan();
+  check('review shows every clip', await page.getByRole('article').count() === plan.clips.length, String(plan.clips.length));
+  check('review says why for each clip', await page.getByText('Why this clip:').count() === plan.clips.length);
+  await shot(page, 'review');
+
+  const frameBefore = plan.clips[0].start_frame;
+  await firstClip.getByRole('button', { name: 'Start: forward one frame' }).click();
+  await firstClip.getByRole('spinbutton', { name: 'Start frame' }).and(page.locator(`[value="${frameBefore + 1}"]`)).waitFor();
+  plan = await reviewPlan();
+  check('start moves by exactly one frame', plan.clips[0].start_frame === frameBefore + 1, `${frameBefore} to ${plan.clips[0].start_frame}`);
+
+  await firstClip.getByRole('button', { name: 'Start: back one second' }).click();
+  await firstClip.getByRole('spinbutton', { name: 'Start frame' }).and(page.locator(`[value="${Math.max(frameBefore + 1 - 30, 0)}"]`)).waitFor();
+  await firstClip.getByRole('button', { name: 'Start: forward one second' }).click();
+  await firstClip.getByRole('spinbutton', { name: 'Start frame' }).and(page.locator(`[value="${Math.max(frameBefore + 1 - 30, 0) + 30}"]`)).waitFor();
+  plan = await reviewPlan();
+  const adjusted = [plan.clips[0].start_frame, plan.clips[0].end_frame];
+  await firstClip.getByRole('spinbutton', { name: 'End frame' }).fill(String(adjusted[1] - 3));
+  await firstClip.getByRole('spinbutton', { name: 'End frame' }).blur();
+  await firstClip.getByRole('spinbutton', { name: 'End frame' }).and(page.locator(`[value="${adjusted[1] - 3}"]`)).waitFor();
+  plan = await reviewPlan();
+  check('end can be typed as an exact frame', plan.clips[0].end_frame === adjusted[1] - 3);
+  const exactCut = [plan.clips[0].start_frame, plan.clips[0].end_frame];
+
+  await firstClip.getByRole('spinbutton', { name: 'End frame' }).fill(String(exactCut[0]));
+  await firstClip.getByRole('spinbutton', { name: 'End frame' }).blur();
+  await firstClip.getByText('end must come after the start').waitFor();
+  plan = await reviewPlan();
+  check('an impossible edit is refused and explained', plan.clips[0].end_frame === exactCut[1]);
+
+  await firstClip.getByRole('button', { name: 'Show start frame' }).click();
+  const previewed = await page.getByLabel('Source video preview').evaluate(async (v, want) => {
+    const start = Date.now();
+    while (Math.abs(v.currentTime - want) > 0.02 && Date.now() - start < 8000) await new Promise((r) => setTimeout(r, 100));
+    return { time: v.currentTime, error: v.error && v.error.message };
+  }, (exactCut[0] + 0.5) / plan.fps);
+  check('preview jumps to the chosen frame', !previewed.error && Math.abs(previewed.time - (exactCut[0] + 0.5) / plan.fps) <= 0.02, JSON.stringify(previewed));
+
+  const thirdClip = page.getByRole('article', { name: 'Clip 3' });
+  const swappedFrom = plan.clips[2].start_frame;
+  check('other candidates are available to swap', plan.alternates_left > 0, String(plan.alternates_left));
+  await thirdClip.getByRole('button', { name: 'Swap for next best' }).click();
+  for (let i = 0; i < 40 && (await reviewPlan()).clips[2].start_frame === swappedFrom; i++) await page.waitForTimeout(100);
+  plan = await reviewPlan();
+  check('swap brings in a different clip', plan.clips[2].start_frame !== swappedFrom, `${swappedFrom} to ${plan.clips[2].start_frame}`);
+
+  await thirdClip.getByRole('button', { name: 'Reject' }).click();
+  await page.getByRole('button', { name: `Export ${plan.clips.length - 1} clips` }).waitFor();
+  check('reject lowers the export count', true);
+  await thirdClip.getByRole('button', { name: 'Restore' }).click();
+  await page.getByRole('button', { name: `Export ${plan.clips.length} clips` }).click();
+  await page.waitForURL('**/jobs');
+  jobs = await waitForJobs(1);
+  check('job finished', jobs[0].status === 'done', jobs[0].error || jobs[0].status);
   check('rights saved with the job', jobs[0].rights_type === 'own');
+  const exported = (await getJson(`/api/jobs/${jobs[0].id}`)).clips;
+  check('export has exactly the reviewed frames', exported.some((c) => c.segments[0][0] === exactCut[0] && c.segments[0][1] === exactCut[1] && c.frames === exactCut[1] - exactCut[0]), JSON.stringify(exported.map((c) => c.segments[0])));
 
   await page.goto(WEB + '/');
   const sampleOption = await page.getByLabel("Your videos").locator("option", { hasText: "sample_workshop" }).first().getAttribute("value");
@@ -126,12 +190,40 @@ async function waitForJobs(count) {
   await page.getByRole('radio', { name: 'Manual: I choose' }).click();
   await page.getByLabel('Genre').selectOption('podcast');
   await page.getByLabel('Clip length (seconds)').fill('10');
-  await page.getByLabel('Number of clips').fill('2');
+  await page.getByLabel('Number of clips').fill('3');
   await page.getByRole('button', { name: 'Start job' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Make now, upload later' }).click();
   await page.waitForURL('**/jobs');
   jobs = await waitForJobs(2);
+  const second = jobs.find((j) => j.status === 'review');
+  await page.goto(`${WEB}/review?job=${second.id}`);
+  await page.getByRole('article', { name: 'Clip 1' }).waitFor();
+  const secondCount = await page.getByRole('article').count();
+  check('second review offers the clips', secondCount >= 3, String(secondCount));
+  await page.getByRole('article', { name: `Clip ${secondCount}` }).getByRole('button', { name: 'Reject' }).click();
+  await page.getByRole('button', { name: `Export ${secondCount - 1} clips` }).click();
+  await page.waitForURL('**/jobs');
+  jobs = await waitForJobs(2);
   check('second job finished', jobs.every((j) => j.status === 'done'), jobs.map((j) => j.error).join(' '));
+  check('a rejected clip is not exported', (await getJson(`/api/jobs/${second.id}`)).clips.length === secondCount - 1);
+
+  // Auto mode stops for review too. Cancelling it leaves nothing behind.
+  await page.goto(WEB + '/');
+  await page.getByLabel("Your videos").selectOption(sampleOption);
+  await pickRights(page);
+  await page.getByRole('radio', { name: 'Auto' }).click();
+  await page.getByRole('button', { name: 'Start job' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Just make the clips' }).click();
+  await page.waitForURL('**/jobs');
+  jobs = await waitForJobs(3);
+  const autoJob = jobs.find((j) => j.status === 'review');
+  check('auto mode stops for review too', Boolean(autoJob) && autoJob.mode === 'auto', jobs.map((j) => j.status).join());
+  await page.goto(`${WEB}/review?job=${autoJob.id}`);
+  await page.getByRole('article', { name: 'Clip 1' }).waitFor();
+  check('auto review says why', await page.getByText('Why this clip:').count() > 0);
+  await page.getByRole('button', { name: 'Cancel job' }).click();
+  await page.waitForURL('**/jobs');
+  check('a cancelled review makes no clips', (await getJson(`/api/jobs/${autoJob.id}`)).clips.length === 0);
 
   await page.goto(WEB + '/');
   await pickRights(page);
@@ -139,7 +231,7 @@ async function waitForJobs(count) {
   await page.getByRole('button', { name: 'Start job' }).click();
   await page.getByRole('alertdialog').getByRole('link', { name: 'Go to Channels' }).click();
   await page.waitForURL('**/channels');
-  check('Go to Channels goes there without starting a job', (await getJson('/api/jobs')).length === 2);
+  check('Go to Channels goes there without starting a job', (await getJson('/api/jobs')).length === 3);
 
   // ---------- folders ----------
   await page.goto(WEB + '/clips');
@@ -266,7 +358,7 @@ async function waitForJobs(count) {
   const phone = await browser.newContext({ viewport: { width: 390, height: 800 } });
   await phone.route('**/*', (r) => (/^https?:\/\/(127\.0\.0\.1|localhost)|^(blob|data):/.test(r.request().url()) ? r.continue() : r.abort()));
   const m = await phone.newPage();
-  for (const route of ['/', '/jobs', '/clips', '/presets', '/channels', '/settings']) {
+  for (const route of ['/', '/jobs', '/review', '/clips', '/presets', '/channels', '/settings']) {
     await m.goto(WEB + route);
     await m.waitForTimeout(600);
     const over = await m.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
