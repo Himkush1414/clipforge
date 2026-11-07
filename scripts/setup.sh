@@ -51,6 +51,38 @@ if [ ! -s "$YUNET" ]; then
   fi
 fi
 
+# Exact word timing for captions, about 1.1 GB in all. Pinned and checked by hash, like the face detector.
+# Without a model, that language simply keeps Whisper's own timing.
+fetch_aligner() {
+  local language=$1 repo=$2 revision=$3 file=$4 model_sha=$5 vocab_sha=$6
+  local dir="$WORK/models/align/$language" base="https://huggingface.co/$repo/resolve/$revision"
+  [ -s "$dir/model.onnx" ] && [ -s "$dir/vocab.json" ] && return 0
+  echo "Downloading the word timing model ($language)..."
+  mkdir -p "$dir"
+  if curl -fL --progress-bar -o "$dir/model.part" "$base/$file" \
+    && echo "$model_sha  $dir/model.part" | sha256sum -c --status \
+    && curl -fsSL -o "$dir/vocab.part" "$base/vocab.json" \
+    && echo "$vocab_sha  $dir/vocab.part" | sha256sum -c --status; then
+    mv "$dir/vocab.part" "$dir/vocab.json"
+    mv "$dir/model.part" "$dir/model.onnx"
+  else
+    rm -f "$dir/model.part" "$dir/vocab.part"
+    echo "Could not download it. Captions in this language keep Whisper's timing."
+  fi
+}
+fetch_aligner en Xenova/wav2vec2-base-960h a19f851b3d42865797e410752b4c570c871e4825 onnx/model_int8.onnx \
+  a4249bb7b7bcbe391be19980922b0523c0907e976a9e5d5aabfadb40fcea5058 \
+  4178db26b3c7570f6a47f14ac6a1c7b32950b8c2800fb097287e53776934f1c5
+fetch_aligner es XDcobra/wav2vec2-large-xlsr-53-spanish-ONNX ce8c6ded2261a6dd5b902cbbcd46d330f7e92c37 onnx/model_int8.onnx \
+  1eb8a34dd7373b48b57c924db5c5a54c3bbf58f5cc8e9cf2631820e01e393244 \
+  f73651195659898d08dbeda085d13b249701b83a6731a96213597457cf6cf53f
+fetch_aligner hi onnx-community/indicwav2vec-hindi-ONNX abfc14a6a5bc18d8757ec27d2dc03fe4e322b984 onnx/model_int8.onnx \
+  ca8e946d2024ee1c7c7a5aa47c6539cdb3486f2aefbd9f866d7ef19958a75d42 \
+  9fc45a96d1020e03131a412574d87ec72cc72bf79c2c813679699234b2f509f1
+fetch_aligner ar onnx-community/wav2vec2-base-arabic-without-reused-en-token-ids-v1-ONNX 908b2bead4fe5c3ea5d5e31be904129fda068f74 onnx/model.onnx \
+  209d73e012442c76b68a1df998e758876cda48c621bea28dae7e88c252d1773c \
+  72cc5d4b0400f54f7bf86fb64e82dcfab956cec742a74587e234b6ac61689e30
+
 echo "Installing the engine..."
 if command -v uv >/dev/null; then
   [ -d "$WORK/venv" ] || uv venv --python 3.12 "$WORK/venv"

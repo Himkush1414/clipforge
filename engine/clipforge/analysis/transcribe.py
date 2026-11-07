@@ -19,6 +19,8 @@ from clipforge.media.ffmpeg import Cancelled, run_ffmpeg
 
 log = logging.getLogger("clipforge.transcribe")
 
+ALIGN_PROGRESS_START = 0.9
+
 
 @dataclass
 class Word:
@@ -97,7 +99,10 @@ def _run(audio, duration, device, language, on_progress, should_cancel) -> dict:
     # Decoded here so faster-whisper never needs its PyAV path. Our WAV is already 16 kHz mono.
     _, pcm = wavfile.read(audio, mmap=True)
     samples = np.asarray(pcm, dtype=np.float32) / 32768.0
+    from clipforge.analysis.align import Segment, align_segments, model_folder
+
     model = _load_model(device)
+    found: list[Segment] = []
     try:
         segments, info = model.transcribe(
             samples,
@@ -108,22 +113,39 @@ def _run(audio, duration, device, language, on_progress, should_cancel) -> dict:
             beam_size=5,
             condition_on_previous_text=False,
         )
-        words: list[Word] = []
+        # Whisper's share of the progress bar, when alignment will run after it.
+        share = ALIGN_PROGRESS_START if model_folder(language or info.language) else 1.0
         for segment in segments:
             if should_cancel and should_cancel():
                 raise Cancelled("Cancelled")
-            for w in segment.words or []:
-                words.append(Word(w.word, float(w.start), float(w.end), float(w.probability)))
+            found.append(
+                Segment(
+                    float(segment.start),
+                    float(segment.end),
+                    [
+                        Word(w.word, float(w.start), float(w.end), float(w.probability))
+                        for w in segment.words or []
+                    ],
+                )
+            )
             if on_progress and duration:
-                on_progress(min(1.0, segment.end / duration))
-        return {
-            "language": info.language,
-            "words": [asdict(w) for w in sanitize_words(words)],
-        }
+                on_progress(share * min(1.0, segment.end / duration))
     finally:
         # shortcut: RAM is 7.6 GB here, so the model is reloaded per video instead of kept alive.
         del model
         gc.collect()
+    words, timing = align_segments(
+        samples,
+        found,
+        info.language,
+        should_cancel,
+        (lambda done: on_progress(share + (1.0 - share) * done)) if on_progress else None,
+    )
+    return {
+        "language": info.language,
+        "timing": timing,
+        "words": [asdict(w) for w in sanitize_words(words)],
+    }
 
 
 def words_from_dicts(rows: list[dict]) -> list[Word]:
