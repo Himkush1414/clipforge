@@ -14,7 +14,8 @@ from functools import lru_cache
 from fontTools.ttLib import TTFont
 from PIL import ImageFont
 
-from clipforge.analysis.scoring import EMOTION_WORDS, STOPWORDS
+from clipforge.analysis.scoring import EMOTION_WORDS
+from clipforge.analysis.scoring_text import STOPWORDS
 from clipforge.analysis.transcribe import Word
 from clipforge.captions.presets import CJK_FACES, FALLBACK_FILES, CaptionPreset, cjk_path, font_location
 

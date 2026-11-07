@@ -13,17 +13,17 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from clipforge.analysis.audio import AudioAnalysis
-from clipforge.analysis.scenes import SceneAnalysis
-from clipforge.analysis.transcribe import Word
-
-STOPWORDS = frozenset(
-    """a about above after again all also am an and any are as at be because been before being but by
-    can could did do does doing down during each few for from further had has have having he her here
-    hers him his how i if in into is it its just me more most my no nor not now of off on once only or
-    other our out over own same she should so some such than that the their them then there these they
-    this those through to too under until up very was we were what when where which while who whom why
-    will with would you your yeah okay ok um uh like gonna wanna got get really""".split()
+from clipforge.analysis.editor import (
+    explain,
+    inverse_document_frequency,
+    judge,
+    lexicon_for,
+    split_thoughts,
+    trim_filler,
 )
+from clipforge.analysis.scenes import SceneAnalysis
+from clipforge.analysis.scoring_text import END_MARK, content_tokens
+from clipforge.analysis.transcribe import Word
 
 EMOTION_WORDS = frozenset(
     """amazing awesome incredible insane crazy unbelievable love hate never always impossible secret
@@ -32,7 +32,7 @@ EMOTION_WORDS = frozenset(
     remember forget finally everything nothing""".split()
 )
 
-SENTENCE_END = re.compile(r"[.!?…。！？]+[\"')\]]*$")
+SENTENCE_END = END_MARK
 
 
 @dataclass
@@ -59,6 +59,8 @@ class Moment:
     score: float
     reasons: dict[str, float] = field(default_factory=dict)
     text: str = ""
+    why: str = ""
+    passed: bool = True
 
 
 GENRE_WEIGHTS: dict[str, dict[str, float]] = {
@@ -112,8 +114,7 @@ def _per_second(curve: np.ndarray, hop: float, seconds: int) -> np.ndarray:
 
 
 def tokenize(text: str) -> list[str]:
-    tokens = re.findall(r"[^\W\d_]+(?:'[^\W\d_]+)?", text.lower())
-    return [t for t in tokens if t not in STOPWORDS and len(t) > 2]
+    return content_tokens(text)
 
 
 def topic_change_curve(sentences: list[Sentence], seconds: int, window: int = 4) -> np.ndarray:
@@ -283,6 +284,99 @@ def select_moments(candidates: list[Moment], count: int, min_gap: float = 1.0) -
     return sorted(chosen, key=lambda m: m.start)
 
 
+def edited_candidates(
+    words: list[Word],
+    curves: FeatureCurves,
+    weights: dict[str, float],
+    duration: float,
+    target: float,
+    language: str | None,
+) -> list[Moment]:
+    """Every way to build a clip from whole thoughts near the target length, judged by the editor."""
+    lexicon = lexicon_for(language)
+    thoughts = split_thoughts(words)
+    idf = inverse_document_frequency(thoughts)
+    moments: list[Moment] = []
+    for tolerance in (0.3, 0.75, 4.0):
+        low, high = target * (1 - tolerance), target * (1 + tolerance)
+        for first in range(len(thoughts)):
+            best: Moment | None = None
+            for last in range(first, len(thoughts)):
+                if thoughts[last].end - thoughts[first].start > high + 3.0:
+                    break
+                span = [w for t in thoughts[first : last + 1] for w in t.words]
+                trimmed = trim_filler(span, lexicon)
+                if not trimmed:
+                    continue
+                length = trimmed[-1].end - trimmed[0].start
+                if not low <= length <= high:
+                    continue
+                moment = score_moment(curves, weights, trimmed[0].start, trimmed[-1].end)
+                verdict = judge(
+                    trimmed, thoughts, first, last, idf, moment.reasons.get("hook", 0.0), duration, lexicon
+                )
+                moment.reasons |= {
+                    "editor_hook": round(verdict.hook, 3),
+                    "editor_self_contained": round(verdict.self_contained, 3),
+                    "editor_complete": round(verdict.complete, 3),
+                    "editor_on_topic": round(verdict.on_topic, 3),
+                }
+                moment.score = round(0.3 * moment.score + 0.7 * verdict.score, 4)
+                moment.passed = verdict.passed
+                moment.why = explain(verdict, moment.reasons)
+                moment.text = " ".join(w.text for w in trimmed)
+                if best is None or (moment.passed, moment.score) > (best.passed, best.score):
+                    best = moment
+            if best is not None:
+                moments.append(best)
+        if moments:
+            break
+    return moments
+
+
+def rank_moments(
+    words: list[Word],
+    audio: AudioAnalysis,
+    scenes: SceneAnalysis,
+    duration: float,
+    genre: str,
+    target_seconds: float,
+    language: str | None = None,
+    editor: bool = True,
+) -> list[Moment]:
+    """All candidates, best first. Those failing the editor's checks come after every one that passes."""
+    target_seconds = min(target_seconds, duration)
+    sentences = split_sentences(words)
+    curves = build_curves(words, sentences, audio, scenes, duration)
+    weights = GENRE_WEIGHTS.get(genre, GENRE_WEIGHTS["other"])
+    speech_share = sum(s.end - s.start for s in sentences) / max(duration, 1e-3)
+    if editor and speech_share >= 0.1:
+        candidates = edited_candidates(words, curves, weights, duration, target_seconds, language)
+        if candidates:
+            return sorted(candidates, key=lambda m: (m.passed, m.score), reverse=True)
+    units = sentences if speech_share >= 0.1 else _nonverbal_units(audio, scenes, duration, target_seconds)
+    # Sentences may never land near the target. Whole sentences matter more than exact length,
+    # so the band widens until the closest whole-sentence span is found.
+    for tolerance in (0.3, 0.75, 4.0):
+        candidates = generate_candidates(units, curves, weights, target_seconds, tolerance)
+        if candidates:
+            break
+    for moment in candidates:
+        moment.why = moment.why or _plain_reason(moment.reasons)
+    return sorted(candidates, key=lambda m: m.score, reverse=True)
+
+
+def _plain_reason(reasons: dict[str, float]) -> str:
+    """For clips with little speech, where there is no transcript to judge."""
+    strongest = max(("speech", "emotion", "topic", "action"), key=lambda k: reasons.get(k, 0.0))
+    return {
+        "speech": "The liveliest speech in this part of the video.",
+        "emotion": "The strongest change in sound in this part of the video.",
+        "topic": "The subject changes here.",
+        "action": "The most on-screen action in this part of the video.",
+    }[strongest]
+
+
 def find_moments(
     words: list[Word],
     audio: AudioAnalysis,
@@ -291,17 +385,13 @@ def find_moments(
     genre: str,
     target_seconds: float,
     count: int,
+    language: str | None = None,
+    editor: bool = True,
 ) -> list[Moment]:
-    target_seconds = min(target_seconds, duration)
-    sentences = split_sentences(words)
-    curves = build_curves(words, sentences, audio, scenes, duration)
-    weights = GENRE_WEIGHTS.get(genre, GENRE_WEIGHTS["other"])
-    speech_share = sum(s.end - s.start for s in sentences) / max(duration, 1e-3)
-    units = sentences if speech_share >= 0.1 else _nonverbal_units(audio, scenes, duration, target_seconds)
-    # Sentences may never land near the target. Whole sentences matter more than exact length,
-    # so the band widens until the closest whole-sentence span is found.
-    for tolerance in (0.3, 0.75, 4.0):
-        candidates = generate_candidates(units, curves, weights, target_seconds, tolerance)
-        if candidates:
-            break
-    return select_moments(candidates, count)
+    ranked = rank_moments(words, audio, scenes, duration, genre, target_seconds, language, editor)
+    passing = [m for m in ranked if m.passed]
+    chosen = select_moments(passing, count)
+    if not chosen:
+        # Nothing passed. A weak clip with an honest reason beats a failed job.
+        chosen = select_moments(ranked, count)
+    return chosen
