@@ -1,5 +1,5 @@
 {
- "label": "current main 8333d41, measured 2026-11-07",
+ "label": "current main 8333d41, measured 2026-11-07; silence re-measured after fix/silence-detection",
  "machine": {
   "gpu": "NVIDIA GeForce RTX 3050",
   "cpu_threads": 28,
@@ -147,9 +147,9 @@
  },
  "silence": {
   "gaps_truth": 4,
-  "gaps_found": 6,
-  "worst_edge_error_ms": 200.0,
-  "mean_edge_error_ms": 62.5
+  "gaps_found": 4,
+  "worst_edge_error_ms": 60.0,
+  "mean_edge_error_ms": 32.5
  },
  "scoring": {
   "clips_chosen": 30,

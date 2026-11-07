@@ -1,0 +1,296 @@
+{
+ "pink noise, seeded, digital gaps": {
+  "current": {
+   "gaps": 4,
+   "found": 4,
+   "false_gaps": 1,
+   "edge_mean_ms": 181.3,
+   "edge_worst_ms": 650.0,
+   "seconds": 0.01
+  },
+  "proposed": {
+   "gaps": 4,
+   "found": 4,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.01
+  },
+  "Silero VAD v6": {
+   "gaps": 4,
+   "found": 0,
+   "false_gaps": 1,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.07
+  },
+  "WebRTC VAD": {
+   "gaps": 4,
+   "found": 3,
+   "false_gaps": 0,
+   "edge_mean_ms": 58.3,
+   "edge_worst_ms": 120.0,
+   "seconds": 0.01
+  },
+  "FFmpeg silencedetect": {
+   "gaps": 4,
+   "found": 4,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.02
+  }
+ },
+ "pink noise, room tone in gaps": {
+  "current": {
+   "gaps": 4,
+   "found": 4,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.0
+  },
+  "proposed": {
+   "gaps": 4,
+   "found": 4,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.0
+  },
+  "Silero VAD v6": {
+   "gaps": 4,
+   "found": 0,
+   "false_gaps": 1,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.02
+  },
+  "WebRTC VAD": {
+   "gaps": 4,
+   "found": 3,
+   "false_gaps": 0,
+   "edge_mean_ms": 51.7,
+   "edge_worst_ms": 100.0,
+   "seconds": 0.0
+  },
+  "FFmpeg silencedetect": {
+   "gaps": 4,
+   "found": 4,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.1,
+   "seconds": 0.02
+  }
+ },
+ "white noise, steady": {
+  "current": {
+   "gaps": 5,
+   "found": 5,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.0
+  },
+  "proposed": {
+   "gaps": 5,
+   "found": 5,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.0
+  },
+  "Silero VAD v6": {
+   "gaps": 5,
+   "found": 0,
+   "false_gaps": 1,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.02
+  },
+  "WebRTC VAD": {
+   "gaps": 5,
+   "found": 4,
+   "false_gaps": 0,
+   "edge_mean_ms": 58.8,
+   "edge_worst_ms": 100.0,
+   "seconds": 0.0
+  },
+  "FFmpeg silencedetect": {
+   "gaps": 5,
+   "found": 5,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.1,
+   "seconds": 0.02
+  }
+ },
+ "brown noise, room tone in gaps": {
+  "current": {
+   "gaps": 5,
+   "found": 5,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.0
+  },
+  "proposed": {
+   "gaps": 5,
+   "found": 5,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.0
+  },
+  "Silero VAD v6": {
+   "gaps": 5,
+   "found": 0,
+   "false_gaps": 1,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.02
+  },
+  "WebRTC VAD": {
+   "gaps": 5,
+   "found": 4,
+   "false_gaps": 0,
+   "edge_mean_ms": 58.8,
+   "edge_worst_ms": 100.0,
+   "seconds": 0.0
+  },
+  "FFmpeg silencedetect": {
+   "gaps": 5,
+   "found": 5,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.02
+  }
+ },
+ "pink noise, no gaps at all": {
+  "current": {
+   "gaps": 0,
+   "found": 0,
+   "false_gaps": 3,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.0
+  },
+  "proposed": {
+   "gaps": 0,
+   "found": 0,
+   "false_gaps": 0,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.0
+  },
+  "Silero VAD v6": {
+   "gaps": 0,
+   "found": 0,
+   "false_gaps": 1,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.02
+  },
+  "WebRTC VAD": {
+   "gaps": 0,
+   "found": 0,
+   "false_gaps": 0,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.0
+  },
+  "FFmpeg silencedetect": {
+   "gaps": 0,
+   "found": 0,
+   "false_gaps": 0,
+   "edge_mean_ms": null,
+   "edge_worst_ms": null,
+   "seconds": 0.02
+  }
+ },
+ "generated speech, exact pauses": {
+  "current": {
+   "gaps": 7,
+   "found": 7,
+   "false_gaps": 0,
+   "edge_mean_ms": 21.4,
+   "edge_worst_ms": 45.9,
+   "seconds": 0.0
+  },
+  "proposed": {
+   "gaps": 7,
+   "found": 7,
+   "false_gaps": 0,
+   "edge_mean_ms": 4.0,
+   "edge_worst_ms": 9.7,
+   "seconds": 0.0
+  },
+  "Silero VAD v6": {
+   "gaps": 7,
+   "found": 7,
+   "false_gaps": 0,
+   "edge_mean_ms": 19.5,
+   "edge_worst_ms": 54.1,
+   "seconds": 0.03
+  },
+  "WebRTC VAD": {
+   "gaps": 7,
+   "found": 7,
+   "false_gaps": 0,
+   "edge_mean_ms": 46.8,
+   "edge_worst_ms": 95.3,
+   "seconds": 0.01
+  },
+  "FFmpeg silencedetect": {
+   "gaps": 7,
+   "found": 7,
+   "false_gaps": 0,
+   "edge_mean_ms": 0.0,
+   "edge_worst_ms": 0.0,
+   "seconds": 0.02
+  }
+ },
+ "real podcast, approximate pauses": {
+  "current": {
+   "gaps": 125,
+   "found": 70,
+   "false_gaps": 6,
+   "edge_mean_ms": 107.4,
+   "edge_worst_ms": 1041.0,
+   "seconds": 0.02
+  },
+  "proposed": {
+   "gaps": 125,
+   "found": 70,
+   "false_gaps": 6,
+   "edge_mean_ms": 100.6,
+   "edge_worst_ms": 1041.0,
+   "seconds": 0.01
+  },
+  "Silero VAD v6": {
+   "gaps": 125,
+   "found": 33,
+   "false_gaps": 4,
+   "edge_mean_ms": 117.3,
+   "edge_worst_ms": 1081.0,
+   "seconds": 0.72
+  },
+  "WebRTC VAD": {
+   "gaps": 125,
+   "found": 29,
+   "false_gaps": 2,
+   "edge_mean_ms": 121.9,
+   "edge_worst_ms": 1101.0,
+   "seconds": 0.05
+  },
+  "FFmpeg silencedetect": {
+   "gaps": 125,
+   "found": 30,
+   "false_gaps": 4,
+   "edge_mean_ms": 126.5,
+   "edge_worst_ms": 1486.9,
+   "seconds": 0.12
+  }
+ }
+}
