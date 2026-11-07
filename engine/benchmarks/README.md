@@ -7,4 +7,4 @@ cd engine
 python benchmarks/run_benchmark.py --out ../docs/benchmark-results.json
 ```
 
-`--only cuts,audio,captions,loudness,render,scenes,silence,scoring` runs some sections. Speech sections need extra tools and live in `scripts/bench/`. See `docs/ENGINE.md` for results and how to read them.
+`--only cuts,audio,captions,loudness,render,scenes,silence,scoring` runs some sections. Speech sections need extra tools and live in `scripts/bench/`. Results and how to read them are in `docs/ENGINE.md`.
