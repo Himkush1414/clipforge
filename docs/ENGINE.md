@@ -174,6 +174,24 @@ The held-out episodes are the honest figure. They were labelled before any score
 
 The picks were chosen by Claude from the transcripts, so they are one AI's taste, not a person's. The earlier figure of 80% of clips catching a planted moment overstated quality, since those moments differ from plain talk in ways real speech does not. On that old test, capture rose from 0.80 to 0.83. The editor adds about 2 seconds on 2 hours of speech.
 
+### Local model for transcript scoring (not yet measured)
+
+`engine/clipforge/analysis/llm_score.py` can ask a small local model to rate each shortlisted clip for hook, standalone sense, payoff and interest, then blend that with the editor's score. It runs llama.cpp as a child process on the loopback address, with a random key, fully offline, and stops it after the job. If anything is missing or fails, the editor's ranking stands.
+
+**It is not used by jobs**, because it has not been measured. The permission settings on the development machine blocked running the downloaded llama.cpp program, so `scripts/bench/llm_eval.py` could not be run. It joins the pipeline only if that comparison beats the editor alone on the held-out picks.
+
+Candidates, chosen for an 8 GB GPU, with licences checked on each model card:
+
+| Model | Licence | Q4_K_M size |
+|---|---|---|
+| Qwen3.5-4B | Apache 2.0 | 2.7 GB |
+| Qwen3.5-2B | Apache 2.0 | 1.3 GB |
+| Gemma 4 E4B | Apache 2.0 | 5.0 GB |
+| Gemma 4 E2B | Apache 2.0 | 3.1 GB |
+| Phi-4-mini | MIT | 2.5 GB |
+
+The runtime is the official llama.cpp build b12182 for CUDA 12.8 (MIT). On this machine it also needs `libgomp`, which was unpacked from the Ubuntu package into the work folder, without root.
+
 ## Silence
 
 Silences are where it is quiet, used as cut points in videos with little speech. The old threshold sat 30% of the way from the floor to the loud level, which falls inside steady noise, so ordinary dips counted as silence. The new method (`find_quiet` in `engine/clipforge/analysis/audio.py`) uses 10 ms frames and puts the threshold where quiet and loud separate best (Otsu's method). When they don't separate by 15 dB, it reports no silences. A click inside a pause doesn't split it, but a consonant at the start of a word still ends one.
