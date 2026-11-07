@@ -22,6 +22,13 @@ jobs:
           curl -fsSL -o "$HOME/cjk-font/NotoSansCJK-Bold.ttc" \
             "https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/OTC/NotoSansCJK-Bold.ttc"
           echo "CLIPFORGE_TEST_CJK_FONT=$HOME/cjk-font/NotoSansCJK-Bold.ttc" >> "$GITHUB_ENV"
+      - name: Download face detector model
+        run: |
+          mkdir -p "$HOME/face-model"
+          curl -fsSL -o "$HOME/face-model/face_detection_yunet_2023mar.onnx" \
+            "https://github.com/opencv/opencv_zoo/raw/f12e12798e8314f7c074a6656816c048dcc95b7a/models/face_detection_yunet/face_detection_yunet_2023mar.onnx"
+          echo "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4  $HOME/face-model/face_detection_yunet_2023mar.onnx" | sha256sum -c --status
+          echo "CLIPFORGE_TEST_YUNET=$HOME/face-model/face_detection_yunet_2023mar.onnx" >> "$GITHUB_ENV"
       - name: Lint
         working-directory: engine
         run: ruff check .

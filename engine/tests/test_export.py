@@ -1,5 +1,7 @@
 import json
+import os
 import subprocess
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -477,3 +479,64 @@ def test_loudness_is_measured_after_converting_to_the_final_format():
     assert chain.index("aformat=channel_layouts=stereo") < chain.index("volume=1dB")
     assert chain.endswith("aformat=channel_layouts=stereo")
     assert finish_audio(None) == "aresample=48000,aformat=channel_layouts=stereo"
+
+
+YUNET_SOURCE = os.environ.get("CLIPFORGE_TEST_YUNET") or str(
+    Path.home() / "clipforge-work" / "models" / "face" / "face_detection_yunet_2023mar.onnx"
+)
+
+
+def _face_picture():
+    """A blank frame. Real faces are measured by benchmarks/faces.py, since photos stay out of the repo."""
+    return np.full((180, 320, 3), 40, np.uint8)
+
+
+@pytest.mark.skipif(not Path(YUNET_SOURCE).exists(), reason="YuNet model not downloaded")
+def test_yunet_is_used_when_installed_and_finds_no_face_in_a_blank_frame(monkeypatch):
+    from clipforge.config import get_settings
+    from clipforge.export import reframe
+
+    target = get_settings().models_dir / reframe.YUNET_FILE
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.symlink_to(YUNET_SOURCE)
+    reframe._yunet.cache_clear()
+    monkeypatch.setattr(reframe, "_haar", lambda: pytest.fail("Haar ran although YuNet is installed"))
+    assert reframe.yunet_available()
+    assert reframe.detect_faces(_face_picture()) == []
+
+
+def test_a_damaged_yunet_file_falls_back_to_haar_instead_of_failing_the_render(monkeypatch):
+    from clipforge.config import get_settings
+    from clipforge.export import reframe
+
+    target = get_settings().models_dir / reframe.YUNET_FILE
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(b"this is not an onnx model")
+    reframe._yunet.cache_clear()
+    used_haar = []
+    real_haar = reframe._haar
+    monkeypatch.setattr(reframe, "_haar", lambda: used_haar.append(True) or real_haar())
+    assert reframe.detect_faces(_face_picture()) == []
+    assert used_haar
+
+
+def test_haar_fallback_runs_when_the_model_is_missing(monkeypatch):
+    from clipforge.export import reframe
+
+    used_haar = []
+    real_haar = reframe._haar
+    monkeypatch.setattr(reframe, "_haar", lambda: used_haar.append(True) or real_haar())
+    assert not reframe.yunet_available()
+    assert reframe.detect_faces(_face_picture()) == []
+    assert used_haar
+
+
+def test_motion_is_the_fallback_when_there_is_no_face():
+    from clipforge.export import reframe
+
+    previous = _face_picture()
+    frame = previous.copy()
+    frame[60:120, 240:300] = 255
+    center, confidence = reframe.find_subject(frame, previous)
+    assert confidence == 0.5
+    assert abs(center - 270 / 320) < 0.02

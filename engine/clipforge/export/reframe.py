@@ -1,11 +1,13 @@
 """Find where the subject is, so a vertical crop can follow it.
 
-Faces come first (OpenCV Haar cascade, bundled with OpenCV). Without a face, the moving area is
-used. The virtual camera holds still until the subject leaves a dead zone, then eases across.
+Faces come first: YuNet when its model is installed, otherwise OpenCV's older Haar cascade.
+Without a face, the moving area is used. The virtual camera holds still until the subject leaves
+a dead zone, then eases across.
 """
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from dataclasses import dataclass
 from functools import lru_cache
@@ -14,7 +16,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from clipforge.config import get_settings
 from clipforge.media.ffmpeg import find_tool
+
+log = logging.getLogger("clipforge.reframe")
 
 SAMPLE_WIDTH, SAMPLE_HEIGHT = 320, 180
 SAMPLE_FPS = 2
@@ -29,23 +34,55 @@ class CameraKey:
     center: float  # 0..1 of source width
 
 
+YUNET_FILE = "face/face_detection_yunet_2023mar.onnx"
+YUNET_CONFIDENCE = 0.7
+
+
 @lru_cache(maxsize=1)
-def _face_detector():
+def _haar():
     return cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")  # type: ignore[attr-defined]
 
 
+@lru_cache(maxsize=1)
+def _yunet(model: str):
+    """The detector, or None when the file will not load. A damaged download must not fail a render."""
+    try:
+        return cv2.FaceDetectorYN.create(model, "", (SAMPLE_WIDTH, SAMPLE_HEIGHT), YUNET_CONFIDENCE, 0.3, 50)  # type: ignore[attr-defined]
+    except cv2.error as exc:
+        log.warning("Could not load the YuNet face model, using Haar instead: %s", exc)
+        return None
+
+
+def yunet_available() -> bool:
+    return (get_settings().models_dir / YUNET_FILE).exists()
+
+
+def detect_faces(frame: np.ndarray) -> list[tuple[float, float, float, float]]:
+    """Face boxes for one BGR frame. Measured in docs/ENGINE.md: YuNet finds far more than Haar."""
+    detector = _yunet(str(get_settings().models_dir / YUNET_FILE)) if yunet_available() else None
+    if detector is not None:
+        detector.setInputSize((frame.shape[1], frame.shape[0]))
+        _, faces = detector.detect(frame)
+        return [tuple(face[:4]) for face in faces] if faces is not None else []
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    return [
+        tuple(box)
+        for box in _haar().detectMultiScale(gray, scaleFactor=1.1, minNeighbors=6, minSize=(24, 24))
+    ]
+
+
 def find_subject(frame: np.ndarray, previous: np.ndarray | None) -> tuple[float | None, float]:
-    """Return (center x 0..1, confidence) for one gray frame."""
-    faces = _face_detector().detectMultiScale(frame, scaleFactor=1.1, minNeighbors=6, minSize=(24, 24))
-    if len(faces):
+    """Return (center x 0..1, confidence) for one BGR frame."""
+    faces = detect_faces(frame)
+    if faces:
         x, _, w, h = max(faces, key=lambda f: f[2] * f[3])
-        return (x + w / 2) / frame.shape[1], 1.0
+        return float((x + w / 2) / frame.shape[1]), 1.0
     if previous is None:
         return None, 0.0
-    diff = cv2.absdiff(frame, previous).astype(np.float32)
+    diff = cv2.absdiff(frame, previous).max(axis=2).astype(np.float32)
     diff[diff < 25] = 0
     total = float(diff.sum())
-    if total < frame.size * 0.5:
+    if total < diff.size * 0.5:
         return None, 0.0
     columns = diff.sum(axis=0)
     return float((columns * np.arange(frame.shape[1])).sum() / total) / frame.shape[1], 0.5
@@ -55,12 +92,12 @@ def sample_centers(video: Path, start: float, duration: float) -> list[tuple[flo
     cmd = [
         find_tool("ffmpeg"), "-hide_banner", "-loglevel", "error", "-nostdin",
         "-ss", f"{start:.3f}", "-t", f"{duration:.3f}", "-i", str(video), "-map", "0:v:0",
-        "-vf", f"fps={SAMPLE_FPS},scale={SAMPLE_WIDTH}:{SAMPLE_HEIGHT},format=gray",
+        "-vf", f"fps={SAMPLE_FPS},scale={SAMPLE_WIDTH}:{SAMPLE_HEIGHT},format=bgr24",
         "-f", "rawvideo", "-",
     ]  # fmt: skip
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     assert proc.stdout
-    size = SAMPLE_WIDTH * SAMPLE_HEIGHT
+    size = SAMPLE_WIDTH * SAMPLE_HEIGHT * 3
     samples: list[tuple[float, float | None]] = []
     previous = None
     index = 0
@@ -68,7 +105,7 @@ def sample_centers(video: Path, start: float, duration: float) -> list[tuple[flo
         buf = proc.stdout.read(size)
         if len(buf) < size:
             break
-        frame = np.frombuffer(buf, np.uint8).reshape(SAMPLE_HEIGHT, SAMPLE_WIDTH)
+        frame = np.frombuffer(buf, np.uint8).reshape(SAMPLE_HEIGHT, SAMPLE_WIDTH, 3)
         center, _ = find_subject(frame, previous)
         samples.append((index / SAMPLE_FPS, center))
         previous = frame
