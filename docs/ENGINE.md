@@ -18,7 +18,7 @@ Most test material is generated, so the correct answers are known exactly. That 
 | Audio sync | FFmpeg, own planning | Known answers only | Worst 15 ms over 40 cuts | Kept |
 | Captions | libass, own layout | Known answers only | 84 renders, none outside the safe area | Kept |
 | Clip selection | Own scoring plus editor pass | Random windows, chosen clips | Held-out recall 0.62, up from 0.48, against 0.34 for random | **Added editor** |
-| Silence | Own threshold | Known answers only | 2 false gaps and a 200 ms edge error | Kept, **open finding** |
+| Silence | Own threshold, now level-split | Silero VAD, WebRTC VAD, FFmpeg silencedetect | 0 false gaps in noise, worst speech edge 46 to 10 ms | **Replaced** |
 
 "Known answers only" means no alternative tool was compared, so those rows show that the stage works, not that it is the best choice.
 
@@ -174,11 +174,28 @@ The held-out episodes are the honest figure. They were labelled before any score
 
 The picks were chosen by Claude from the transcripts, so they are one AI's taste, not a person's. The earlier figure of 80% of clips catching a planted moment overstated quality, since those moments differ from plain talk in ways real speech does not. On that old test, capture rose from 0.80 to 0.83. The editor adds about 2 seconds on 2 hours of speech.
 
-## Silence (open finding)
+## Silence
 
-On pink noise with 4 known gaps, the detector finds all 4, plus 2 false gaps, with a worst edge error of 200 ms. The threshold sits between the signal's own 10th and 90th percentiles, so dips inside steady noise can count as silence.
+Silences are where it is quiet, used as cut points in videos with little speech. The old threshold sat 30% of the way from the floor to the loud level, which falls inside steady noise, so ordinary dips counted as silence. The new method (`find_quiet` in `engine/clipforge/analysis/audio.py`) uses 10 ms frames and puts the threshold where quiet and loud separate best (Otsu's method). When they don't separate by 15 dB, it reports no silences. A click inside a pause doesn't split it, but a consonant at the start of a word still ends one.
 
-This is left as it is because silences are only used as approximate marks in sections with no speech. Cuts in speech follow word times. Steady music or noise could gain some extra clip boundaries. No alternative has been measured, so this stage is not yet shown to be the best choice. The baseline's better figures, 4 gaps and 150 ms, came from unseeded noise, and an earlier unseeded run also found 6. The code has not changed.
+Measured by `scripts/bench/silence_eval.py`. Raw results: [benchmarks/silence.json](benchmarks/silence.json).
+
+| Test set | Measure | Old | **New** | Silero VAD v6 | WebRTC VAD | FFmpeg silencedetect |
+|---|---|---|---|---|---|---|
+| Pink noise, seeded, 4 gaps | Found / false | 4 / 1 | **4 / 0** | 0 / 1 | 3 / 0 | 4 / 0 |
+| | Worst edge | 650 ms | **0 ms** | none | 120 ms | 0 ms |
+| Steady noise, 3 sets with digital or room-tone gaps | Found / false | 14 / 0 | **14 / 0** | 0 / 3 | 11 / 0 | 14 / 0 |
+| Pink noise, no gaps | False gaps | 3 | **0** | 1 | 0 | 0 |
+| Generated speech, 7 exact pauses | Found / false | 7 / 0 | **7 / 0** | 7 / 0 | 7 / 0 | 7 / 0 |
+| | Worst edge | 46 ms | **10 ms** | 54 ms | 95 ms | 0 ms |
+| Real podcast, 125 pauses (approximate) | Found / false | 70 / 6 | **70 / 6** | 33 / 4 | 29 / 2 | 30 / 4 |
+| | Mean edge | 107 ms | **101 ms** | 117 ms | 122 ms | 127 ms |
+
+The engine benchmark's own noise test went from 6 gaps found (2 false) with a 200 ms worst edge to 4 found (0 false) with a 60 ms worst edge. That noise changes volume once per 64 ms audio frame, so 60 ms is about as close as its reference allows.
+
+**Why not a speech detector.** Silero and WebRTC answer "is someone talking?", not "is it quiet?", so they find none of the quiet gaps in noise, and fewer than half the pauses in the podcast. FFmpeg's fixed -35 dB threshold is perfect on generated material but finds only 30 of 125 real pauses, since real room tone sits above it.
+
+Limits: the podcast reference comes from aligned word times, which are accurate to about 40 ms, and counts only pauses between words, so breaths and laughter add both misses and false gaps for every method. All five methods are MIT or BSD licensed.
 
 ## Not measured
 
