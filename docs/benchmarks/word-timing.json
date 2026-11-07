@@ -1,0 +1,566 @@
+{
+ "note": "scripts/bench/timing_methods.py, run three times, because Whisper's own times vary between runs. Generated voices with known word times. Measured 2026-11-07. Hindi was measured separately, after its model was added, so it is under hindi_runs.",
+ "reference_quality": {
+  "word by word": "Exact: each word is synthesized alone and joined with known gaps.",
+  "en natural": "Approximate: Kokoro's own reported word times. Its sentence-final ends run about 200 ms past where the voice stops."
+ },
+ "runs": [
+  {
+   "en word by word": {
+    "whisper": {
+     "words_matched": 80,
+     "start_median_abs_ms": 214.0,
+     "start_p90_abs_ms": 343.1,
+     "start_max_abs_ms": 812.7,
+     "start_median_signed_ms": -214.0,
+     "start_within_50ms": 0.013,
+     "start_within_100ms": 0.025,
+     "end_median_abs_ms": 130.3,
+     "end_p90_abs_ms": 203.8,
+     "end_max_abs_ms": 398.1,
+     "end_median_signed_ms": -130.3,
+     "seconds": 1.4
+    },
+    "clipforge align": {
+     "words_matched": 80,
+     "start_median_abs_ms": 28.0,
+     "start_p90_abs_ms": 64.4,
+     "start_max_abs_ms": 302.5,
+     "start_median_signed_ms": -7.9,
+     "start_within_50ms": 0.875,
+     "start_within_100ms": 0.95,
+     "end_median_abs_ms": 48.3,
+     "end_p90_abs_ms": 104.7,
+     "end_max_abs_ms": 202.5,
+     "end_median_signed_ms": -44.8,
+     "seconds": 1.74
+    },
+    "whisperx align": {
+     "words_matched": 80,
+     "start_median_abs_ms": 26.4,
+     "start_p90_abs_ms": 96.3,
+     "start_max_abs_ms": 268.9,
+     "start_median_signed_ms": 22.2,
+     "start_within_50ms": 0.637,
+     "start_within_100ms": 0.9,
+     "end_median_abs_ms": 40.5,
+     "end_p90_abs_ms": 92.8,
+     "end_max_abs_ms": 539.8,
+     "end_median_signed_ms": -39.9,
+     "seconds": 3.3
+    }
+   },
+   "es word by word": {
+    "whisper": {
+     "words_matched": 51,
+     "start_median_abs_ms": 176.8,
+     "start_p90_abs_ms": 235.8,
+     "start_max_abs_ms": 390.0,
+     "start_median_signed_ms": -176.8,
+     "start_within_50ms": 0.059,
+     "start_within_100ms": 0.118,
+     "end_median_abs_ms": 83.2,
+     "end_p90_abs_ms": 134.9,
+     "end_max_abs_ms": 147.7,
+     "end_median_signed_ms": -83.2,
+     "seconds": 0.6
+    },
+    "clipforge align": {
+     "words_matched": 51,
+     "start_median_abs_ms": 27.6,
+     "start_p90_abs_ms": 45.3,
+     "start_max_abs_ms": 120.3,
+     "start_median_signed_ms": -23.1,
+     "start_within_50ms": 0.941,
+     "start_within_100ms": 0.98,
+     "end_median_abs_ms": 28.4,
+     "end_p90_abs_ms": 57.3,
+     "end_max_abs_ms": 134.7,
+     "end_median_signed_ms": -26.8,
+     "seconds": 1.96
+    },
+    "whisperx align": {
+     "words_matched": 51,
+     "start_median_abs_ms": 48.8,
+     "start_p90_abs_ms": 102.1,
+     "start_max_abs_ms": 294.9,
+     "start_median_signed_ms": 40.6,
+     "start_within_50ms": 0.529,
+     "start_within_100ms": 0.882,
+     "end_median_abs_ms": 45.9,
+     "end_p90_abs_ms": 214.6,
+     "end_max_abs_ms": 304.5,
+     "end_median_signed_ms": -43.4,
+     "seconds": 2.5
+    }
+   },
+   "ar word by word": {
+    "whisper": {
+     "words_matched": 11,
+     "start_median_abs_ms": 178.6,
+     "start_p90_abs_ms": 232.4,
+     "start_max_abs_ms": 644.4,
+     "start_median_signed_ms": -178.6,
+     "start_within_50ms": 0.0,
+     "start_within_100ms": 0.0,
+     "end_median_abs_ms": 60.4,
+     "end_p90_abs_ms": 177.4,
+     "end_max_abs_ms": 184.4,
+     "end_median_signed_ms": -60.4,
+     "seconds": 0.8
+    },
+    "clipforge align": {
+     "words_matched": 11,
+     "start_median_abs_ms": 75.0,
+     "start_p90_abs_ms": 127.3,
+     "start_max_abs_ms": 200.3,
+     "start_median_signed_ms": 56.8,
+     "start_within_50ms": 0.273,
+     "start_within_100ms": 0.818,
+     "end_median_abs_ms": 33.8,
+     "end_p90_abs_ms": 133.1,
+     "end_max_abs_ms": 137.0,
+     "end_median_signed_ms": 8.3,
+     "seconds": 1.2
+    },
+    "whisperx align": {
+     "words_matched": 11,
+     "start_median_abs_ms": 16.5,
+     "start_p90_abs_ms": 124.4,
+     "start_max_abs_ms": 434.1,
+     "start_median_signed_ms": -2.5,
+     "start_within_50ms": 0.636,
+     "start_within_100ms": 0.818,
+     "end_median_abs_ms": 48.9,
+     "end_p90_abs_ms": 147.4,
+     "end_max_abs_ms": 316.5,
+     "end_median_signed_ms": 3.4,
+     "seconds": 3.4
+    }
+   },
+   "en natural": {
+    "whisper": {
+     "words_matched": 82,
+     "start_median_abs_ms": 47.5,
+     "start_p90_abs_ms": 230.5,
+     "start_max_abs_ms": 560.0,
+     "start_median_signed_ms": -47.5,
+     "start_within_50ms": 0.5,
+     "start_within_100ms": 0.793,
+     "end_median_abs_ms": 47.5,
+     "end_p90_abs_ms": 248.0,
+     "end_max_abs_ms": 460.0,
+     "end_median_signed_ms": -47.5,
+     "seconds": 0.7
+    },
+    "clipforge align": {
+     "words_matched": 82,
+     "start_median_abs_ms": 37.0,
+     "start_p90_abs_ms": 63.4,
+     "start_max_abs_ms": 147.4,
+     "start_median_signed_ms": 37.0,
+     "start_within_50ms": 0.695,
+     "start_within_100ms": 0.976,
+     "end_median_abs_ms": 47.4,
+     "end_p90_abs_ms": 248.0,
+     "end_max_abs_ms": 305.7,
+     "end_median_signed_ms": 34.5,
+     "seconds": 1.18
+    },
+    "whisperx align": {
+     "words_matched": 82,
+     "start_median_abs_ms": 70.0,
+     "start_p90_abs_ms": 94.9,
+     "start_max_abs_ms": 139.0,
+     "start_median_signed_ms": 70.0,
+     "start_within_50ms": 0.085,
+     "start_within_100ms": 0.915,
+     "end_median_abs_ms": 30.0,
+     "end_p90_abs_ms": 212.4,
+     "end_max_abs_ms": 380.0,
+     "end_median_signed_ms": 15.5,
+     "seconds": 1.7
+    }
+   }
+  },
+  {
+   "en word by word": {
+    "whisper": {
+     "words_matched": 79,
+     "start_median_abs_ms": 202.6,
+     "start_p90_abs_ms": 312.7,
+     "start_max_abs_ms": 556.1,
+     "start_median_signed_ms": -202.6,
+     "start_within_50ms": 0.038,
+     "start_within_100ms": 0.063,
+     "end_median_abs_ms": 114.8,
+     "end_p90_abs_ms": 202.6,
+     "end_max_abs_ms": 279.4,
+     "end_median_signed_ms": -114.8,
+     "seconds": 1.4
+    },
+    "clipforge align": {
+     "words_matched": 79,
+     "start_median_abs_ms": 24.8,
+     "start_p90_abs_ms": 60.6,
+     "start_max_abs_ms": 206.0,
+     "start_median_signed_ms": -8.7,
+     "start_within_50ms": 0.873,
+     "start_within_100ms": 0.949,
+     "end_median_abs_ms": 46.3,
+     "end_p90_abs_ms": 84.5,
+     "end_max_abs_ms": 145.7,
+     "end_median_signed_ms": -34.8,
+     "seconds": 1.62
+    }
+   },
+   "es word by word": {
+    "whisper": {
+     "words_matched": 52,
+     "start_median_abs_ms": 167.6,
+     "start_p90_abs_ms": 238.4,
+     "start_max_abs_ms": 390.0,
+     "start_median_signed_ms": -167.6,
+     "start_within_50ms": 0.038,
+     "start_within_100ms": 0.115,
+     "end_median_abs_ms": 79.6,
+     "end_p90_abs_ms": 121.7,
+     "end_max_abs_ms": 132.9,
+     "end_median_signed_ms": -79.6,
+     "seconds": 0.8
+    },
+    "clipforge align": {
+     "words_matched": 52,
+     "start_median_abs_ms": 28.0,
+     "start_p90_abs_ms": 50.0,
+     "start_max_abs_ms": 68.8,
+     "start_median_signed_ms": -23.0,
+     "start_within_50ms": 0.885,
+     "start_within_100ms": 1.0,
+     "end_median_abs_ms": 20.6,
+     "end_p90_abs_ms": 49.8,
+     "end_max_abs_ms": 135.7,
+     "end_median_signed_ms": -19.6,
+     "seconds": 1.99
+    }
+   },
+   "ar word by word": {
+    "whisper": {
+     "words_matched": 11,
+     "start_median_abs_ms": 163.8,
+     "start_p90_abs_ms": 390.0,
+     "start_max_abs_ms": 631.3,
+     "start_median_signed_ms": -163.8,
+     "start_within_50ms": 0.0,
+     "start_within_100ms": 0.182,
+     "end_median_abs_ms": 43.6,
+     "end_p90_abs_ms": 85.5,
+     "end_max_abs_ms": 145.0,
+     "end_median_signed_ms": -42.0,
+     "seconds": 0.9
+    },
+    "clipforge align": {
+     "words_matched": 11,
+     "start_median_abs_ms": 38.6,
+     "start_p90_abs_ms": 108.2,
+     "start_max_abs_ms": 217.1,
+     "start_median_signed_ms": 34.2,
+     "start_within_50ms": 0.636,
+     "start_within_100ms": 0.818,
+     "end_median_abs_ms": 25.8,
+     "end_p90_abs_ms": 41.7,
+     "end_max_abs_ms": 56.8,
+     "end_median_signed_ms": -8.6,
+     "seconds": 1.33
+    }
+   },
+   "en natural": {
+    "whisper": {
+     "words_matched": 82,
+     "start_median_abs_ms": 47.5,
+     "start_p90_abs_ms": 309.0,
+     "start_max_abs_ms": 875.0,
+     "start_median_signed_ms": -47.5,
+     "start_within_50ms": 0.5,
+     "start_within_100ms": 0.793,
+     "end_median_abs_ms": 45.0,
+     "end_p90_abs_ms": 230.0,
+     "end_max_abs_ms": 480.0,
+     "end_median_signed_ms": -45.0,
+     "seconds": 0.7
+    },
+    "clipforge align": {
+     "words_matched": 82,
+     "start_median_abs_ms": 39.8,
+     "start_p90_abs_ms": 66.1,
+     "start_max_abs_ms": 119.3,
+     "start_median_signed_ms": 39.8,
+     "start_within_50ms": 0.659,
+     "start_within_100ms": 0.976,
+     "end_median_abs_ms": 48.1,
+     "end_p90_abs_ms": 248.1,
+     "end_max_abs_ms": 346.0,
+     "end_median_signed_ms": 37.5,
+     "seconds": 1.36
+    }
+   }
+  },
+  {
+   "en word by word": {
+    "whisper": {
+     "words_matched": 81,
+     "start_median_abs_ms": 203.4,
+     "start_p90_abs_ms": 323.4,
+     "start_max_abs_ms": 542.9,
+     "start_median_signed_ms": -203.4,
+     "start_within_50ms": 0.012,
+     "start_within_100ms": 0.049,
+     "end_median_abs_ms": 116.9,
+     "end_p90_abs_ms": 202.6,
+     "end_max_abs_ms": 305.1,
+     "end_median_signed_ms": -116.9,
+     "seconds": 1.7
+    },
+    "clipforge align": {
+     "words_matched": 81,
+     "start_median_abs_ms": 29.3,
+     "start_p90_abs_ms": 50.8,
+     "start_max_abs_ms": 120.2,
+     "start_median_signed_ms": -7.2,
+     "start_within_50ms": 0.889,
+     "start_within_100ms": 0.988,
+     "end_median_abs_ms": 50.1,
+     "end_p90_abs_ms": 89.8,
+     "end_max_abs_ms": 158.1,
+     "end_median_signed_ms": -45.1,
+     "seconds": 1.91
+    }
+   },
+   "es word by word": {
+    "whisper": {
+     "words_matched": 49,
+     "start_median_abs_ms": 162.9,
+     "start_p90_abs_ms": 246.0,
+     "start_max_abs_ms": 390.0,
+     "start_median_signed_ms": -162.9,
+     "start_within_50ms": 0.061,
+     "start_within_100ms": 0.143,
+     "end_median_abs_ms": 81.0,
+     "end_p90_abs_ms": 134.0,
+     "end_max_abs_ms": 159.9,
+     "end_median_signed_ms": -81.0,
+     "seconds": 0.9
+    },
+    "clipforge align": {
+     "words_matched": 49,
+     "start_median_abs_ms": 24.2,
+     "start_p90_abs_ms": 43.7,
+     "start_max_abs_ms": 84.6,
+     "start_median_signed_ms": -23.9,
+     "start_within_50ms": 0.939,
+     "start_within_100ms": 1.0,
+     "end_median_abs_ms": 25.9,
+     "end_p90_abs_ms": 52.7,
+     "end_max_abs_ms": 140.2,
+     "end_median_signed_ms": -24.3,
+     "seconds": 2.41
+    }
+   },
+   "ar word by word": {
+    "whisper": {
+     "words_matched": 13,
+     "start_median_abs_ms": 129.9,
+     "start_p90_abs_ms": 353.0,
+     "start_max_abs_ms": 804.1,
+     "start_median_signed_ms": -129.9,
+     "start_within_50ms": 0.0,
+     "start_within_100ms": 0.308,
+     "end_median_abs_ms": 74.9,
+     "end_p90_abs_ms": 112.8,
+     "end_max_abs_ms": 163.1,
+     "end_median_signed_ms": -74.9,
+     "seconds": 1.0
+    },
+    "clipforge align": {
+     "words_matched": 13,
+     "start_median_abs_ms": 62.2,
+     "start_p90_abs_ms": 137.6,
+     "start_max_abs_ms": 233.8,
+     "start_median_signed_ms": 31.5,
+     "start_within_50ms": 0.462,
+     "start_within_100ms": 0.769,
+     "end_median_abs_ms": 30.1,
+     "end_p90_abs_ms": 54.1,
+     "end_max_abs_ms": 67.8,
+     "end_median_signed_ms": -6.5,
+     "seconds": 1.36
+    }
+   },
+   "en natural": {
+    "whisper": {
+     "words_matched": 82,
+     "start_median_abs_ms": 47.5,
+     "start_p90_abs_ms": 309.0,
+     "start_max_abs_ms": 875.0,
+     "start_median_signed_ms": -47.5,
+     "start_within_50ms": 0.5,
+     "start_within_100ms": 0.805,
+     "end_median_abs_ms": 47.5,
+     "end_p90_abs_ms": 230.0,
+     "end_max_abs_ms": 480.0,
+     "end_median_signed_ms": -47.5,
+     "seconds": 0.7
+    },
+    "clipforge align": {
+     "words_matched": 82,
+     "start_median_abs_ms": 39.4,
+     "start_p90_abs_ms": 64.5,
+     "start_max_abs_ms": 119.3,
+     "start_median_signed_ms": 39.4,
+     "start_within_50ms": 0.671,
+     "start_within_100ms": 0.988,
+     "end_median_abs_ms": 48.1,
+     "end_p90_abs_ms": 250.1,
+     "end_max_abs_ms": 326.0,
+     "end_median_signed_ms": 37.3,
+     "seconds": 1.31
+    }
+   }
+  }
+ ],
+ "real_speech_pause_onsets": {
+  "minutes": 10.0,
+  "language": "en",
+  "timing": "aligned",
+  "words": 1653,
+  "segments": 113,
+  "pause_onsets": 53,
+  "whisper": {
+   "onsets_matched": 53,
+   "median_abs_ms": 150.0,
+   "p90_abs_ms": 340.0,
+   "max_abs_ms": 640.0,
+   "median_signed_ms": 120.0,
+   "within_50ms": 0.094,
+   "within_100ms": 0.208
+  },
+  "aligned": {
+   "onsets_matched": 53,
+   "median_abs_ms": 37.0,
+   "p90_abs_ms": 162.4,
+   "max_abs_ms": 626.0,
+   "median_signed_ms": 32.0,
+   "within_50ms": 0.604,
+   "within_100ms": 0.811
+  }
+ },
+ "one_hour": {
+  "minutes_of_speech": 70.0,
+  "method": "aligned",
+  "segments": 791,
+  "longest_segment_seconds": 25.6,
+  "words": 11571,
+  "seconds": 203.5,
+  "times_realtime": 20.6,
+  "rss_before_gb": 2.7,
+  "rss_peak_gb": 3.11
+ },
+ "hindi_runs": [
+  {
+   "hi word by word": {
+    "whisper": {
+     "words_matched": 25,
+     "start_median_abs_ms": 128.4,
+     "start_p90_abs_ms": 306.0,
+     "start_max_abs_ms": 550.9,
+     "start_median_signed_ms": -128.4,
+     "start_within_50ms": 0.08,
+     "start_within_100ms": 0.2,
+     "end_median_abs_ms": 35.0,
+     "end_p90_abs_ms": 77.5,
+     "end_max_abs_ms": 123.3,
+     "end_median_signed_ms": -30.7,
+     "seconds": 1.8
+    },
+    "clipforge align": {
+     "words_matched": 25,
+     "start_median_abs_ms": 44.6,
+     "start_p90_abs_ms": 60.9,
+     "start_max_abs_ms": 85.0,
+     "start_median_signed_ms": 40.4,
+     "start_within_50ms": 0.68,
+     "start_within_100ms": 1.0,
+     "end_median_abs_ms": 13.5,
+     "end_p90_abs_ms": 37.3,
+     "end_max_abs_ms": 79.6,
+     "end_median_signed_ms": -0.7,
+     "seconds": 2.5
+    }
+   }
+  },
+  {
+   "hi word by word": {
+    "whisper": {
+     "words_matched": 20,
+     "start_median_abs_ms": 138.2,
+     "start_p90_abs_ms": 377.5,
+     "start_max_abs_ms": 7260.2,
+     "start_median_signed_ms": -138.2,
+     "start_within_50ms": 0.15,
+     "start_within_100ms": 0.25,
+     "end_median_abs_ms": 61.5,
+     "end_p90_abs_ms": 443.5,
+     "end_max_abs_ms": 7202.3,
+     "end_median_signed_ms": -41.0,
+     "seconds": 1.9
+    },
+    "clipforge align": {
+     "words_matched": 20,
+     "start_median_abs_ms": 36.9,
+     "start_p90_abs_ms": 89.0,
+     "start_max_abs_ms": 7054.0,
+     "start_median_signed_ms": 32.8,
+     "start_within_50ms": 0.65,
+     "start_within_100ms": 0.95,
+     "end_median_abs_ms": 9.4,
+     "end_p90_abs_ms": 47.9,
+     "end_max_abs_ms": 7156.0,
+     "end_median_signed_ms": -4.0,
+     "seconds": 2.58
+    }
+   }
+  },
+  {
+   "hi word by word": {
+    "whisper": {
+     "words_matched": 24,
+     "start_median_abs_ms": 118.7,
+     "start_p90_abs_ms": 194.7,
+     "start_max_abs_ms": 332.8,
+     "start_median_signed_ms": -118.7,
+     "start_within_50ms": 0.083,
+     "start_within_100ms": 0.333,
+     "end_median_abs_ms": 36.8,
+     "end_p90_abs_ms": 85.9,
+     "end_max_abs_ms": 454.9,
+     "end_median_signed_ms": -21.7,
+     "seconds": 1.7
+    },
+    "clipforge align": {
+     "words_matched": 24,
+     "start_median_abs_ms": 40.7,
+     "start_p90_abs_ms": 78.4,
+     "start_max_abs_ms": 129.6,
+     "start_median_signed_ms": 40.7,
+     "start_within_50ms": 0.625,
+     "start_within_100ms": 0.958,
+     "end_median_abs_ms": 19.8,
+     "end_p90_abs_ms": 58.0,
+     "end_max_abs_ms": 549.6,
+     "end_median_signed_ms": -0.5,
+     "seconds": 2.58
+    }
+   }
+  }
+ ]
+}

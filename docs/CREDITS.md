@@ -32,6 +32,11 @@ These are separate programs and libraries, not copied into this repo.
 | [libass](https://github.com/libass/libass) | Caption rendering | ISC |
 | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) | Transcription | MIT |
 | [CTranslate2](https://github.com/OpenNMT/CTranslate2) | Whisper inference | MIT |
+| [wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) | English word timing model, downloaded by setup as the [Xenova ONNX export](https://huggingface.co/Xenova/wav2vec2-base-960h) | Apache 2.0 |
+| [wav2vec2-large-xlsr-53-spanish](https://huggingface.co/jonatasgrosman/wav2vec2-large-xlsr-53-spanish) | Spanish word timing model, downloaded by setup as an [ONNX export](https://huggingface.co/XDcobra/wav2vec2-large-xlsr-53-spanish-ONNX) | Apache 2.0 |
+| [wav2vec2-base-arabic](https://huggingface.co/onnx-community/wav2vec2-base-arabic-without-reused-en-token-ids-v1-ONNX) | Arabic word timing model, downloaded by setup | Apache 2.0 |
+| [IndicWav2Vec Hindi](https://huggingface.co/ai4bharat/indicwav2vec-hindi) | Hindi word timing model, downloaded by setup as an [ONNX export](https://huggingface.co/onnx-community/indicwav2vec-hindi-ONNX) | Apache 2.0 |
+| [ONNX Runtime](https://onnxruntime.ai/) | Runs the word timing models | MIT |
 | [OpenCV](https://opencv.org/) | Runs the face detectors for reframing | Apache 2.0 |
 | [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) | Face detection model, downloaded by setup | MIT |
 | [FastAPI](https://fastapi.tiangolo.com/), [SQLModel](https://sqlmodel.tiangolo.com/) | Local API and database | MIT |
