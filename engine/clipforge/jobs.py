@@ -11,6 +11,7 @@ from sqlmodel import col, select, update
 from clipforge.db import session_scope
 from clipforge.media.ffmpeg import Cancelled
 from clipforge.models import Job, JobStatus, utcnow
+from clipforge.review import AwaitingReview
 
 log = logging.getLogger("clipforge.jobs")
 
@@ -99,6 +100,8 @@ def run_one(job_id: str, runner: JobRunner) -> None:
     final_status, error = JobStatus.done, None
     try:
         runner(ctx)
+    except AwaitingReview:
+        final_status = JobStatus.review
     except Cancelled:
         final_status = JobStatus.cancelled
     except Exception as exc:

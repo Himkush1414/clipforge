@@ -28,6 +28,7 @@ class RightsType(StrEnum):
 class JobStatus(StrEnum):
     queued = "queued"
     running = "running"
+    review = "review"  # Waiting for a person to approve the clips. Nothing has been rendered yet.
     done = "done"
     failed = "failed"
     cancelled = "cancelled"

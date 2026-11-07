@@ -69,6 +69,7 @@ class JobCreate(BaseModel):
     channel_id: str | None = None
     frame_cuts: list[FrameCut] = Field(default_factory=list, max_length=50)
     destination: Literal["unassigned", "queued"] = "unassigned"
+    review: bool = False  # Stop for a person to review the clips before anything is rendered.
 
     @model_validator(mode="after")
     def _manual_needs_options(self) -> JobCreate:

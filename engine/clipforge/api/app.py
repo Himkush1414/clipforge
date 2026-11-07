@@ -11,6 +11,7 @@ import threading
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from copy import deepcopy
 from datetime import timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path, PurePosixPath
@@ -25,7 +26,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import Session, col, select, update
 
-from clipforge import __version__
+from clipforge import __version__, review
 from clipforge.appsettings import AppSettings, load_app_settings, save_app_settings
 from clipforge.captions.layout import cell_ratio
 from clipforge.captions.presets import BUILTIN_PRESETS, FONT_FILES, FONTS_DIR, CaptionPreset
@@ -156,6 +157,17 @@ def require(session: Session, model, item_id: str, label: str):
 
 class ImportRequest(BaseModel):
     path: str = Field(min_length=1, max_length=4096)
+
+
+class ReviewCut(BaseModel):
+    """Unchecked here, so the review step can explain a bad edit in plain words."""
+
+    start_frame: int
+    end_frame: int
+
+
+class ReviewReject(BaseModel):
+    rejected: bool = True
 
 
 class ClipPatch(BaseModel):
@@ -342,7 +354,9 @@ def create_app() -> FastAPI:
         active = session.exec(
             select(Job).where(
                 Job.source_id == source_id,
-                col(Job.status).in_([JobStatus.queued.value, JobStatus.running.value]),
+                col(Job.status).in_(
+                    [JobStatus.queued.value, JobStatus.running.value, JobStatus.review.value]
+                ),
             )
         ).first()
         if active:
@@ -378,7 +392,10 @@ def create_app() -> FastAPI:
             mode=body.mode,
             rights_type=body.rights.type.value,
             rights_detail=body.rights.detail,
-            settings=body.model_dump(mode="json", include={"manual", "edit", "frame_cuts", "destination"}),
+            settings={
+                **body.model_dump(mode="json", include={"manual", "edit", "frame_cuts", "destination"}),
+                "wants_review": body.review,
+            },
         )
         session.add(job)
         session.commit()
@@ -406,7 +423,9 @@ def create_app() -> FastAPI:
         # Atomic, because the worker may be claiming this same job right now.
         queued = session.exec(
             update(Job)
-            .where(col(Job.id) == job_id, col(Job.status) == JobStatus.queued.value)
+            .where(
+                col(Job.id) == job_id, col(Job.status).in_([JobStatus.queued.value, JobStatus.review.value])
+            )
             .values(status=JobStatus.cancelled.value, stage="cancelled", updated_at=utcnow())
         )
         if queued.rowcount == 0:
@@ -422,6 +441,101 @@ def create_app() -> FastAPI:
         session.commit()
         session.expire_all()
         return job_json(require(session, Job, job_id, "Job"))
+
+    # ---------- review ----------
+    def job_in_review(session: Session, job_id: str) -> Job:
+        job = require(session, Job, job_id, "Job")
+        if job.status != JobStatus.review.value or not job.settings.get("review"):
+            raise HTTPException(409, f"This job is not waiting for review. It is {job.status}.")
+        return job
+
+    def save_plan(session: Session, job: Job, plan: dict) -> None:
+        job.settings = {**job.settings, "review": plan}  # A new object, so the JSON column is saved.
+        job.updated_at = utcnow()
+        session.add(job)
+        session.commit()
+
+    def review_json(session: Session, job: Job) -> dict:
+        plan = job.settings["review"]
+        source = session.get(Source, job.source_id)
+        return {
+            "job_id": job.id,
+            "mode": job.mode,
+            "status": job.status,
+            "fps": plan["fps"],
+            "frame_count": plan["frame_count"],
+            "options": plan["options"],
+            "clips": plan["clips"],
+            "alternates_left": len(plan["alternates"]),
+            "source_url": f"/api/sources/{job.source_id}/file" if source and source.path else None,
+        }
+
+    @app.get("/api/sources/{source_id}/file")
+    def source_file(source_id: str, session: Session = Depends(get_session)):
+        source = require(session, Source, source_id, "Source")
+        if not source.path or not Path(source.path).exists():
+            raise HTTPException(410, "That video was deleted.")
+        return FileResponse(source.path)
+
+    @app.get("/api/jobs/{job_id}/review")
+    def get_review(job_id: str, session: Session = Depends(get_session)) -> dict:
+        return review_json(session, job_in_review(session, job_id))
+
+    @app.patch("/api/jobs/{job_id}/review/{key}")
+    def adjust_review_clip(
+        job_id: str, key: str, cut: ReviewCut, session: Session = Depends(get_session)
+    ) -> dict:
+        job = job_in_review(session, job_id)
+        plan = deepcopy(job.settings["review"])
+        try:
+            review.adjust(plan, key, cut.start_frame, cut.end_frame, review.words_of_job(job))
+        except review.ReviewError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        save_plan(session, job, plan)
+        return review_json(session, job)
+
+    @app.post("/api/jobs/{job_id}/review/{key}/reject")
+    def reject_review_clip(
+        job_id: str, key: str, body: ReviewReject, session: Session = Depends(get_session)
+    ) -> dict:
+        job = job_in_review(session, job_id)
+        plan = deepcopy(job.settings["review"])
+        try:
+            review.find_clip(plan, key)["rejected"] = body.rejected
+        except review.ReviewError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        save_plan(session, job, plan)
+        return review_json(session, job)
+
+    @app.post("/api/jobs/{job_id}/review/{key}/swap")
+    def swap_review_clip(job_id: str, key: str, session: Session = Depends(get_session)) -> dict:
+        job = job_in_review(session, job_id)
+        plan = deepcopy(job.settings["review"])
+        try:
+            review.swap(plan, key)
+        except review.ReviewError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        save_plan(session, job, plan)
+        return review_json(session, job)
+
+    @app.post("/api/jobs/{job_id}/review/approve")
+    def approve_review(job_id: str, session: Session = Depends(get_session)) -> dict:
+        """Export what the review kept, through the normal render path."""
+        job = job_in_review(session, job_id)
+        low = low_disk_message()
+        if low:
+            raise HTTPException(507, low)
+        try:
+            approved = review.approved_clips(job.settings["review"])
+        except review.ReviewError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        job.settings = {**job.settings, "approved": approved}
+        job.status = JobStatus.queued.value
+        job.stage = "queued"
+        job.updated_at = utcnow()
+        session.add(job)
+        session.commit()
+        return job_json(job)
 
     # ---------- clips ----------
     def job_of(session: Session, clip: Clip) -> Job | None:
