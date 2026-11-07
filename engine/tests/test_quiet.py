@@ -55,5 +55,9 @@ def test_a_consonant_burst_at_the_end_of_a_pause_does_not_swallow_the_pause_edge
     assert spans[0] == (3.0, pytest.approx(4.95, abs=0.011))
 
 
+def test_digital_silence_sits_inside_the_level_range_on_every_platform():
+    assert levels(np.zeros(RATE, np.float32)).min() == -100.0
+
+
 def test_digital_silence_alone_has_nothing_to_compare_with():
     assert quiet_spans(levels(np.zeros(5 * RATE, np.float32)), QUIET_HOP) == []

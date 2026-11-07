@@ -60,8 +60,10 @@ def frame_levels(samples: np.ndarray, hop: int, chunk_frames: int = 6000) -> np.
     for first in range(0, frames, chunk_frames):
         last = min(frames, first + chunk_frames)
         block = np.asarray(samples[first * hop : last * hop], dtype=np.float32).reshape(-1, hop) / 32768.0
-        out[first:last] = 20.0 * np.log10(np.maximum(np.sqrt((block * block).mean(axis=1)), 1e-5))
-    return out
+        rms = np.sqrt((block.astype(np.float64) ** 2).mean(axis=1))
+        out[first:last] = 20.0 * np.log10(np.maximum(rms, 1e-5))
+    # Rounding can put digital silence a hair under -100 dB, outside the level histogram, so clamp it.
+    return np.clip(out, -100.0, 0.0)
 
 
 def quiet_threshold(levels: np.ndarray) -> float | None:
