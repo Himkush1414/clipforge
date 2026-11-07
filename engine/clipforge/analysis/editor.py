@@ -23,6 +23,8 @@ from clipforge.analysis.transcribe import Word
 HOOK_SECONDS = 3.0
 MAX_THOUGHT_SECONDS = 35.0
 HARD_PAUSE = 1.0
+UNMARKED_SECONDS = 6.0
+UNMARKED_PAUSE = 0.25
 GATE = {"self_contained": 0.4, "complete": 0.4}
 TOPIC_WINDOW = 3
 
@@ -199,11 +201,15 @@ class Thought:
         return " ".join(w.text for w in self.words)
 
 
-def split_thoughts(words: Sequence[Word]) -> list[Thought]:
+def split_thoughts(words: Sequence[Word], fine: bool = False) -> list[Thought]:
     """Join words until an end mark or a long pause.
 
     Whisper breaks speech at every breath, which gives "sentences" such as "And" or "NASA astronaut."
     A clip built on those starts mid-sentence, however clean it looks.
+
+    Whisper can also drop punctuation for whole stretches. With fine set, a real pause also ends a
+    thought that has already run a while. That gives more places to cut, but less clean ones, so it is
+    only used when a video would otherwise yield too few clips.
     """
     thoughts: list[Thought] = []
     current: list[Word] = []
@@ -211,8 +217,10 @@ def split_thoughts(words: Sequence[Word]) -> list[Thought]:
         current.append(word)
         following = words[index + 1] if index + 1 < len(words) else None
         pause = following.start - word.end if following else math.inf
-        too_long = word.end - current[0].start >= MAX_THOUGHT_SECONDS
-        if END_MARK.search(word.text) or pause >= HARD_PAUSE or too_long:
+        length = word.end - current[0].start
+        too_long = length >= MAX_THOUGHT_SECONDS
+        unmarked = fine and length >= UNMARKED_SECONDS and pause >= UNMARKED_PAUSE
+        if END_MARK.search(word.text) or pause >= HARD_PAUSE or too_long or unmarked:
             thoughts.append(Thought(current))
             current = []
     return thoughts

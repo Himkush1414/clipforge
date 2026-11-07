@@ -37,6 +37,19 @@ def test_a_thought_ends_at_an_end_mark_or_a_long_pause():
     assert [t.text for t in split_thoughts(words)] == ["First one here.", "no end mark at all", "then more"]
 
 
+def test_a_long_unpunctuated_stretch_breaks_at_a_pause_only_when_asked():
+    first = say("word " * 25)
+    second = say("more " * 10, first[-1].end + 0.3)
+    assert len(split_thoughts(first + second)) == 1
+    assert [len(t.words) for t in split_thoughts(first + second, fine=True)] == [25, 10]
+
+
+def test_a_short_breath_never_breaks_a_thought():
+    first = say("word " * 5)
+    second = say("more " * 5, first[-1].end + 0.3)
+    assert len(split_thoughts(first + second, fine=True)) == 1
+
+
 def test_an_endless_run_is_capped():
     thoughts = split_thoughts(say("word " * 300))
     assert len(thoughts) > 1
