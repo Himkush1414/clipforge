@@ -1,6 +1,9 @@
 # Private notes and plans — never pushed
 .private/
 
+# Your own favourite clips, for scripts/bench/pick_eval.py
+scripts/bench/my_picks.json
+
 # Secrets and logins
 .env
 .env.*
