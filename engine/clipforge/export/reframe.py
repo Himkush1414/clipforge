@@ -7,6 +7,7 @@ a dead zone, then eases across.
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from dataclasses import dataclass
 from functools import lru_cache
@@ -17,6 +18,8 @@ import numpy as np
 
 from clipforge.config import get_settings
 from clipforge.media.ffmpeg import find_tool
+
+log = logging.getLogger("clipforge.reframe")
 
 SAMPLE_WIDTH, SAMPLE_HEIGHT = 320, 180
 SAMPLE_FPS = 2
@@ -42,7 +45,12 @@ def _haar():
 
 @lru_cache(maxsize=1)
 def _yunet(model: str):
-    return cv2.FaceDetectorYN.create(model, "", (SAMPLE_WIDTH, SAMPLE_HEIGHT), YUNET_CONFIDENCE, 0.3, 50)  # type: ignore[attr-defined]
+    """The detector, or None when the file will not load. A damaged download must not fail a render."""
+    try:
+        return cv2.FaceDetectorYN.create(model, "", (SAMPLE_WIDTH, SAMPLE_HEIGHT), YUNET_CONFIDENCE, 0.3, 50)  # type: ignore[attr-defined]
+    except cv2.error as exc:
+        log.warning("Could not load the YuNet face model, using Haar instead: %s", exc)
+        return None
 
 
 def yunet_available() -> bool:
@@ -51,8 +59,8 @@ def yunet_available() -> bool:
 
 def detect_faces(frame: np.ndarray) -> list[tuple[float, float, float, float]]:
     """Face boxes for one BGR frame. Measured in docs/ENGINE.md: YuNet finds far more than Haar."""
-    if yunet_available():
-        detector = _yunet(str(get_settings().models_dir / YUNET_FILE))
+    detector = _yunet(str(get_settings().models_dir / YUNET_FILE)) if yunet_available() else None
+    if detector is not None:
         detector.setInputSize((frame.shape[1], frame.shape[0]))
         _, faces = detector.detect(frame)
         return [tuple(face[:4]) for face in faces] if faces is not None else []
