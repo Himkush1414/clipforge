@@ -13,6 +13,8 @@ export default function SettingsPage() {
   const [lowDisk, setLowDisk] = useState(5);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Fields stay locked until the saved values arrive, or they would overwrite whatever was typed first.
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!settings) return;
@@ -21,6 +23,7 @@ export default function SettingsPage() {
       setQueuedLimit(settings.queued_limit_gb);
       setSavedLimit(settings.saved_limit_gb);
       setLowDisk(settings.low_disk_gb);
+      setLoaded(true);
     }, 0);
     return () => clearTimeout(timer);
   }, [settings]);
@@ -47,20 +50,20 @@ export default function SettingsPage() {
       <div className="max-w-2xl space-y-4">
         <Panel title="Saved folder" hint="Clips you move to Saved are never deleted automatically.">
           <Field label="Folder path" hint="Leave empty for the default. A Windows path works, such as D:\clipforge-saved. Clips already in Saved stay where they are.">
-            <input className="field" placeholder={settings?.saved_path} value={savedDir} onChange={(e) => setSavedDir(e.target.value)} />
+            <input className="field" disabled={!loaded} placeholder={settings?.saved_path} value={savedDir} onChange={(e) => setSavedDir(e.target.value)} />
           </Field>
           {settings && <p className="mt-2 break-all text-xs text-muted">Now using: {settings.saved_path}</p>}
         </Panel>
         <Panel title="Disk space limits">
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Warn when Queued passes (GB)">
-              <input className="field" type="number" min={1} value={queuedLimit} onChange={(e) => setQueuedLimit(Number(e.target.value))} />
+              <input className="field" disabled={!loaded} type="number" min={1} value={queuedLimit} onChange={(e) => setQueuedLimit(Number(e.target.value))} />
             </Field>
             <Field label="Warn when Saved passes (GB)">
-              <input className="field" type="number" min={1} value={savedLimit} onChange={(e) => setSavedLimit(Number(e.target.value))} />
+              <input className="field" disabled={!loaded} type="number" min={1} value={savedLimit} onChange={(e) => setSavedLimit(Number(e.target.value))} />
             </Field>
             <Field label="Stop new jobs below (GB free)">
-              <input className="field" type="number" min={0} value={lowDisk} onChange={(e) => setLowDisk(Number(e.target.value))} />
+              <input className="field" disabled={!loaded} type="number" min={0} value={lowDisk} onChange={(e) => setLowDisk(Number(e.target.value))} />
             </Field>
           </div>
         </Panel>
@@ -82,7 +85,7 @@ export default function SettingsPage() {
         )}
         <ErrorNote message={error} />
         <div className="flex items-center gap-3">
-          <button type="button" className="btn btn-primary" onClick={save}>
+          <button type="button" className="btn btn-primary" disabled={!loaded} onClick={save}>
             Save settings
           </button>
           {message && <span className="text-sm text-ok">{message}</span>}
