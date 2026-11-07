@@ -154,6 +154,12 @@ async function waitForJobs(count) {
   await shot(page, 'clips-unassigned');
   check('no upload control while no channel exists', await page.getByText('Upload to channel', { exact: true }).count() === 0);
 
+  // ---------- why this clip ----------
+  const reasonCount = await page.getByText('Why this clip:').count();
+  const cardCount = await page.locator('article').count();
+  check('every clip says why it was chosen', cardCount > 0 && reasonCount === cardCount, `${reasonCount} of ${cardCount}`);
+  check('the reason is plain words', (await page.getByText('Why this clip:').first().locator('..').innerText()).length > 25);
+
   // ---------- the clip player ----------
   const player = page.locator('article video').first();
   await player.scrollIntoViewIfNeeded();

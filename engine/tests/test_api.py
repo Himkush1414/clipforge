@@ -162,6 +162,7 @@ def test_manual_job_end_to_end(client, scene_video, fake_transcript):
     clip = job["clips"][0]
     assert (clip["width"], clip["height"]) == (1080, 1920)
     assert clip["qc"]["checks"]
+    assert clip["reasons"]["why"]
     assert 86000 < clip["seconds_left"] <= 86400
     assert "Nobody expected" in clip["title"] or "first line" in clip["title"]
 
@@ -207,6 +208,7 @@ def test_frame_cut_job_and_recut_keep_rights(client, scene_video, fake_transcrip
     job = client.get(f"/api/jobs/{run_queued()}").json()
     assert job["status"] == "done", job["error"]
     assert job["clips"][0]["frames"] == 3
+    assert job["clips"][0]["reasons"]["why"] == "You chose this part by frame number."
 
     res = client.post(f"/api/clips/{job['clips'][0]['id']}/recut", json={"start_frame": 10, "end_frame": 15})
     assert res.status_code == 201

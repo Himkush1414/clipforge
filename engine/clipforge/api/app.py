@@ -886,7 +886,7 @@ def create_app() -> FastAPI:
             path=str(output),
             size_bytes=output.stat().st_size,
             description=f"{clip.description}\n\nAudio: {licence.strip()}",
-            reasons={"replaced_audio_licence": licence.strip(), "from_clip": clip_id},
+            reasons={**clip.reasons, "replaced_audio_licence": licence.strip(), "from_clip": clip_id},
             created_at=now,
             expires_at=now + timedelta(hours=settings.clip_ttl_hours)
             if clip.folder == "unassigned"

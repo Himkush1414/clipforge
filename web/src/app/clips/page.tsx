@@ -92,6 +92,12 @@ function ClipCard({
         )}
       </div>
       <div className="space-y-3 p-4">
+        {clip.reasons?.why && (
+          <p className="text-sm">
+            <span className="font-medium">Why this clip: </span>
+            <span className="text-muted">{clip.reasons.why}</span>
+          </p>
+        )}
         <div className="flex flex-wrap gap-1.5">
           <Badge>{clip.ratio}</Badge>
           <Badge>{clip.resolution}</Badge>
