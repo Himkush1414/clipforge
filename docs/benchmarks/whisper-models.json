@@ -1,0 +1,567 @@
+{
+ "note": "scripts/bench/speech_timing.py, two runs on the same machine. Generated voices; the script is the reference. Accuracy varies between runs, most of all for Hindi.",
+ "runs": {
+  "2026-11-05": {
+   "note": "Generated voices. Reference text and timings are known exactly.",
+   "large-v3-turbo": {
+    "load_seconds": 3.9,
+    "en": {
+     "speed_x_realtime": 16.7,
+     "detected_language": "en",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.012,
+      "cer": 0.004
+     },
+     "accuracy_language_given": {
+      "wer": 0.012,
+      "cer": 0.004
+     },
+     "timing_word_by_word": {
+      "words_matched": 81,
+      "words_total": 83,
+      "start_median_ms": 206.6,
+      "start_p90_ms": 299.3,
+      "start_max_ms": 538.1,
+      "end_median_ms": 116.6,
+      "end_p90_ms": 192.1
+     },
+     "timing_word_by_word_whisperx_align": {
+      "words_matched": 81,
+      "words_total": 83,
+      "start_median_ms": 25.7,
+      "start_p90_ms": 93.2,
+      "start_max_ms": 218.9,
+      "end_median_ms": 45.4,
+      "end_p90_ms": 88.2,
+      "seconds": 235.2
+     },
+     "timing_natural": {
+      "words_matched": 82,
+      "words_total": 83,
+      "start_median_ms": 45.0,
+      "start_p90_ms": 221.0,
+      "start_max_ms": 540.0,
+      "end_median_ms": 45.0,
+      "end_p90_ms": 250.0
+     },
+     "timing_natural_whisperx_align": {
+      "words_matched": 82,
+      "words_total": 83,
+      "start_median_ms": 72.5,
+      "start_p90_ms": 95.0,
+      "start_max_ms": 140.0,
+      "end_median_ms": 31.7,
+      "end_p90_ms": 232.2,
+      "seconds": 1.7
+     }
+    },
+    "es": {
+     "speed_x_realtime": 17.5,
+     "detected_language": "es",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.019,
+      "cer": 0.003
+     },
+     "accuracy_language_given": {
+      "wer": 0.019,
+      "cer": 0.003
+     },
+     "timing_word_by_word": {
+      "words_matched": 52,
+      "words_total": 53,
+      "start_median_ms": 169.4,
+      "start_p90_ms": 242.6,
+      "start_max_ms": 390.0,
+      "end_median_ms": 84.7,
+      "end_p90_ms": 131.4
+     },
+     "timing_word_by_word_whisperx_align": {
+      "words_matched": 52,
+      "words_total": 53,
+      "start_median_ms": 44.2,
+      "start_p90_ms": 116.4,
+      "start_max_ms": 202.7,
+      "end_median_ms": 44.3,
+      "end_p90_ms": 170.8,
+      "seconds": 111.3
+     }
+    },
+    "hi": {
+     "speed_x_realtime": 11.5,
+     "detected_language": "hi",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.255,
+      "cer": 0.196
+     },
+     "accuracy_language_given": {
+      "wer": 0.255,
+      "cer": 0.196
+     },
+     "timing_word_by_word": {
+      "words_matched": 20,
+      "words_total": 51,
+      "start_median_ms": 133.1,
+      "start_p90_ms": 219.4,
+      "start_max_ms": 5220.1,
+      "end_median_ms": 55.7,
+      "end_p90_ms": 410.3
+     },
+     "timing_word_by_word_whisperx_align": {
+      "words_matched": 20,
+      "words_total": 51,
+      "start_median_ms": 70.9,
+      "start_p90_ms": 100.9,
+      "start_max_ms": 5110.1,
+      "end_median_ms": 52.8,
+      "end_p90_ms": 108.4,
+      "seconds": 441.9
+     }
+    },
+    "ar": {
+     "speed_x_realtime": 26.6,
+     "detected_language": "ar",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.051,
+      "cer": 0.01
+     },
+     "accuracy_language_given": {
+      "wer": 0.051,
+      "cer": 0.01
+     },
+     "timing_word_by_word": {
+      "words_matched": 16,
+      "words_total": 39,
+      "start_median_ms": 164.6,
+      "start_p90_ms": 438.1,
+      "start_max_ms": 613.0,
+      "end_median_ms": 65.8,
+      "end_p90_ms": 124.5
+     },
+     "timing_word_by_word_whisperx_align": {
+      "words_matched": 16,
+      "words_total": 39,
+      "start_median_ms": 26.8,
+      "start_p90_ms": 84.3,
+      "start_max_ms": 382.6,
+      "end_median_ms": 62.3,
+      "end_p90_ms": 124.0,
+      "seconds": 359.7
+     }
+    },
+    "ja": {
+     "speed_x_realtime": 25.8,
+     "detected_language": "ja",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": null,
+      "cer": 0.035
+     },
+     "accuracy_language_given": {
+      "wer": null,
+      "cer": 0.035
+     }
+    },
+    "peak_vram_mb": 3590
+   },
+   "large-v3": {
+    "load_seconds": 1249.2,
+    "en": {
+     "speed_x_realtime": 11.0,
+     "detected_language": "en",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.012,
+      "cer": 0.004
+     },
+     "accuracy_language_given": {
+      "wer": 0.012,
+      "cer": 0.004
+     },
+     "timing_word_by_word": {
+      "words_matched": 81,
+      "words_total": 83,
+      "start_median_ms": 351.6,
+      "start_p90_ms": 475.8,
+      "start_max_ms": 654.9,
+      "end_median_ms": 262.2,
+      "end_p90_ms": 354.8
+     },
+     "timing_natural": {
+      "words_matched": 82,
+      "words_total": 83,
+      "start_median_ms": 136.3,
+      "start_p90_ms": 304.5,
+      "start_max_ms": 460.0,
+      "end_median_ms": 136.3,
+      "end_p90_ms": 348.0
+     }
+    },
+    "es": {
+     "speed_x_realtime": 8.3,
+     "detected_language": "es",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.019,
+      "cer": 0.003
+     },
+     "accuracy_language_given": {
+      "wer": 0.019,
+      "cer": 0.003
+     },
+     "timing_word_by_word": {
+      "words_matched": 51,
+      "words_total": 53,
+      "start_median_ms": 265.4,
+      "start_p90_ms": 404.9,
+      "start_max_ms": 538.0,
+      "end_median_ms": 186.1,
+      "end_p90_ms": 282.4
+     }
+    },
+    "hi": {
+     "speed_x_realtime": 3.9,
+     "detected_language": "hi",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.196,
+      "cer": 0.188
+     },
+     "accuracy_language_given": {
+      "wer": 0.196,
+      "cer": 0.188
+     },
+     "timing_word_by_word": {
+      "words_matched": 19,
+      "words_total": 51,
+      "start_median_ms": 207.3,
+      "start_p90_ms": 415.2,
+      "start_max_ms": 5360.1,
+      "end_median_ms": 143.9,
+      "end_p90_ms": 275.2
+     }
+    },
+    "ar": {
+     "speed_x_realtime": 11.5,
+     "detected_language": "ar",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.026,
+      "cer": 0.005
+     },
+     "accuracy_language_given": {
+      "wer": 0.026,
+      "cer": 0.005
+     },
+     "timing_word_by_word": {
+      "words_matched": 10,
+      "words_total": 39,
+      "start_median_ms": 216.1,
+      "start_p90_ms": 450.5,
+      "start_max_ms": 753.0,
+      "end_median_ms": 126.6,
+      "end_p90_ms": 305.2
+     }
+    },
+    "ja": {
+     "speed_x_realtime": 10.5,
+     "detected_language": "ja",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": null,
+      "cer": 0.035
+     },
+     "accuracy_language_given": {
+      "wer": null,
+      "cer": 0.035
+     }
+    },
+    "peak_vram_mb": 2586
+   }
+  },
+  "2026-11-07": {
+   "note": "Generated voices. Reference text and timings are known exactly.",
+   "large-v3-turbo": {
+    "load_seconds": 4.7,
+    "en": {
+     "speed_x_realtime": 16.9,
+     "detected_language": "en",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.012,
+      "cer": 0.004
+     },
+     "accuracy_language_given": {
+      "wer": 0.012,
+      "cer": 0.004
+     },
+     "timing_word_by_word": {
+      "words_matched": 81,
+      "words_total": 83,
+      "start_median_ms": 196.7,
+      "start_p90_ms": 305.9,
+      "start_max_ms": 544.8,
+      "end_median_ms": 112.8,
+      "end_p90_ms": 182.6
+     },
+     "timing_word_by_word_whisperx_align": {
+      "words_matched": 81,
+      "words_total": 83,
+      "start_median_ms": 23.1,
+      "start_p90_ms": 102.2,
+      "start_max_ms": 261.1,
+      "end_median_ms": 47.8,
+      "end_p90_ms": 92.0,
+      "seconds": 5.9
+     },
+     "timing_natural": {
+      "words_matched": 82,
+      "words_total": 83,
+      "start_median_ms": 45.0,
+      "start_p90_ms": 230.0,
+      "start_max_ms": 560.0,
+      "end_median_ms": 45.0,
+      "end_p90_ms": 248.0
+     },
+     "timing_natural_whisperx_align": {
+      "words_matched": 82,
+      "words_total": 83,
+      "start_median_ms": 70.5,
+      "start_p90_ms": 94.9,
+      "start_max_ms": 139.0,
+      "end_median_ms": 31.3,
+      "end_p90_ms": 212.4,
+      "seconds": 1.7
+     }
+    },
+    "es": {
+     "speed_x_realtime": 19.2,
+     "detected_language": "es",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.019,
+      "cer": 0.003
+     },
+     "accuracy_language_given": {
+      "wer": 0.019,
+      "cer": 0.003
+     },
+     "timing_word_by_word": {
+      "words_matched": 51,
+      "words_total": 53,
+      "start_median_ms": 166.9,
+      "start_p90_ms": 243.8,
+      "start_max_ms": 390.0,
+      "end_median_ms": 80.9,
+      "end_p90_ms": 136.6
+     },
+     "timing_word_by_word_whisperx_align": {
+      "words_matched": 51,
+      "words_total": 53,
+      "start_median_ms": 50.7,
+      "start_p90_ms": 90.1,
+      "start_max_ms": 193.6,
+      "end_median_ms": 44.9,
+      "end_p90_ms": 110.9,
+      "seconds": 2.6
+     }
+    },
+    "hi": {
+     "speed_x_realtime": 10.3,
+     "detected_language": "hi",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.118,
+      "cer": 0.033
+     },
+     "accuracy_language_given": {
+      "wer": 0.118,
+      "cer": 0.033
+     },
+     "timing_word_by_word": {
+      "words_matched": 22,
+      "words_total": 51,
+      "start_median_ms": 128.1,
+      "start_p90_ms": 191.3,
+      "start_max_ms": 390.0,
+      "end_median_ms": 35.4,
+      "end_p90_ms": 75.6
+     },
+     "timing_word_by_word_whisperx_align": {
+      "words_matched": 22,
+      "words_total": 51,
+      "start_median_ms": 64.3,
+      "start_p90_ms": 97.1,
+      "start_max_ms": 139.5,
+      "end_median_ms": 37.3,
+      "end_p90_ms": 62.2,
+      "seconds": 3.7
+     }
+    },
+    "ar": {
+     "speed_x_realtime": 27.7,
+     "detected_language": "ar",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.026,
+      "cer": 0.005
+     },
+     "accuracy_language_given": {
+      "wer": 0.026,
+      "cer": 0.005
+     },
+     "timing_word_by_word": {
+      "words_matched": 15,
+      "words_total": 39,
+      "start_median_ms": 154.8,
+      "start_p90_ms": 215.4,
+      "start_max_ms": 390.0,
+      "end_median_ms": 78.8,
+      "end_p90_ms": 147.1
+     },
+     "timing_word_by_word_whisperx_align": {
+      "words_matched": 15,
+      "words_total": 39,
+      "start_median_ms": 51.7,
+      "start_p90_ms": 116.7,
+      "start_max_ms": 908.1,
+      "end_median_ms": 58.3,
+      "end_p90_ms": 252.5,
+      "seconds": 3.4
+     }
+    },
+    "ja": {
+     "speed_x_realtime": 26.1,
+     "detected_language": "ja",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": null,
+      "cer": 0.018
+     },
+     "accuracy_language_given": {
+      "wer": null,
+      "cer": 0.018
+     }
+    },
+    "peak_vram_mb": 3022
+   },
+   "large-v3": {
+    "load_seconds": 3.7,
+    "en": {
+     "speed_x_realtime": 10.7,
+     "detected_language": "en",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.012,
+      "cer": 0.004
+     },
+     "accuracy_language_given": {
+      "wer": 0.012,
+      "cer": 0.004
+     },
+     "timing_word_by_word": {
+      "words_matched": 81,
+      "words_total": 83,
+      "start_median_ms": 354.3,
+      "start_p90_ms": 464.7,
+      "start_max_ms": 659.1,
+      "end_median_ms": 254.5,
+      "end_p90_ms": 354.1
+     },
+     "timing_natural": {
+      "words_matched": 82,
+      "words_total": 83,
+      "start_median_ms": 138.8,
+      "start_p90_ms": 328.0,
+      "start_max_ms": 560.0,
+      "end_median_ms": 138.8,
+      "end_p90_ms": 348.0
+     }
+    },
+    "es": {
+     "speed_x_realtime": 9.5,
+     "detected_language": "es",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.019,
+      "cer": 0.003
+     },
+     "accuracy_language_given": {
+      "wer": 0.019,
+      "cer": 0.003
+     },
+     "timing_word_by_word": {
+      "words_matched": 51,
+      "words_total": 53,
+      "start_median_ms": 272.2,
+      "start_p90_ms": 434.1,
+      "start_max_ms": 567.3,
+      "end_median_ms": 187.9,
+      "end_p90_ms": 320.6
+     }
+    },
+    "hi": {
+     "speed_x_realtime": 3.9,
+     "detected_language": "hi",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.255,
+      "cer": 0.204
+     },
+     "accuracy_language_given": {
+      "wer": 0.255,
+      "cer": 0.204
+     },
+     "timing_word_by_word": {
+      "words_matched": 19,
+      "words_total": 51,
+      "start_median_ms": 194.2,
+      "start_p90_ms": 304.5,
+      "start_max_ms": 390.0,
+      "end_median_ms": 59.8,
+      "end_p90_ms": 231.1
+     }
+    },
+    "ar": {
+     "speed_x_realtime": 11.1,
+     "detected_language": "ar",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": 0.026,
+      "cer": 0.005
+     },
+     "accuracy_language_given": {
+      "wer": 0.026,
+      "cer": 0.005
+     },
+     "timing_word_by_word": {
+      "words_matched": 12,
+      "words_total": 39,
+      "start_median_ms": 237.3,
+      "start_p90_ms": 396.3,
+      "start_max_ms": 432.8,
+      "end_median_ms": 141.1,
+      "end_p90_ms": 314.7
+     }
+    },
+    "ja": {
+     "speed_x_realtime": 10.6,
+     "detected_language": "ja",
+     "detected_correct": true,
+     "accuracy_auto_language": {
+      "wer": null,
+      "cer": 0.053
+     },
+     "accuracy_language_given": {
+      "wer": null,
+      "cer": 0.053
+     }
+    },
+    "peak_vram_mb": 2516
+   }
+  }
+ }
+}

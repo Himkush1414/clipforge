@@ -1,0 +1,110 @@
+{
+ "clipforge": {
+  "hard_cuts_exact": {
+   "found": 6,
+   "true_positives": 6,
+   "missed": 0,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  },
+  "fps": 2293,
+  "false_cuts_on_motion_and_flash": 0,
+  "dissolves": {
+   "found": 0,
+   "true_positives": 0,
+   "missed": 2,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  }
+ },
+ "PySceneDetect Content": {
+  "hard_cuts_exact": {
+   "found": 5,
+   "true_positives": 5,
+   "missed": 1,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  },
+  "fps": 1580,
+  "false_cuts_on_motion_and_flash": 0,
+  "dissolves": {
+   "found": 0,
+   "true_positives": 0,
+   "missed": 2,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  }
+ },
+ "PySceneDetect Adaptive": {
+  "hard_cuts_exact": {
+   "found": 5,
+   "true_positives": 5,
+   "missed": 1,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  },
+  "fps": 1771,
+  "false_cuts_on_motion_and_flash": 0,
+  "dissolves": {
+   "found": 0,
+   "true_positives": 0,
+   "missed": 2,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  }
+ },
+ "PySceneDetect Hash": {
+  "hard_cuts_exact": {
+   "found": 7,
+   "true_positives": 5,
+   "missed": 1,
+   "false_alarms": 2,
+   "worst_offset_frames": 0
+  },
+  "fps": 1686,
+  "false_cuts_on_motion_and_flash": 11,
+  "dissolves": {
+   "found": 2,
+   "true_positives": 0,
+   "missed": 2,
+   "false_alarms": 2,
+   "worst_offset_frames": 0
+  }
+ },
+ "PySceneDetect Histogram": {
+  "hard_cuts_exact": {
+   "found": 5,
+   "true_positives": 5,
+   "missed": 1,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  },
+  "fps": 1705,
+  "false_cuts_on_motion_and_flash": 1,
+  "dissolves": {
+   "found": 4,
+   "true_positives": 2,
+   "missed": 0,
+   "false_alarms": 2,
+   "worst_offset_frames": 14
+  }
+ },
+ "FFmpeg scdet": {
+  "hard_cuts_exact": {
+   "found": 6,
+   "true_positives": 6,
+   "missed": 0,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  },
+  "fps": 2593,
+  "false_cuts_on_motion_and_flash": 3,
+  "dissolves": {
+   "found": 0,
+   "true_positives": 0,
+   "missed": 2,
+   "false_alarms": 0,
+   "worst_offset_frames": 0
+  }
+ }
+}
