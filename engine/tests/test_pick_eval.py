@@ -60,7 +60,7 @@ def test_chance_of_covering_a_whole_video_is_certain():
     assert pick_eval.chance(100.0, [(0.0, 10.0)], picks)["pick_recall"] == 1.0
 
 
-@pytest.mark.parametrize("name", ["my_picks.template.json", "nasa_picks.json"])
+@pytest.mark.parametrize("name", ["my_picks.template.json", "nasa_picks.json", "nasa_heldout_picks.json"])
 def test_picks_files_are_valid_with_ordered_times(name):
     videos = json.loads((BENCH / name).read_text(encoding="utf-8"))["videos"]
     assert videos
