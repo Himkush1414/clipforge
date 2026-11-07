@@ -56,6 +56,7 @@ export type Clip = {
   rights_type: string | null;
   rights_detail: string | null;
   qc: { status?: "ok" | "warn" | "fail"; checks?: QcCheck[]; encoder?: string };
+  reasons: { why?: string };
   seconds_left: number | null;
   file_url: string | null;
   thumb_url: string | null;
