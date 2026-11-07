@@ -122,6 +122,7 @@ export default function NewJobPage() {
           source_id: sourceId,
           mode,
           destination,
+          review: true,
           rights: { type: rights, detail: rightsDetail },
           channel_id: channelId || null,
           manual:
