@@ -32,7 +32,8 @@ These are separate programs and libraries, not copied into this repo.
 | [libass](https://github.com/libass/libass) | Caption rendering | ISC |
 | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) | Transcription | MIT |
 | [CTranslate2](https://github.com/OpenNMT/CTranslate2) | Whisper inference | MIT |
-| [OpenCV](https://opencv.org/) | Face detection for reframing | Apache 2.0 |
+| [OpenCV](https://opencv.org/) | Runs the face detectors for reframing | Apache 2.0 |
+| [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) | Face detection model, downloaded by setup | MIT |
 | [FastAPI](https://fastapi.tiangolo.com/), [SQLModel](https://sqlmodel.tiangolo.com/) | Local API and database | MIT |
 | [Next.js](https://nextjs.org/), [React](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/) | Web UI | MIT |
 

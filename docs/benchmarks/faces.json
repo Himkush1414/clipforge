@@ -1,0 +1,121 @@
+{
+ "note": "engine/benchmarks/faces.py at 320x180. 'found' counts detections centred within 8% of frame width of the known position. Measured 2026-11-07.",
+ "opencv_haar_yunet": "4.14.0",
+ "haar": {
+  "large": {
+   "found": 17,
+   "of": 17,
+   "median_center_error_pct": 0.5
+  },
+  "tilt 20": {
+   "found": 14,
+   "of": 34,
+   "median_center_error_pct": 1.61
+  },
+  "tilt 40": {
+   "found": 1,
+   "of": 34,
+   "median_center_error_pct": 3.24
+  },
+  "dark": {
+   "found": 32,
+   "of": 34,
+   "median_center_error_pct": 0.33
+  },
+  "blur": {
+   "found": 33,
+   "of": 34,
+   "median_center_error_pct": 0.3
+  },
+  "medium": {
+   "found": 17,
+   "of": 17,
+   "median_center_error_pct": 0.21
+  },
+  "small": {
+   "found": 2,
+   "of": 17,
+   "median_center_error_pct": 0.45
+  },
+  "false_alarms": "0/30",
+  "ms_per_frame": 12.1
+ },
+ "yunet": {
+  "large": {
+   "found": 17,
+   "of": 17,
+   "median_center_error_pct": 0.29
+  },
+  "tilt 20": {
+   "found": 34,
+   "of": 34,
+   "median_center_error_pct": 1.87
+  },
+  "tilt 40": {
+   "found": 25,
+   "of": 34,
+   "median_center_error_pct": 3.73
+  },
+  "dark": {
+   "found": 34,
+   "of": 34,
+   "median_center_error_pct": 0.21
+  },
+  "blur": {
+   "found": 34,
+   "of": 34,
+   "median_center_error_pct": 0.21
+  },
+  "medium": {
+   "found": 17,
+   "of": 17,
+   "median_center_error_pct": 0.1
+  },
+  "small": {
+   "found": 17,
+   "of": 17,
+   "median_center_error_pct": 0.14
+  },
+  "false_alarms": "0/30",
+  "ms_per_frame": 10.6
+ },
+ "blazeface": {
+  "large": {
+   "found": 17,
+   "of": 17,
+   "median_center_error_pct": 0.61
+  },
+  "tilt 20": {
+   "found": 34,
+   "of": 34,
+   "median_center_error_pct": 1.85
+  },
+  "tilt 40": {
+   "found": 33,
+   "of": 34,
+   "median_center_error_pct": 3.58
+  },
+  "dark": {
+   "found": 31,
+   "of": 34,
+   "median_center_error_pct": 0.61
+  },
+  "blur": {
+   "found": 33,
+   "of": 34,
+   "median_center_error_pct": 0.6
+  },
+  "medium": {
+   "found": 16,
+   "of": 17,
+   "median_center_error_pct": 0.57
+  },
+  "small": {
+   "found": 0,
+   "of": 17,
+   "median_center_error_pct": null
+  },
+  "false_alarms": "0/30",
+  "ms_per_frame": 9.9
+ }
+}
