@@ -1,0 +1,79 @@
+{
+ "baseline": {
+  "note": "scripts/bench/pick_eval.py, before any change to clip selection (main 8ad3014). NASA picks were chosen by Claude from transcripts before any scorer ran, not by a person. Generated picks are the passages written to be good.",
+  "nasa": {
+   "scorer": "heuristic",
+   "videos": [
+    {
+     "video": "ep393.mp3",
+     "picks": 6,
+     "clips": 6,
+     "pick_recall": 0.0,
+     "clip_precision": 0.0,
+     "mean_iou": 0.035,
+     "random": {
+      "pick_recall": 0.254,
+      "clip_precision": 0.255,
+      "mean_iou": 0.174
+     }
+    },
+    {
+     "video": "Ep378_Pursuit_of_Lifelong_Learning.mp3",
+     "picks": 7,
+     "clips": 7,
+     "pick_recall": 0.429,
+     "clip_precision": 0.429,
+     "mean_iou": 0.148,
+     "random": {
+      "pick_recall": 0.306,
+      "clip_precision": 0.306,
+      "mean_iou": 0.187
+     }
+    },
+    {
+     "video": "Ep370_Spaceflight_Adaptation.mp3",
+     "picks": 6,
+     "clips": 6,
+     "pick_recall": 0.333,
+     "clip_precision": 0.333,
+     "mean_iou": 0.214,
+     "random": {
+      "pick_recall": 0.245,
+      "clip_precision": 0.247,
+      "mean_iou": 0.159
+     }
+    }
+   ],
+   "mean_pick_recall": 0.254,
+   "mean_random_pick_recall": 0.268,
+   "mean_clip_precision": 0.254,
+   "mean_random_clip_precision": 0.269,
+   "mean_mean_iou": 0.132,
+   "mean_random_mean_iou": 0.173
+  },
+  "generated": {
+   "scorer": "heuristic",
+   "videos": [
+    {
+     "video": "generated-talk.wav",
+     "picks": 8,
+     "clips": 8,
+     "pick_recall": 0.5,
+     "clip_precision": 0.5,
+     "mean_iou": 0.488,
+     "random": {
+      "pick_recall": 0.492,
+      "clip_precision": 0.492,
+      "mean_iou": 0.353
+     }
+    }
+   ],
+   "mean_pick_recall": 0.5,
+   "mean_random_pick_recall": 0.492,
+   "mean_clip_precision": 0.5,
+   "mean_random_clip_precision": 0.492,
+   "mean_mean_iou": 0.488,
+   "mean_random_mean_iou": 0.353
+  }
+ }
+}
