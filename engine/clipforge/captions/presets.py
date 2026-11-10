@@ -70,7 +70,15 @@ class CaptionPreset(BaseModel):
     emphasis_font: str | None = None
     uppercase: bool = True
     max_words: int = Field(default=3, ge=1, le=3)
-    size: float = Field(default=0.1, ge=0.03, le=0.25, description="Text size as a share of the short side")
+    size: float = Field(
+        default=0.1,
+        ge=0.03,
+        le=0.25,
+        description="Smallest text size as a share of the short side; below it a line wraps",
+    )
+    fill: float = Field(
+        default=0.78, ge=0.3, le=0.95, description="Share of the safe width a caption line fills"
+    )
     emphasis_scale: float = Field(default=1.3, ge=1.0, le=2.0)
     filler_scale: float = Field(default=0.8, ge=0.5, le=1.0)
     text_color: str = "#FFFFFF"
@@ -80,6 +88,10 @@ class CaptionPreset(BaseModel):
     outline: float = Field(default=0.08, ge=0.0, le=0.3, description="Outline as a share of the text size")
     shadow_color: str = "#000000"
     shadow: float = Field(default=0.04, ge=0.0, le=0.3)
+    shadow_blur: float = Field(
+        default=0.0, ge=0.0, le=0.2, description="Shadow softness, share of the text size"
+    )
+    shadow_opacity: float = Field(default=1.0, ge=0.0, le=1.0)
     glow_color: str | None = None
     glow: float = Field(default=0.0, ge=0.0, le=0.5)
     active_style: Literal["color", "box"] = "color"
@@ -115,20 +127,24 @@ BUILTIN_PRESETS: dict[str, CaptionPreset] = {
     "anime-impact": CaptionPreset(
         name="Anime Impact",
         font="Anton",
-        size=0.14,
-        emphasis_scale=1.4,
-        filler_scale=0.72,
+        size=0.12,
+        fill=0.84,
+        emphasis_scale=1.3,
+        filler_scale=0.8,
         active_color="#FFE600",
-        emphasis_color="#FF3B30",
-        outline=0.1,
+        # Outline about 7% of the em size (Anton's em is 0.577 of its cell).
+        outline=0.04,
         shadow=0.05,
+        shadow_blur=0.03,
+        shadow_opacity=0.65,
         animation="pop",
-        active_pop=1.16,
+        active_pop=1.08,
     ),
     "manga-punch": CaptionPreset(
         name="Manga Punch",
         font="Bangers",
-        size=0.15,
+        size=0.12,
+        fill=0.82,
         emphasis_scale=1.45,
         filler_scale=0.75,
         active_color="#FF2D55",
@@ -142,7 +158,8 @@ BUILTIN_PRESETS: dict[str, CaptionPreset] = {
     "neon-glow": CaptionPreset(
         name="Neon Glow",
         font="Lilita One",
-        size=0.125,
+        size=0.07,
+        fill=0.8,
         emphasis_scale=1.3,
         active_color="#22F7FF",
         outline_color="#12002B",
@@ -156,7 +173,8 @@ BUILTIN_PRESETS: dict[str, CaptionPreset] = {
     "karaoke-box": CaptionPreset(
         name="Karaoke Box",
         font="Poppins Black",
-        size=0.095,
+        size=0.08,
+        fill=0.76,
         emphasis_scale=1.15,
         filler_scale=0.9,
         active_color="#FFFFFF",
@@ -171,7 +189,8 @@ BUILTIN_PRESETS: dict[str, CaptionPreset] = {
         name="One Word Punch",
         font="Archivo Black",
         max_words=1,
-        size=0.17,
+        size=0.12,
+        fill=0.92,
         emphasis_scale=1.3,
         filler_scale=0.85,
         active_color="#FFE600",
@@ -184,7 +203,8 @@ BUILTIN_PRESETS: dict[str, CaptionPreset] = {
         name="Podcast Clean",
         font="Poppins ExtraBold",
         uppercase=False,
-        size=0.085,
+        size=0.07,
+        fill=0.66,
         emphasis_scale=1.15,
         filler_scale=0.92,
         active_color="#34D399",
@@ -196,7 +216,8 @@ BUILTIN_PRESETS: dict[str, CaptionPreset] = {
     "cinema-subtle": CaptionPreset(
         name="Cinema Subtle",
         font="Bebas Neue",
-        size=0.1,
+        size=0.08,
+        fill=0.6,
         emphasis_scale=1.1,
         filler_scale=0.95,
         active_color="#FBBF24",

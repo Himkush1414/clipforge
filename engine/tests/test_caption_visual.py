@@ -22,6 +22,7 @@ import pytest
 from PIL import Image
 
 from clipforge.analysis.transcribe import Word
+from clipforge.captions.layout import SAFE_MARGINS
 from clipforge.captions.presets import BUILTIN_PRESETS, CJK_FILE, cjk_path, fonts_dir
 from clipforge.captions.preview import PREVIEW_SIZES, render_preview
 
@@ -118,6 +119,17 @@ def compare(reference: np.ndarray, rendered: np.ndarray) -> dict[str, float]:
     }
 
 
+def assert_inside_safe_area(frame: np.ndarray, ratio: str) -> None:
+    """Every drawn pixel stays inside the safe margins, apart from the soft edge of a shadow or outline."""
+    height, width = frame.shape[:2]
+    ys, xs = np.where(_ink(frame))
+    assert xs.size, "nothing was drawn"
+    margin = SAFE_MARGINS[ratio]
+    slack = height * 0.012
+    assert xs.min() >= width * margin["side"] - slack and xs.max() <= width * (1 - margin["side"]) + slack
+    assert ys.min() >= height * margin["top"] - slack and ys.max() <= height * (1 - margin["bottom"]) + slack
+
+
 def within_limits(metrics: dict[str, float]) -> bool:
     return (
         metrics["edge_shift"] <= MAX_EDGE_SHIFT
@@ -146,6 +158,7 @@ def test_caption_frame_matches_reference(name, ratio, scene, tmp_path):
     reference_path = REFERENCES / name / f"{ratio.replace(':', 'x')}-{scene}.png"
     out = render(name, ratio, scene, tmp_path / "frame.png")
     rendered = np.asarray(Image.open(out).convert("RGB")).astype(int)
+    assert_inside_safe_area(rendered, ratio)
     if UPDATE:
         reference_path.parent.mkdir(parents=True, exist_ok=True)
         Image.fromarray(rendered.astype(np.uint8)).save(reference_path, optimize=True)

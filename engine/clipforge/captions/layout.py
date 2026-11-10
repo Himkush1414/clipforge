@@ -21,13 +21,33 @@ from clipforge.captions.presets import CJK_FACES, FALLBACK_FILES, CaptionPreset,
 
 # Fractions of the frame: everything visible must stay inside these. The bottom of a 9:16 frame
 # and its right edge are covered by the app's own buttons on Shorts, Reels and TikTok.
+# "lower" is where the centre of lower captions sits: lower-middle, above the platform's own titles and
+# buttons. Text may move up to POSITION_BAND from there to fit, and never past the margins.
 SAFE_MARGINS: dict[str, dict[str, float]] = {
-    "9:16": {"top": 0.12, "bottom": 0.24, "side": 0.08, "lower": 0.66},
-    "1:1": {"top": 0.08, "bottom": 0.12, "side": 0.07, "lower": 0.80},
-    "16:9": {"top": 0.08, "bottom": 0.10, "side": 0.06, "lower": 0.84},
+    "9:16": {"top": 0.12, "bottom": 0.22, "side": 0.08, "lower": 0.65},
+    "1:1": {"top": 0.08, "bottom": 0.14, "side": 0.07, "lower": 0.70},
+    "16:9": {"top": 0.08, "bottom": 0.10, "side": 0.06, "lower": 0.74},
 }
+POSITION_BAND = 0.03
 RATIO_SIZE_FACTOR = {"9:16": 1.0, "1:1": 0.9, "16:9": 0.72}
+# Share of a preset's fill used at each ratio: a landscape line filling 80% of the width would be huge.
+RATIO_FILL = {"9:16": 1.0, "1:1": 0.85, "16:9": 0.55}
 GROUP_CHAR_LIMIT = {"9:16": 20, "1:1": 24, "16:9": 34}
+# A typical three-word caption. A lone short word may grow to SHORT_WORD_GAIN times the size this line
+# gets, so one word reads big without filling the screen.
+REFERENCE_LINE = "THE BEST PART"
+SHORT_WORD_GAIN = 2.0
+# Presets that show one word at a time compare against one typical word instead.
+REFERENCE_WORD = "PERFECT"
+ONE_WORD_GAIN = 1.3
+# Words that lead into the next one. A group cut after one of these reads as a broken phrase.
+PHRASE_LEAD = frozenset(
+    "a an the of to in on at for with from by my your his her its our their and or but".split()
+)
+# A lone word is merged into a neighbouring group across a pause up to this long.
+ORPHAN_MERGE_GAP = 1.0
+# Gaps between groups shorter than this are bridged, so captions never blink off and on.
+MIN_EMPTY_GAP = 0.15
 
 BREAK_AFTER = re.compile(r"[.!?…,;:。！？，、][\"')\]]*$")
 HANGUL = re.compile(r"[\uac00-\ud7af\u1100-\u11ff]")
@@ -225,7 +245,11 @@ def _end_group(words: list[Word], starts: list[bool], preset: CaptionPreset) -> 
 
 
 def group_words(words: list[Word], preset: CaptionPreset, ratio: str, hold: float = 0.3) -> list[WordGroup]:
-    """1 to max_words per group. Breaks at punctuation, pauses and width. Groups never overlap."""
+    """1 to max_words per group, broken at punctuation, pauses, width and phrase boundaries.
+
+    A lone word is merged into a neighbour unless it is a strong word that deserves the screen to itself.
+    Groups never overlap, and a gap between them is either at least MIN_EMPTY_GAP or bridged.
+    """
     limit = GROUP_CHAR_LIMIT[ratio]
     # Positions in words, so each word knows whether it opens a sentence (a capital there is not a name).
     raw: list[list[int]] = []
@@ -233,8 +257,12 @@ def group_words(words: list[Word], preset: CaptionPreset, ratio: str, hold: floa
     for i, word in enumerate(words):
         length = sum(len(words[j].text) + 1 for j in current) + len(word.text)
         if current and (len(current) >= preset.max_words or length > limit):
+            carry = None
+            # "THAT BECAME THE | CLASS" reads worse than "THAT BECAME | THE CLASS".
+            if len(current) >= 2 and _clean(words[current[-1]].text) in PHRASE_LEAD:
+                carry = current.pop()
             raw.append(current)
-            current = []
+            current = [carry] if carry is not None else []
         current.append(i)
         next_word = words[i + 1] if i + 1 < len(words) else None
         if BREAK_AFTER.search(word.text) or (next_word and next_word.start - word.end >= 0.35):
@@ -242,6 +270,8 @@ def group_words(words: list[Word], preset: CaptionPreset, ratio: str, hold: floa
             current = []
     if current:
         raw.append(current)
+    if preset.max_words > 1:
+        raw = _merge_orphans(raw, words, preset.max_words, limit)
 
     groups: list[WordGroup] = []
     for index, positions in enumerate(raw):
@@ -250,10 +280,56 @@ def group_words(words: list[Word], preset: CaptionPreset, ratio: str, hold: floa
         next_start = words[raw[index + 1][0]].start if index + 1 < len(raw) else None
         end = chunk[-1].end + hold
         if next_start is not None:
-            # A tiny gap would make captions flicker, so the group holds until the next one starts.
-            end = next_start if next_start - chunk[-1].end < 0.2 else min(end, next_start)
+            # A short empty gap would make captions blink, so the group holds until the next one starts.
+            end = next_start if next_start - end < MIN_EMPTY_GAP else end
         groups.append(WordGroup(_end_group(chunk, starts, preset), chunk[0].start, end, index))
     return groups
+
+
+def _merge_orphans(raw: list[list[int]], words: list[Word], max_words: int, limit: int) -> list[list[int]]:
+    """Give a lone ordinary word company: join it to the phrase it belongs to, or borrow a word."""
+
+    def chars(group: list[int]) -> int:
+        return sum(len(words[j].text) + 1 for j in group) - 1
+
+    def gap(left: list[int], right: list[int]) -> float:
+        return words[right[0]].start - words[left[-1]].end
+
+    def ends_sentence(group: list[int]) -> bool:
+        return bool(END_MARK.search(words[group[-1]].text))
+
+    raw = [list(g) for g in raw]
+    index = 0
+    while index < len(raw):
+        group = raw[index]
+        prev = raw[index - 1] if index > 0 else None
+        nxt = raw[index + 1] if index + 1 < len(raw) else None
+        if len(group) != 1:
+            index += 1
+            continue
+        at = group[0]
+        opens = at == 0 or bool(END_MARK.search(words[at - 1].text))
+        if emphasis_strength(words[at], opens) > 0:
+            index += 1
+            continue
+        joins_prev = prev is not None and not ends_sentence(prev) and gap(prev, group) <= ORPHAN_MERGE_GAP
+        joins_next = (
+            nxt is not None and not BREAK_AFTER.search(words[at].text) and gap(group, nxt) <= ORPHAN_MERGE_GAP
+        )
+        if joins_prev and prev and len(prev) < max_words and chars(prev + group) <= limit:
+            prev.extend(group)
+            del raw[index]
+            continue
+        if joins_next and nxt and len(nxt) < max_words and chars(group + nxt) <= limit:
+            nxt[:0] = group
+            del raw[index]
+            continue
+        if joins_prev and prev and len(prev) >= 2 and not BREAK_AFTER.search(words[prev[-1]].text):
+            group.insert(0, prev.pop())  # 3 + 1 becomes 2 + 2
+        elif joins_next and nxt and len(nxt) >= 2 and not BREAK_AFTER.search(words[nxt[0]].text):
+            group.append(nxt.pop(0))
+        index += 1
+    return raw
 
 
 def base_size(preset: CaptionPreset, width: int, height: int, ratio: str) -> float:
@@ -269,66 +345,88 @@ def anchor_y(preset: CaptionPreset, height: int, ratio: str) -> float:
 def layout_group(
     group: WordGroup, preset: CaptionPreset, width: int, height: int, ratio: str, language: str | None = None
 ) -> LaidOutGroup:
-    """Place each word. Text is shrunk, and then wrapped, to stay inside the safe area."""
+    """Place each word. A group is scaled to fill preset.fill of the safe width (fit to width).
+
+    A lone short word stops at SHORT_WORD_GAIN times a typical three-word line, and text is never taller
+    than the position band allows. A line that would drop below the preset's minimum size wraps to two
+    lines instead. Nothing ever leaves the safe area.
+    """
     margins = SAFE_MARGINS[ratio]
     max_width = width * (1 - 2 * margins["side"])
     top, bottom = margins["top"] * height, (1 - margins["bottom"]) * height
-    size = base_size(preset, width, height, ratio)
+    floor = base_size(preset, width, height, ratio)
+    target = max_width * preset.fill * RATIO_FILL[ratio]
 
     def word_font(word: StyledWord) -> str:
         font = preset.emphasis_font if word.kind == "emphasis" and preset.emphasis_font else preset.font
         return font_for_text(word.text, font, language)
 
-    def word_size(word: StyledWord, scale: float) -> float:
+    def word_size(word: StyledWord, size: float) -> float:
         factor = {"emphasis": preset.emphasis_scale, "filler": preset.filler_scale}.get(word.kind, 1.0)
         # Some fallback fonts reserve a tall line box, which would draw their letters small.
         match_letters = cell_ratio(preset.font)[0] / cell_ratio(word_font(word))[0]
-        return size * factor * scale * min(1.6, max(1.0, match_letters))
+        return size * factor * min(1.6, max(1.0, match_letters))
 
-    def gap_between(left: StyledWord, right: StyledWord, scale: float) -> float:
+    def gap_between(left: StyledWord, right: StyledWord, size: float) -> float:
         """Enough room that neither word touches the other at the peak of its pop, outline included.
 
         Only one word pops at a time, so the larger of the two growths is what must fit.
         """
-        left_w = measure(left.text, word_font(left), word_size(left, scale))
-        right_w = measure(right.text, word_font(right), word_size(right, scale))
+        left_w = measure(left.text, word_font(left), word_size(left, size))
+        right_w = measure(right.text, word_font(right), word_size(right, size))
         growth = max(left_w, right_w) * (preset.active_pop - 1) / 2
-        outlines = (word_size(left, scale) + word_size(right, scale)) * preset.outline
-        return preset.word_gap * size * scale + growth + outlines
+        outlines = (word_size(left, size) + word_size(right, size)) * preset.outline
+        return preset.word_gap * size + growth + outlines
 
-    def line_width(words: list[StyledWord], scale: float) -> float:
-        widths = [measure(w.text, word_font(w), word_size(w, scale)) for w in words]
-        gaps = sum(gap_between(a, b, scale) for a, b in zip(words, words[1:], strict=False))
+    def line_width(words: list[StyledWord], size: float) -> float:
+        widths = [measure(w.text, word_font(w), word_size(w, size)) for w in words]
+        gaps = sum(gap_between(a, b, size) for a, b in zip(words, words[1:], strict=False))
         # The first and last words can also pop outward, so the safe margin must allow for that.
         edges = (widths[0] + widths[-1]) * (preset.active_pop - 1) / 2
-        outline = (word_size(words[0], scale) + word_size(words[-1], scale)) * preset.outline
+        outline = (word_size(words[0], size) + word_size(words[-1], size)) * preset.outline
         return sum(widths) + gaps + edges + outline
 
+    def line_height(line: list[StyledWord], size: float) -> float:
+        return max(word_size(w, size) for w in line) * 1.02
+
+    # Every width and height above is proportional to size, so one measurement at size 1 is enough.
+    one_at_a_time = preset.max_words == 1
+    sample, gain = (REFERENCE_WORD, ONE_WORD_GAIN) if one_at_a_time else (REFERENCE_LINE, SHORT_WORD_GAIN)
+    reference = [StyledWord(t if preset.uppercase else t.lower(), 0, 0) for t in sample.split()]
+    short_word_cap = gain * target / line_width(reference, 1.0)
+    anchor = anchor_y(preset, height, ratio)
+    band = POSITION_BAND * height
+    # Peak pop grows from the centre, so half the growth must also stay inside.
+    room = max(height * 0.02, min(bottom - (anchor - band), (anchor + band) - top))
+
+    def fitted(lines: list[list[StyledWord]]) -> float:
+        widest = max(line_width(line, 1.0) for line in lines)
+        tallest = sum(line_height(line, 1.0) for line in lines) * preset.active_pop / 2
+        return min(target / widest, short_word_cap, room / tallest)
+
     lines = [group.words]
-    scale = min(1.0, max_width / max(1.0, line_width(group.words, 1.0)))
-    if scale < 0.72 and len(group.words) > 1:
+    size = fitted(lines)
+    if size < floor and len(group.words) > 1:
         split = _best_split(group.words, lambda w: line_width(w, 1.0))
         lines = [group.words[:split], group.words[split:]]
-        scale = min(1.0, max_width / max(line_width(line, 1.0) for line in lines))
+        size = fitted(lines)
 
-    laid = LaidOutGroup(group, scale=scale)
-    heights = [max(word_size(w, scale) for w in line) * 1.02 for line in lines]
+    laid = LaidOutGroup(group, scale=size / floor if floor else 1.0)
+    heights = [line_height(line, size) for line in lines]
     total_height = sum(heights)
-    # Peak pop grows from the centre, so keep half the growth inside the safe area too.
     grow = total_height * (preset.active_pop - 1) / 2
-    center = anchor_y(preset, height, ratio)
-    center = max(top + total_height / 2 + grow, min(bottom - total_height / 2 - grow, center))
+    center = max(top + total_height / 2 + grow, min(bottom - total_height / 2 - grow, anchor))
     line_top = center - total_height / 2
-    for line, line_height in zip(lines, heights, strict=True):
-        baseline = line_top + line_height * 0.82
+    for line, height_of_line in zip(lines, heights, strict=True):
+        baseline = line_top + height_of_line * 0.82
         # Right-to-left lines read from the right, so the first spoken word is placed last in x order.
         if sum(is_rtl(w.text) for w in line) * 2 > len(line):
             line = list(reversed(line))
-        widths = [measure(w.text, word_font(w), word_size(w, scale)) for w in line]
-        gaps = [gap_between(a, b, scale) for a, b in zip(line, line[1:], strict=False)]
+        widths = [measure(w.text, word_font(w), word_size(w, size)) for w in line]
+        gaps = [gap_between(a, b, size) for a, b in zip(line, line[1:], strict=False)]
         x = width / 2 - (sum(widths) + sum(gaps)) / 2
         for position, (word, word_width) in enumerate(zip(line, widths, strict=True)):
-            word_px = word_size(word, scale)
+            word_px = word_size(word, size)
             font = word_font(word)
             descent_ratio, _ascent_ratio = cell_ratio(font)[1:]
             # Words share a baseline, so a big word and a small word sit on the same line.
@@ -337,7 +435,7 @@ def layout_group(
                 PlacedWord(word, font, word_px, x + word_width / 2, cell_center, word_width, word_px)
             )
             x += word_width + (gaps[position] if position < len(gaps) else 0.0)
-        line_top += line_height
+        line_top += height_of_line
     return laid
 
 
