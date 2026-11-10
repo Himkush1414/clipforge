@@ -195,6 +195,7 @@ Time for a 30-second clip, five runs. The 7.9x in the baseline was a difference 
 | Caption look | 126 reference frames, every preset and ratio. CI's FFmpeg drew all of them identically. Deliberate breakages caught in every case that changed visibly (see [CAPTIONS.md](CAPTIONS.md#visual-regression-tests)) |
 | Loudness, generated speech | 0.0 LU from -14 LUFS |
 | Loudness, other material | 0.3 to 1.0 LU off, worst on clipped noise |
+| True peak, real anime clips | The limiter aims at -1.5 dBTP. At -1.0 the encoded AAC measured -0.9 dBFS on all three test clips; at -1.5 it measures -1.4, with loudness unchanged (-14.0, -13.9, -14.1 LUFS). QC now warns above -1.0 |
 
 ## Clip selection
 

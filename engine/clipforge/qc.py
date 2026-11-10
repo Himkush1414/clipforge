@@ -32,7 +32,7 @@ def run_qc(
     fps: float,
     expect_audio: bool,
     target_lufs: float = -14.0,
-    target_peak: float = -1.0,
+    target_peak: float = -1.0,  # the delivery ceiling; renders limit at -1.5 to stay under it
     source_height: int | None = None,
 ) -> dict:
     checks: list[Check] = []
@@ -105,7 +105,5 @@ def run_qc(
             checks.append(Check("loudness", "warn", "Audio is silent"))
         if peak:
             value = float(peak.group(1))
-            checks.append(
-                Check("true_peak", "ok" if value <= target_peak + 0.5 else "warn", f"{value:.1f} dBFS")
-            )
+            checks.append(Check("true_peak", "ok" if value <= target_peak else "warn", f"{value:.1f} dBFS"))
     return {"status": _status(checks), "checks": [asdict(c) for c in checks]}

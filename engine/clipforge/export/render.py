@@ -25,7 +25,9 @@ from clipforge.media.probe import MediaInfo
 log = logging.getLogger("clipforge.render")
 
 TARGET_LUFS = -14.0
-TARGET_PEAK = -1.0
+# The limiter aims below the -1.0 dBFS delivery ceiling, because AAC encoding adds a few tenths of a dB
+# of overshoot (clips limited at -1.0 measured -0.9 after encoding).
+TARGET_PEAK = -1.5
 TARGET_LRA = 11.0
 SEEK_MARGIN = 2.0
 CLICK_FADE = 0.012
