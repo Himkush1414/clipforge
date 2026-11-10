@@ -31,9 +31,13 @@ class Word:
 
 
 def extract_audio(video: Path, out: Path, should_cancel: Callable[[], bool] | None = None) -> Path:
-    """Decode to 16 kHz mono WAV: what Whisper and the audio analysis both use."""
+    """Decode to 16 kHz mono WAV: what Whisper and the audio analysis both use.
+
+    Always the first audio track, the one renders play. Left to itself FFmpeg picks the track flagged as
+    default, so a file flagging its second language would get captions that do not match its sound.
+    """
     run_ffmpeg(
-        ["-i", video, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", out],
+        ["-i", video, "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", out],
         should_cancel=should_cancel,
     )
     return out
