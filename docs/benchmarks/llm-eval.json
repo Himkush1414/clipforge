@@ -1,0 +1,350 @@
+{
+ "_about": [
+  "scripts/bench/llm_eval.py on 2026-11-10. tuning: all five models and weights. heldout: only the model and weight chosen on tuning, run once.",
+  "Gemma 4 rows: every request failed (the model thinks before answering and spent the 48-token budget there), so their scores equal the editor alone."
+ ],
+ "tuning": {
+  "editor alone": {
+   "tuning": {
+    "pick_recall": 0.484,
+    "clip_precision": 0.484,
+    "mean_iou": 0.332
+   },
+   "generated": {
+    "pick_recall": 1.0,
+    "clip_precision": 1.0,
+    "mean_iou": 0.951
+   }
+  },
+  "Qwen3.5-4B-Q4_K_M.gguf": {
+   "stats": {
+    "rated": 111,
+    "seconds_per_clip": 0.93,
+    "peak_vram_mb": 3167,
+    "load_seconds": 2.3,
+    "failed": 0
+   },
+   "0.3": {
+    "tuning": {
+     "pick_recall": 0.421,
+     "clip_precision": 0.421,
+     "mean_iou": 0.235
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.5": {
+    "tuning": {
+     "pick_recall": 0.476,
+     "clip_precision": 0.476,
+     "mean_iou": 0.262
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.7": {
+    "tuning": {
+     "pick_recall": 0.579,
+     "clip_precision": 0.579,
+     "mean_iou": 0.34
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "1.0": {
+    "tuning": {
+     "pick_recall": 0.579,
+     "clip_precision": 0.579,
+     "mean_iou": 0.34
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   }
+  },
+  "Qwen3.5-2B-Q4_K_M.gguf": {
+   "stats": {
+    "rated": 111,
+    "seconds_per_clip": 0.44,
+    "peak_vram_mb": 1641,
+    "load_seconds": 1.5,
+    "failed": 0
+   },
+   "0.3": {
+    "tuning": {
+     "pick_recall": 0.381,
+     "clip_precision": 0.381,
+     "mean_iou": 0.258
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.5": {
+    "tuning": {
+     "pick_recall": 0.429,
+     "clip_precision": 0.429,
+     "mean_iou": 0.272
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.7": {
+    "tuning": {
+     "pick_recall": 0.421,
+     "clip_precision": 0.421,
+     "mean_iou": 0.302
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "1.0": {
+    "tuning": {
+     "pick_recall": 0.421,
+     "clip_precision": 0.421,
+     "mean_iou": 0.302
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   }
+  },
+  "gemma-4-E4B-it-Q4_K_M.gguf": {
+   "stats": {
+    "rated": 111,
+    "seconds_per_clip": 1.15,
+    "peak_vram_mb": 3427,
+    "load_seconds": 3.3,
+    "failed": 107
+   },
+   "0.3": {
+    "tuning": {
+     "pick_recall": 0.484,
+     "clip_precision": 0.484,
+     "mean_iou": 0.332
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.5": {
+    "tuning": {
+     "pick_recall": 0.484,
+     "clip_precision": 0.484,
+     "mean_iou": 0.332
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.7": {
+    "tuning": {
+     "pick_recall": 0.484,
+     "clip_precision": 0.484,
+     "mean_iou": 0.332
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "1.0": {
+    "tuning": {
+     "pick_recall": 0.484,
+     "clip_precision": 0.484,
+     "mean_iou": 0.332
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   }
+  },
+  "gemma-4-E2B-it-Q4_K_M.gguf": {
+   "stats": {
+    "rated": 111,
+    "seconds_per_clip": 0.57,
+    "peak_vram_mb": 1845,
+    "load_seconds": 3.0,
+    "failed": 111
+   },
+   "0.3": {
+    "tuning": {
+     "pick_recall": 0.484,
+     "clip_precision": 0.484,
+     "mean_iou": 0.332
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.5": {
+    "tuning": {
+     "pick_recall": 0.484,
+     "clip_precision": 0.484,
+     "mean_iou": 0.332
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.7": {
+    "tuning": {
+     "pick_recall": 0.484,
+     "clip_precision": 0.484,
+     "mean_iou": 0.332
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "1.0": {
+    "tuning": {
+     "pick_recall": 0.484,
+     "clip_precision": 0.484,
+     "mean_iou": 0.332
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   }
+  },
+  "Phi-4-mini-instruct-Q4_K_M.gguf": {
+   "stats": {
+    "rated": 111,
+    "seconds_per_clip": 0.61,
+    "peak_vram_mb": 3253,
+    "load_seconds": 2.0,
+    "failed": 0
+   },
+   "0.3": {
+    "tuning": {
+     "pick_recall": 0.476,
+     "clip_precision": 0.476,
+     "mean_iou": 0.308
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.5": {
+    "tuning": {
+     "pick_recall": 0.429,
+     "clip_precision": 0.429,
+     "mean_iou": 0.274
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "0.7": {
+    "tuning": {
+     "pick_recall": 0.579,
+     "clip_precision": 0.579,
+     "mean_iou": 0.379
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   },
+   "1.0": {
+    "tuning": {
+     "pick_recall": 0.524,
+     "clip_precision": 0.524,
+     "mean_iou": 0.32
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    }
+   }
+  }
+ },
+ "heldout": {
+  "editor alone": {
+   "tuning": {
+    "pick_recall": 0.484,
+    "clip_precision": 0.484,
+    "mean_iou": 0.332
+   },
+   "generated": {
+    "pick_recall": 1.0,
+    "clip_precision": 1.0,
+    "mean_iou": 0.951
+   },
+   "heldout": {
+    "pick_recall": 0.619,
+    "clip_precision": 0.619,
+    "mean_iou": 0.367
+   }
+  },
+  "Phi-4-mini-instruct-Q4_K_M.gguf": {
+   "stats": {
+    "rated": 53,
+    "seconds_per_clip": 0.65,
+    "peak_vram_mb": 3253,
+    "load_seconds": 2.6,
+    "failed": 0
+   },
+   "0.7": {
+    "tuning": {
+     "pick_recall": 0.579,
+     "clip_precision": 0.579,
+     "mean_iou": 0.379
+    },
+    "generated": {
+     "pick_recall": 1.0,
+     "clip_precision": 1.0,
+     "mean_iou": 0.951
+    },
+    "heldout": {
+     "pick_recall": 0.452,
+     "clip_precision": 0.452,
+     "mean_iou": 0.295
+    }
+   }
+  }
+ }
+}

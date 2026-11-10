@@ -17,7 +17,7 @@ Most test material is generated, so the correct answers are known exactly. That 
 | Frame cuts | FFmpeg, own planning | Known answers only | 44 of 44 exact | Kept |
 | Audio sync | FFmpeg, own planning | Known answers only | Worst 15 ms over 40 cuts | Kept |
 | Captions | libass, own layout | Known answers only | 84 renders, none outside the safe area | Kept |
-| Clip selection | Own scoring plus editor pass | Random windows, chosen clips | Held-out recall 0.62, up from 0.48, against 0.34 for random | **Added editor** |
+| Clip selection | Own scoring plus editor pass | Random windows, chosen clips, local language models | Held-out recall 0.62, up from 0.48, against 0.34 for random. Best local model blend: 0.45 | **Added editor**, no model |
 | Caption emphasis | Own rule | Hand labels on real podcast captions | Held-out agreement 0.75 to 0.80, precision 0.59 to 0.68 | **Replaced** |
 | Silence | Own threshold, now level-split | Silero VAD, WebRTC VAD, FFmpeg silencedetect | 0 false gaps in noise, worst speech edge 46 to 10 ms | **Replaced** |
 
@@ -215,23 +215,28 @@ The held-out episodes are the honest figure. They were labelled before any score
 
 The picks were chosen by Claude from the transcripts, so they are one AI's taste, not a person's. The earlier figure of 80% of clips catching a planted moment overstated quality, since those moments differ from plain talk in ways real speech does not. On that old test, capture rose from 0.80 to 0.83. The editor adds about 2 seconds on 2 hours of speech.
 
-### Local model for transcript scoring (not yet measured)
+### Local model for transcript scoring (measured, not used)
 
 `engine/clipforge/analysis/llm_score.py` can ask a small local model to rate each shortlisted clip for hook, standalone sense, payoff and interest, then blend that with the editor's score. It runs llama.cpp as a child process on the loopback address, with a random key, fully offline, and stops it after the job. If anything is missing or fails, the editor's ranking stands.
 
-**It is not used by jobs**, because it has not been measured. The permission settings on the development machine blocked running the downloaded llama.cpp program, so `scripts/bench/llm_eval.py` could not be run. It joins the pipeline only if that comparison beats the editor alone on the held-out picks.
+**It is not used by jobs, because it made held-out picks worse.** Measured by `scripts/bench/llm_eval.py`: every model and blend weight on the tuning picks, then only the chosen pair on the held-out picks, once. Raw results: [benchmarks/llm-eval.json](benchmarks/llm-eval.json).
 
-Candidates, chosen for an 8 GB GPU, with licences checked on each model card:
+| Model | Licence | Q4_K_M size | Tuning recall at weight 0.3 / 0.5 / 0.7 / 1.0 | Per clip | VRAM |
+|---|---|---|---|---|---|
+| Editor alone | | | 0.484 | | |
+| Qwen3.5-4B | Apache 2.0 | 2.7 GB | 0.421 / 0.476 / 0.579 / 0.579 | 0.93 s | 3.2 GB |
+| Phi-4-mini | MIT | 2.5 GB | 0.476 / 0.429 / **0.579** / 0.524 | 0.61 s | 3.3 GB |
+| Qwen3.5-2B | Apache 2.0 | 1.3 GB | 0.381 / 0.429 / 0.421 / 0.421 | 0.44 s | 1.6 GB |
+| Gemma 4 E4B | Apache 2.0 | 5.0 GB | not measured | | |
+| Gemma 4 E2B | Apache 2.0 | 3.1 GB | not measured | | |
 
-| Model | Licence | Q4_K_M size |
-|---|---|---|
-| Qwen3.5-4B | Apache 2.0 | 2.7 GB |
-| Qwen3.5-2B | Apache 2.0 | 1.3 GB |
-| Gemma 4 E4B | Apache 2.0 | 5.0 GB |
-| Gemma 4 E2B | Apache 2.0 | 3.1 GB |
-| Phi-4-mini | MIT | 2.5 GB |
+Phi-4-mini at 0.7 was chosen: it tied Qwen3.5-4B on recall and had the higher mean overlap (0.379 against 0.340). On the held-out picks it scored **0.452 recall, against 0.619 for the editor alone** (mean overlap 0.295 against 0.367). The tuning gain was about two picks out of 19, and Phi-4-mini's scores jumped around between weights, so it was most likely noise. Qwen3.5-4B was not tried on the held-out picks, because picking the better of two there would make it a second tuning set.
 
-The runtime is the official llama.cpp build b12182 for CUDA 12.8 (MIT). On this machine it also needs `libgomp`, which was unpacked from the Ubuntu package into the work folder, without root.
+Gemma 4 could not be measured with this setup. It writes a hidden reasoning passage before answering, even with reasoning turned off, and spent the whole 48-token reply on it, so every request returned nothing. Measuring it would need a larger reply budget and reading past the reasoning.
+
+Limits: 19 tuning picks and 13 held-out picks, all chosen by Claude, not a person, and the held-out picks had been looked at before. A person's own picks (`my_picks.json`) could change the result.
+
+The runtime is the official llama.cpp build b12182 for CUDA 12.8 (MIT), checked against the release's published SHA-256 digests. On this machine it also needs `libgomp`, unpacked from the Ubuntu package into the work folder without root. Until #39 the program's library path left out both `libgomp` and the CUDA runtime, so it could not start at all, which is why this was not measured earlier.
 
 ## Silence
 
