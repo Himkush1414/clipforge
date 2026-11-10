@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
-export function NoChannelDialog({ onJustMake, onLater, onCancel }: { onJustMake: () => void; onLater: () => void; onCancel: () => void }) {
+export function NoChannelDialog({
+  onJustMake,
+  onLater,
+  onCancel,
+  canQueue = true,
+}: {
+  onJustMake: () => void;
+  onLater: () => void;
+  onCancel: () => void;
+  canQueue?: boolean;
+}) {
   const first = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -32,10 +42,14 @@ export function NoChannelDialog({ onJustMake, onLater, onCancel }: { onJustMake:
             <p className="mt-1 text-xs text-muted">They go to Unassigned and are deleted 24 hours after they are made.</p>
           </div>
           <div>
-            <button type="button" className="btn w-full" onClick={onLater}>
+            <button type="button" className="btn w-full" disabled={!canQueue} onClick={onLater}>
               Make now, upload later
             </button>
-            <p className="mt-1 text-xs text-muted">They go to Queued, with the timer paused, until a channel is connected.</p>
+            <p className="mt-1 text-xs text-muted">
+              {canQueue
+                ? "They go to Queued, with the timer paused, until a channel is connected."
+                : "Not for a private test: those clips are never uploaded."}
+            </p>
           </div>
           <div>
             <Link className="btn w-full" href="/channels">

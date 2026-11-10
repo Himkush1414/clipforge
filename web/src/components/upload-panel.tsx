@@ -211,7 +211,14 @@ export function UploadPanel({ clip, channels, uploads, onChange }: { clip: Clip;
     <details className="text-sm" open={uploads.length > 0}>
       <summary className="cursor-pointer font-medium">Upload to channel{uploads.length ? ` (${uploads.length})` : ""}</summary>
       <div className="mt-2 space-y-2">
-        {connected.length === 0 ? (
+        {!clip.uploadable ? (
+          <>
+            <p className="text-xs text-warn">From a private test video: this clip is never uploaded.</p>
+            <button type="button" className="btn" disabled>
+              Upload this clip
+            </button>
+          </>
+        ) : connected.length === 0 ? (
           <p className="text-xs text-muted">Connect a channel on the Channels page first.</p>
         ) : (
           <>

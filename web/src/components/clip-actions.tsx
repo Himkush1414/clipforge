@@ -109,6 +109,9 @@ export function BulkBar({
   const [confirming, setConfirming] = useState(false);
   if (clips.length === 0) return null;
   const count = selected.length;
+  // The server refuses these too; disabling the buttons just says so before you click.
+  const privateTest = clips.some((c) => selected.includes(c.id) && !c.uploadable);
+  const blockedTitle = privateTest ? "Private test clips are never uploaded" : undefined;
 
   async function run(path: string, body: object, verb: string) {
     setMessage(null);
@@ -141,13 +144,13 @@ export function BulkBar({
         <button type="button" className="btn" disabled={!count} onClick={() => run("/api/clips/bulk", { clip_ids: selected, action: "move_saved" }, "moved to Saved")}>
           Move to Saved
         </button>
-        <button type="button" className="btn" disabled={!count} onClick={() => run("/api/clips/bulk", { clip_ids: selected, action: "move_queued" }, "moved to Queued")}>
+        <button type="button" className="btn" disabled={!count || privateTest} title={blockedTitle} onClick={() => run("/api/clips/bulk", { clip_ids: selected, action: "move_queued" }, "moved to Queued")}>
           Move to Queued
         </button>
         {connected.length > 0 && (
           <>
             <ChannelPicker channels={connected} value={channelId} onChange={setChannelId} />
-            <button type="button" className="btn" disabled={!count || !channelId} onClick={() => run("/api/uploads/bulk", { clip_ids: selected, channel_id: channelId }, "sent to the upload queue")}>
+            <button type="button" className="btn" disabled={!count || !channelId || privateTest} title={blockedTitle} onClick={() => run("/api/uploads/bulk", { clip_ids: selected, channel_id: channelId }, "sent to the upload queue")}>
               Upload to channel
             </button>
           </>
