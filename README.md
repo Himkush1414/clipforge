@@ -83,11 +83,17 @@ Everything large goes into `~/clipforge-work`, outside the repo. To put it elsew
 
 ## Quick start
 
+From the repository folder:
+
 ```bash
-scripts/dev.sh
+npm run dev
 ```
 
-Open <http://localhost:3000>. The first job downloads the Whisper model.
+This starts the engine API (port 8765) and the web app together, installing the web app's packages on the first run. Open <http://localhost:3000>, and press Ctrl+C to stop both. `npm start` does the same with a production build.
+
+`npm` must be the Linux one. Under WSL, a Windows Node.js can come first on `PATH`, and then `npm` fails with `Cannot find module 'D:\...'`. Check with `node -p process.platform`, which must print `linux`. If it does not, either put your Linux Node.js first, for example `export PATH="$HOME/toolchain/node/bin:$PATH"` in `~/.bashrc`, or run `scripts/dev.sh` directly, which finds a Linux Node.js by itself.
+
+The first job downloads the Whisper model.
 
 ## Using it
 
