@@ -277,3 +277,28 @@ def test_eight_frame_shot_keeps_both_cuts(tmp_path):
         check=True,
     )
     assert analyze_scenes(video, fps=30, duration=3).cut_frames == [30, 38]
+
+
+def test_transcription_audio_is_the_first_track_the_render_plays(tmp_path):
+    """Two audio tracks with the default flag on the second, as some releases are tagged. FFmpeg alone
+    picks the flagged (and 5.1) track, but renders play the first, so captions must come from the first."""
+    video = tmp_path / "two-tracks.mkv"
+    ff = find_tool("ffmpeg")
+    subprocess.run(
+        [
+            ff, "-v", "error", "-y",
+            "-f", "lavfi", "-i", "color=c=gray:s=160x90:r=10:d=2",
+            "-f", "lavfi", "-i", "sine=f=440:d=2", "-f", "lavfi", "-i", "sine=f=1000:d=2",
+            "-map", "0:v", "-map", "1:a", "-map", "2:a",
+            "-c:v", "libx264", "-c:a", "aac", "-ac:a:0", "2", "-ac:a:1", "6",
+            "-disposition:a:0", "0", "-disposition:a:1", "default", str(video),
+        ],
+        check=True,
+    )  # fmt: skip
+    wav = extract_audio(video, tmp_path / "a.wav")
+    from scipy.io import wavfile
+
+    rate, samples = wavfile.read(wav)
+    spectrum = np.abs(np.fft.rfft(samples.astype(float)))
+    peak = np.fft.rfftfreq(len(samples), 1 / rate)[int(np.argmax(spectrum))]
+    assert abs(peak - 440) < 10
