@@ -167,6 +167,7 @@ Time for a 30-second clip, five runs. The 7.9x in the baseline was a difference 
 | Frame cuts | 44 of 44 exact, at 23.976, 29.97, 30 and 60 fps |
 | Audio sync | Worst offset 15 ms and drift 10 ms, across 40 cuts |
 | Captions | 84 renders, none outside the safe area, tightest margin 10 px |
+| Caption look | 126 reference frames, every preset and ratio. CI's FFmpeg drew all of them identically. Deliberate breakages caught in every case that changed visibly (see [CAPTIONS.md](CAPTIONS.md#visual-regression-tests)) |
 | Loudness, generated speech | 0.0 LU from -14 LUFS |
 | Loudness, other material | 0.3 to 1.0 LU off, worst on clipped noise |
 

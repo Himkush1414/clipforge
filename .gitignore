@@ -75,3 +75,4 @@ desktop.ini
 *:Zone.Identifier
 .vscode/
 .idea/
+engine/tests/visual-failures/
