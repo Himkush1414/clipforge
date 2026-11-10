@@ -20,7 +20,7 @@ Drop in a video of any length. clipforge transcribes it, finds the strongest mom
 - **Caption engine.** One to three words at a time, synced to the audio, with a coloured active word, big emphasis words, small filler words and safe margins for each ratio. Seven presets, plus an editor with a live preview and a real libass render. Works with Latin scripts, Hindi, Japanese, Korean, Chinese, Arabic and Hebrew.
 - **Editing.** Clean cuts or crossfades, pause removal, face- and motion-aware vertical reframing, and two-pass loudness normalization to -14 LUFS.
 - **Quality checks** on every export: duration, resolution, audio, black frames, frozen video, loudness and peak.
-- **Titles and descriptions** generated locally from the transcript, with no network and no AI service.
+- **Titles and descriptions** generated locally from the transcript, with no network and no AI service. A blocklist of sexual, violent, profane and hateful words (English and Hindi) keeps dialogue out of them: lines with such words are never used, and hashtags are the format, genre, part number and words the clip keeps returning to.
 - **No channel needed.** Make clips first and connect a channel whenever you like.
 - **Three clip folders.** Unassigned clips delete themselves after 24 hours, with a visible countdown. Queued clips wait for a channel with the timer paused. Saved clips are kept until you delete them, in a folder you choose. Temp files go right after each render.
 - **Channels.** YouTube, Instagram and Facebook, each with its own defaults, and linked channels that can receive the same clip.
