@@ -1,0 +1,338 @@
+{
+ "repeat_check": {
+  "rates_kbps": [
+   1000,
+   2000,
+   4000,
+   7000,
+   12000
+  ],
+  "seconds": 10.0,
+  "sources": {
+   "launch-orig.mp4@20": {
+    "h264_nvenc p5 (current)": {
+     "identical": true,
+     "runs": [
+      [
+       93.88,
+       2904095
+      ],
+      [
+       93.88,
+       2904095
+      ]
+     ]
+    },
+    "h264_nvenc p7 multipass": {
+     "identical": true,
+     "runs": [
+      [
+       93.78,
+       2855175
+      ],
+      [
+       93.78,
+       2855175
+      ]
+     ]
+    },
+    "libx264 slow 2-pass": {
+     "identical": false,
+     "runs": [
+      [
+       93.04,
+       2530603
+      ],
+      [
+       93.01,
+       2524940
+      ]
+     ]
+    },
+    "libx264 medium 2-pass": {
+     "identical": false,
+     "runs": [
+      [
+       92.78,
+       2561512
+      ],
+      [
+       92.77,
+       2557208
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "timing_1080": {
+  "rates_kbps": [
+   1000,
+   2000,
+   4000,
+   7000,
+   12000
+  ],
+  "seconds": 20.0,
+  "sources": {
+   "launch-orig.mp4@20": {
+    "9:16": {
+     "h264_nvenc p5 (current)": {
+      "kbps": 4000,
+      "seconds": [
+       2.38,
+       2.29,
+       2.3
+      ]
+     },
+     "h264_nvenc p7 multipass": {
+      "kbps": 4000,
+      "seconds": [
+       4.57,
+       4.53,
+       4.53
+      ]
+     },
+     "libx264 slow 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       15.79,
+       16.17,
+       15.48
+      ]
+     },
+     "libx264 medium 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       13.62,
+       13.59,
+       13.6
+      ]
+     }
+    },
+    "16:9": {
+     "h264_nvenc p5 (current)": {
+      "kbps": 4000,
+      "seconds": [
+       2.41,
+       2.35,
+       2.32
+      ]
+     },
+     "h264_nvenc p7 multipass": {
+      "kbps": 4000,
+      "seconds": [
+       4.36,
+       4.38,
+       4.39
+      ]
+     },
+     "libx264 slow 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       11.9,
+       11.72,
+       11.7
+      ]
+     },
+     "libx264 medium 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       9.86,
+       9.85,
+       9.8
+      ]
+     }
+    }
+   },
+   "spacewalk-orig.mp4@60": {
+    "9:16": {
+     "h264_nvenc p5 (current)": {
+      "kbps": 4000,
+      "seconds": [
+       2.44,
+       2.37,
+       2.36
+      ]
+     },
+     "h264_nvenc p7 multipass": {
+      "kbps": 4000,
+      "seconds": [
+       3.99,
+       3.95,
+       3.96
+      ]
+     },
+     "libx264 slow 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       11.94,
+       11.92,
+       11.85
+      ]
+     },
+     "libx264 medium 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       10.11,
+       10.11,
+       10.16
+      ]
+     }
+    },
+    "16:9": {
+     "h264_nvenc p5 (current)": {
+      "kbps": 4000,
+      "seconds": [
+       2.69,
+       2.59,
+       2.6
+      ]
+     },
+     "h264_nvenc p7 multipass": {
+      "kbps": 4000,
+      "seconds": [
+       3.95,
+       3.93,
+       3.89
+      ]
+     },
+     "libx264 slow 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       10.0,
+       9.91,
+       9.88
+      ]
+     },
+     "libx264 medium 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       8.16,
+       8.09,
+       8.17
+      ]
+     }
+    }
+   },
+   "interview-orig.mp4@120": {
+    "9:16": {
+     "h264_nvenc p5 (current)": {
+      "kbps": 4000,
+      "seconds": [
+       2.76,
+       2.59,
+       2.62
+      ]
+     },
+     "h264_nvenc p7 multipass": {
+      "kbps": 4000,
+      "seconds": [
+       4.2,
+       4.13,
+       4.12
+      ]
+     },
+     "libx264 slow 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       12.63,
+       12.68,
+       12.74
+      ]
+     },
+     "libx264 medium 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       10.72,
+       10.74,
+       10.81
+      ]
+     }
+    },
+    "16:9": {
+     "h264_nvenc p5 (current)": {
+      "kbps": 4000,
+      "seconds": [
+       2.84,
+       2.7,
+       2.76
+      ]
+     },
+     "h264_nvenc p7 multipass": {
+      "kbps": 4000,
+      "seconds": [
+       4.07,
+       4.09,
+       4.14
+      ]
+     },
+     "libx264 slow 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       10.41,
+       10.28,
+       10.3
+      ]
+     },
+     "libx264 medium 2-pass": {
+      "kbps": 4000,
+      "seconds": [
+       8.4,
+       8.34,
+       8.37
+      ]
+     }
+    }
+   }
+  }
+ },
+ "timing_4k": {
+  "rates_kbps": [
+   1000,
+   2000,
+   4000,
+   7000,
+   12000
+  ],
+  "seconds": 20.0,
+  "sources": {
+   "interview-orig.mp4@120": {
+    "16:9 4K": {
+     "h264_nvenc p5 (current)": {
+      "kbps": 16000,
+      "seconds": [
+       8.47,
+       8.41,
+       8.43
+      ]
+     },
+     "h264_nvenc p7 multipass": {
+      "kbps": 16000,
+      "seconds": [
+       14.39,
+       14.21,
+       14.31
+      ]
+     },
+     "libx264 slow 2-pass": {
+      "kbps": 16000,
+      "seconds": [
+       37.98,
+       38.34,
+       38.5
+      ]
+     },
+     "libx264 medium 2-pass": {
+      "kbps": 16000,
+      "seconds": [
+       30.02,
+       29.9,
+       29.77
+      ]
+     }
+    }
+   }
+  }
+ }
+}

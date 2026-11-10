@@ -1,0 +1,1316 @@
+{
+ "rates_kbps": [
+  1000,
+  2000,
+  4000,
+  7000,
+  12000
+ ],
+ "seconds": 20.0,
+ "sources": {
+  "generated-1080p.mp4@0": {
+   "9:16": {
+    "points": {
+     "h264_nvenc p5 (current)": [
+      {
+       "target_kbps": 1000,
+       "kbps": 3179.0,
+       "vmaf": 5.18,
+       "vmaf_harmonic": 0.29,
+       "seconds": 1.7
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 3264.4,
+       "vmaf": 14.75,
+       "vmaf_harmonic": 0.75,
+       "seconds": 1.6
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4679.2,
+       "vmaf": 58.44,
+       "vmaf_harmonic": 55.73,
+       "seconds": 1.7
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 8098.8,
+       "vmaf": 75.44,
+       "vmaf_harmonic": 74.23,
+       "seconds": 1.7
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 14256.5,
+       "vmaf": 87.57,
+       "vmaf_harmonic": 87.22,
+       "seconds": 1.7
+      }
+     ],
+     "h264_nvenc p7 multipass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 3180.9,
+       "vmaf": 6.39,
+       "vmaf_harmonic": 0.29,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 3300.6,
+       "vmaf": 15.97,
+       "vmaf_harmonic": 0.8,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4787.6,
+       "vmaf": 58.92,
+       "vmaf_harmonic": 55.97,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 8289.8,
+       "vmaf": 75.79,
+       "vmaf_harmonic": 74.52,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 14549.8,
+       "vmaf": 87.87,
+       "vmaf_harmonic": 87.52,
+       "seconds": 2.5
+      }
+     ],
+     "libx264 slow 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 917.7,
+       "vmaf": 8.38,
+       "vmaf_harmonic": 5.06,
+       "seconds": 5.4
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1800.6,
+       "vmaf": 27.4,
+       "vmaf_harmonic": 25.56,
+       "seconds": 5.5
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3749.2,
+       "vmaf": 55.45,
+       "vmaf_harmonic": 54.87,
+       "seconds": 5.9
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6531.5,
+       "vmaf": 73.03,
+       "vmaf_harmonic": 72.71,
+       "seconds": 6.4
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11072.7,
+       "vmaf": 85.49,
+       "vmaf_harmonic": 85.37,
+       "seconds": 7.2
+      }
+     ],
+     "libx264 medium 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 925.6,
+       "vmaf": 6.12,
+       "vmaf_harmonic": 3.06,
+       "seconds": 5.1
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1862.4,
+       "vmaf": 24.76,
+       "vmaf_harmonic": 23.48,
+       "seconds": 5.2
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3700.1,
+       "vmaf": 53.74,
+       "vmaf_harmonic": 53.18,
+       "seconds": 5.3
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6541.8,
+       "vmaf": 72.27,
+       "vmaf_harmonic": 71.97,
+       "seconds": 5.6
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11134.1,
+       "vmaf": 85.01,
+       "vmaf_harmonic": 84.9,
+       "seconds": 6.0
+      }
+     ]
+    },
+    "bd_rate_vs_current": {
+     "h264_nvenc p7 multipass": 1.1,
+     "libx264 slow 2-pass": -34.5,
+     "libx264 medium 2-pass": -31.9
+    },
+    "bd_rate_vs_current_above_vmaf_93": {
+     "h264_nvenc p7 multipass": null,
+     "libx264 slow 2-pass": null,
+     "libx264 medium 2-pass": null
+    }
+   },
+   "16:9": {
+    "points": {
+     "h264_nvenc p5 (current)": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1613.7,
+       "vmaf": 25.04,
+       "vmaf_harmonic": 2.44,
+       "seconds": 1.6
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2364.5,
+       "vmaf": 63.3,
+       "vmaf_harmonic": 61.49,
+       "seconds": 1.6
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4702.2,
+       "vmaf": 77.6,
+       "vmaf_harmonic": 76.79,
+       "seconds": 1.7
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 8238.3,
+       "vmaf": 85.68,
+       "vmaf_harmonic": 85.23,
+       "seconds": 1.6
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 14603.0,
+       "vmaf": 92.39,
+       "vmaf_harmonic": 92.25,
+       "seconds": 1.6
+      }
+     ],
+     "h264_nvenc p7 multipass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1643.3,
+       "vmaf": 27.51,
+       "vmaf_harmonic": 2.51,
+       "seconds": 2.4
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2396.4,
+       "vmaf": 63.42,
+       "vmaf_harmonic": 61.44,
+       "seconds": 2.4
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4750.4,
+       "vmaf": 77.63,
+       "vmaf_harmonic": 76.75,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 8397.6,
+       "vmaf": 85.74,
+       "vmaf_harmonic": 85.25,
+       "seconds": 2.4
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 14852.3,
+       "vmaf": 92.48,
+       "vmaf_harmonic": 92.34,
+       "seconds": 2.4
+      }
+     ],
+     "libx264 slow 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 828.8,
+       "vmaf": 42.11,
+       "vmaf_harmonic": 40.97,
+       "seconds": 4.6
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1888.8,
+       "vmaf": 67.08,
+       "vmaf_harmonic": 66.7,
+       "seconds": 4.7
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3927.2,
+       "vmaf": 77.1,
+       "vmaf_harmonic": 76.85,
+       "seconds": 5.3
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6660.6,
+       "vmaf": 84.1,
+       "vmaf_harmonic": 83.95,
+       "seconds": 5.6
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11479.0,
+       "vmaf": 91.02,
+       "vmaf_harmonic": 90.96,
+       "seconds": 6.3
+      }
+     ],
+     "libx264 medium 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 836.8,
+       "vmaf": 30.1,
+       "vmaf_harmonic": 28.81,
+       "seconds": 4.0
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1874.6,
+       "vmaf": 66.68,
+       "vmaf_harmonic": 66.32,
+       "seconds": 4.3
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3881.6,
+       "vmaf": 76.78,
+       "vmaf_harmonic": 76.53,
+       "seconds": 4.5
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6687.7,
+       "vmaf": 83.96,
+       "vmaf_harmonic": 83.8,
+       "seconds": 4.7
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11291.5,
+       "vmaf": 90.49,
+       "vmaf_harmonic": 90.43,
+       "seconds": 5.2
+      }
+     ]
+    },
+    "bd_rate_vs_current": {
+     "h264_nvenc p7 multipass": 0.9,
+     "libx264 slow 2-pass": -32.0,
+     "libx264 medium 2-pass": -32.5
+    },
+    "bd_rate_vs_current_above_vmaf_93": {
+     "h264_nvenc p7 multipass": null,
+     "libx264 slow 2-pass": null,
+     "libx264 medium 2-pass": null
+    }
+   }
+  },
+  "launch-orig.mp4@20": {
+   "9:16": {
+    "points": {
+     "h264_nvenc p5 (current)": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1191.1,
+       "vmaf": 89.18,
+       "vmaf_harmonic": 89.13,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2209.4,
+       "vmaf": 92.24,
+       "vmaf_harmonic": 92.22,
+       "seconds": 2.4
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4306.2,
+       "vmaf": 94.32,
+       "vmaf_harmonic": 94.31,
+       "seconds": 2.4
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7461.2,
+       "vmaf": 95.54,
+       "vmaf_harmonic": 95.54,
+       "seconds": 2.4
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 13006.6,
+       "vmaf": 96.55,
+       "vmaf_harmonic": 96.54,
+       "seconds": 2.4
+      }
+     ],
+     "h264_nvenc p7 multipass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1174.3,
+       "vmaf": 89.04,
+       "vmaf_harmonic": 88.95,
+       "seconds": 4.5
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2196.9,
+       "vmaf": 92.17,
+       "vmaf_harmonic": 92.14,
+       "seconds": 4.5
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4253.0,
+       "vmaf": 94.28,
+       "vmaf_harmonic": 94.27,
+       "seconds": 4.7
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7366.1,
+       "vmaf": 95.54,
+       "vmaf_harmonic": 95.53,
+       "seconds": 4.8
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12837.2,
+       "vmaf": 96.54,
+       "vmaf_harmonic": 96.53,
+       "seconds": 4.8
+      }
+     ],
+     "libx264 slow 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 982.9,
+       "vmaf": 89.29,
+       "vmaf_harmonic": 89.26,
+       "seconds": 13.4
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1979.8,
+       "vmaf": 92.01,
+       "vmaf_harmonic": 91.99,
+       "seconds": 14.5
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4017.7,
+       "vmaf": 93.88,
+       "vmaf_harmonic": 93.87,
+       "seconds": 16.4
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7011.4,
+       "vmaf": 95.07,
+       "vmaf_harmonic": 95.07,
+       "seconds": 17.7
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11977.3,
+       "vmaf": 96.15,
+       "vmaf_harmonic": 96.15,
+       "seconds": 19.7
+      }
+     ],
+     "libx264 medium 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 986.3,
+       "vmaf": 88.93,
+       "vmaf_harmonic": 88.9,
+       "seconds": 12.3
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1982.2,
+       "vmaf": 91.7,
+       "vmaf_harmonic": 91.68,
+       "seconds": 13.2
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4018.4,
+       "vmaf": 93.79,
+       "vmaf_harmonic": 93.78,
+       "seconds": 14.1
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7015.2,
+       "vmaf": 95.05,
+       "vmaf_harmonic": 95.04,
+       "seconds": 15.2
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12005.5,
+       "vmaf": 96.12,
+       "vmaf_harmonic": 96.11,
+       "seconds": 16.8
+      }
+     ]
+    },
+    "bd_rate_vs_current": {
+     "h264_nvenc p7 multipass": 0.5,
+     "libx264 slow 2-pass": 0.2,
+     "libx264 medium 2-pass": 6.3
+    },
+    "bd_rate_vs_current_above_vmaf_93": {
+     "h264_nvenc p7 multipass": -0.2,
+     "libx264 slow 2-pass": 13.2,
+     "libx264 medium 2-pass": 16.2
+    }
+   },
+   "16:9": {
+    "points": {
+     "h264_nvenc p5 (current)": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1192.7,
+       "vmaf": 90.35,
+       "vmaf_harmonic": 90.26,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2162.0,
+       "vmaf": 92.59,
+       "vmaf_harmonic": 92.54,
+       "seconds": 2.7
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4214.7,
+       "vmaf": 94.46,
+       "vmaf_harmonic": 94.44,
+       "seconds": 2.8
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7329.2,
+       "vmaf": 95.49,
+       "vmaf_harmonic": 95.48,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12857.5,
+       "vmaf": 96.43,
+       "vmaf_harmonic": 96.43,
+       "seconds": 2.5
+      }
+     ],
+     "h264_nvenc p7 multipass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1198.5,
+       "vmaf": 90.23,
+       "vmaf_harmonic": 90.09,
+       "seconds": 4.3
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2196.6,
+       "vmaf": 92.72,
+       "vmaf_harmonic": 92.68,
+       "seconds": 4.4
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4199.5,
+       "vmaf": 94.43,
+       "vmaf_harmonic": 94.42,
+       "seconds": 4.6
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7178.5,
+       "vmaf": 95.49,
+       "vmaf_harmonic": 95.48,
+       "seconds": 4.5
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12578.8,
+       "vmaf": 96.42,
+       "vmaf_harmonic": 96.42,
+       "seconds": 4.8
+      }
+     ],
+     "libx264 slow 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1011.4,
+       "vmaf": 90.3,
+       "vmaf_harmonic": 90.25,
+       "seconds": 9.7
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2010.9,
+       "vmaf": 92.66,
+       "vmaf_harmonic": 92.65,
+       "seconds": 10.5
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3978.6,
+       "vmaf": 94.22,
+       "vmaf_harmonic": 94.21,
+       "seconds": 12.2
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6964.3,
+       "vmaf": 95.16,
+       "vmaf_harmonic": 95.16,
+       "seconds": 13.9
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11856.6,
+       "vmaf": 96.1,
+       "vmaf_harmonic": 96.1,
+       "seconds": 15.6
+      }
+     ],
+     "libx264 medium 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1011.7,
+       "vmaf": 89.49,
+       "vmaf_harmonic": 89.42,
+       "seconds": 8.7
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2027.0,
+       "vmaf": 92.39,
+       "vmaf_harmonic": 92.37,
+       "seconds": 9.2
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3981.9,
+       "vmaf": 94.08,
+       "vmaf_harmonic": 94.08,
+       "seconds": 10.3
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6982.6,
+       "vmaf": 95.08,
+       "vmaf_harmonic": 95.08,
+       "seconds": 11.4
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11881.5,
+       "vmaf": 96.02,
+       "vmaf_harmonic": 96.02,
+       "seconds": 12.4
+      }
+     ]
+    },
+    "bd_rate_vs_current": {
+     "h264_nvenc p7 multipass": -0.9,
+     "libx264 slow 2-pass": -2.4,
+     "libx264 medium 2-pass": 6.7
+    },
+    "bd_rate_vs_current_above_vmaf_93": {
+     "h264_nvenc p7 multipass": -0.9,
+     "libx264 slow 2-pass": 6.7,
+     "libx264 medium 2-pass": 13.6
+    }
+   }
+  },
+  "spacewalk-orig.mp4@60": {
+   "9:16": {
+    "points": {
+     "h264_nvenc p5 (current)": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1076.0,
+       "vmaf": 78.84,
+       "vmaf_harmonic": 78.6,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2022.9,
+       "vmaf": 87.13,
+       "vmaf_harmonic": 86.99,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3918.3,
+       "vmaf": 92.54,
+       "vmaf_harmonic": 92.47,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6799.1,
+       "vmaf": 95.48,
+       "vmaf_harmonic": 95.45,
+       "seconds": 2.5
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11940.2,
+       "vmaf": 97.15,
+       "vmaf_harmonic": 97.12,
+       "seconds": 2.5
+      }
+     ],
+     "h264_nvenc p7 multipass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1107.6,
+       "vmaf": 80.51,
+       "vmaf_harmonic": 80.15,
+       "seconds": 4.0
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2015.5,
+       "vmaf": 87.49,
+       "vmaf_harmonic": 87.32,
+       "seconds": 4.0
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3917.4,
+       "vmaf": 92.6,
+       "vmaf_harmonic": 92.52,
+       "seconds": 4.1
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6903.4,
+       "vmaf": 95.53,
+       "vmaf_harmonic": 95.5,
+       "seconds": 4.0
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12080.6,
+       "vmaf": 97.16,
+       "vmaf_harmonic": 97.14,
+       "seconds": 4.1
+      }
+     ],
+     "libx264 slow 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1014.1,
+       "vmaf": 83.62,
+       "vmaf_harmonic": 83.38,
+       "seconds": 10.1
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2016.1,
+       "vmaf": 89.95,
+       "vmaf_harmonic": 89.82,
+       "seconds": 10.9
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3964.0,
+       "vmaf": 94.03,
+       "vmaf_harmonic": 93.97,
+       "seconds": 12.6
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6926.0,
+       "vmaf": 96.17,
+       "vmaf_harmonic": 96.13,
+       "seconds": 14.2
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11973.8,
+       "vmaf": 97.43,
+       "vmaf_harmonic": 97.41,
+       "seconds": 16.0
+      }
+     ],
+     "libx264 medium 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1021.0,
+       "vmaf": 83.26,
+       "vmaf_harmonic": 83.03,
+       "seconds": 9.6
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2013.5,
+       "vmaf": 89.6,
+       "vmaf_harmonic": 89.48,
+       "seconds": 10.1
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3965.9,
+       "vmaf": 93.82,
+       "vmaf_harmonic": 93.76,
+       "seconds": 10.7
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6953.7,
+       "vmaf": 96.03,
+       "vmaf_harmonic": 96.0,
+       "seconds": 11.0
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12025.3,
+       "vmaf": 97.37,
+       "vmaf_harmonic": 97.35,
+       "seconds": 11.8
+      }
+     ]
+    },
+    "bd_rate_vs_current": {
+     "h264_nvenc p7 multipass": -3.1,
+     "libx264 slow 2-pass": -25.5,
+     "libx264 medium 2-pass": -22.3
+    },
+    "bd_rate_vs_current_above_vmaf_93": {
+     "h264_nvenc p7 multipass": 0.1,
+     "libx264 slow 2-pass": -18.6,
+     "libx264 medium 2-pass": -14.7
+    }
+   },
+   "16:9": {
+    "points": {
+     "h264_nvenc p5 (current)": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1085.4,
+       "vmaf": 81.89,
+       "vmaf_harmonic": 81.76,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2034.5,
+       "vmaf": 88.89,
+       "vmaf_harmonic": 88.84,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3984.3,
+       "vmaf": 93.04,
+       "vmaf_harmonic": 93.02,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6932.9,
+       "vmaf": 95.41,
+       "vmaf_harmonic": 95.39,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12296.8,
+       "vmaf": 96.92,
+       "vmaf_harmonic": 96.92,
+       "seconds": 2.6
+      }
+     ],
+     "h264_nvenc p7 multipass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1104.8,
+       "vmaf": 84.12,
+       "vmaf_harmonic": 84.04,
+       "seconds": 3.9
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2043.9,
+       "vmaf": 89.47,
+       "vmaf_harmonic": 89.42,
+       "seconds": 3.9
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4013.0,
+       "vmaf": 93.28,
+       "vmaf_harmonic": 93.26,
+       "seconds": 3.9
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7102.7,
+       "vmaf": 95.61,
+       "vmaf_harmonic": 95.6,
+       "seconds": 4.0
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12442.5,
+       "vmaf": 96.99,
+       "vmaf_harmonic": 96.98,
+       "seconds": 3.9
+      }
+     ],
+     "libx264 slow 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1016.3,
+       "vmaf": 86.25,
+       "vmaf_harmonic": 86.17,
+       "seconds": 7.6
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2001.2,
+       "vmaf": 91.17,
+       "vmaf_harmonic": 91.13,
+       "seconds": 8.9
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3958.9,
+       "vmaf": 94.25,
+       "vmaf_harmonic": 94.23,
+       "seconds": 9.8
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6904.2,
+       "vmaf": 95.95,
+       "vmaf_harmonic": 95.94,
+       "seconds": 11.4
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11849.3,
+       "vmaf": 97.17,
+       "vmaf_harmonic": 97.16,
+       "seconds": 12.9
+      }
+     ],
+     "libx264 medium 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1012.9,
+       "vmaf": 85.74,
+       "vmaf_harmonic": 85.66,
+       "seconds": 6.9
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2000.8,
+       "vmaf": 90.87,
+       "vmaf_harmonic": 90.84,
+       "seconds": 7.3
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3963.0,
+       "vmaf": 94.05,
+       "vmaf_harmonic": 94.03,
+       "seconds": 8.2
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6925.3,
+       "vmaf": 95.85,
+       "vmaf_harmonic": 95.84,
+       "seconds": 8.8
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11894.4,
+       "vmaf": 97.12,
+       "vmaf_harmonic": 97.11,
+       "seconds": 9.4
+      }
+     ]
+    },
+    "bd_rate_vs_current": {
+     "h264_nvenc p7 multipass": -6.7,
+     "libx264 slow 2-pass": -27.2,
+     "libx264 medium 2-pass": -23.7
+    },
+    "bd_rate_vs_current_above_vmaf_93": {
+     "h264_nvenc p7 multipass": -3.5,
+     "libx264 slow 2-pass": -20.4,
+     "libx264 medium 2-pass": -16.5
+    }
+   }
+  },
+  "interview-orig.mp4@120": {
+   "9:16": {
+    "points": {
+     "h264_nvenc p5 (current)": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1117.4,
+       "vmaf": 73.89,
+       "vmaf_harmonic": 73.75,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2156.5,
+       "vmaf": 86.02,
+       "vmaf_harmonic": 85.95,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4242.4,
+       "vmaf": 91.73,
+       "vmaf_harmonic": 91.69,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7343.6,
+       "vmaf": 94.79,
+       "vmaf_harmonic": 94.76,
+       "seconds": 2.6
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12899.6,
+       "vmaf": 97.03,
+       "vmaf_harmonic": 97.01,
+       "seconds": 2.6
+      }
+     ],
+     "h264_nvenc p7 multipass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1119.8,
+       "vmaf": 74.17,
+       "vmaf_harmonic": 74.04,
+       "seconds": 4.1
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2152.8,
+       "vmaf": 85.97,
+       "vmaf_harmonic": 85.91,
+       "seconds": 4.2
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4239.6,
+       "vmaf": 91.74,
+       "vmaf_harmonic": 91.69,
+       "seconds": 4.2
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7369.9,
+       "vmaf": 94.81,
+       "vmaf_harmonic": 94.78,
+       "seconds": 4.2
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 13015.7,
+       "vmaf": 97.05,
+       "vmaf_harmonic": 97.03,
+       "seconds": 4.2
+      }
+     ],
+     "libx264 slow 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 985.5,
+       "vmaf": 79.01,
+       "vmaf_harmonic": 78.93,
+       "seconds": 10.2
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1965.9,
+       "vmaf": 88.12,
+       "vmaf_harmonic": 88.08,
+       "seconds": 11.1
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3961.7,
+       "vmaf": 92.98,
+       "vmaf_harmonic": 92.95,
+       "seconds": 12.4
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6950.1,
+       "vmaf": 95.42,
+       "vmaf_harmonic": 95.39,
+       "seconds": 14.1
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11947.0,
+       "vmaf": 97.17,
+       "vmaf_harmonic": 97.16,
+       "seconds": 15.9
+      }
+     ],
+     "libx264 medium 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 986.6,
+       "vmaf": 78.27,
+       "vmaf_harmonic": 78.19,
+       "seconds": 9.1
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1970.5,
+       "vmaf": 87.68,
+       "vmaf_harmonic": 87.64,
+       "seconds": 10.1
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3975.2,
+       "vmaf": 92.73,
+       "vmaf_harmonic": 92.71,
+       "seconds": 10.8
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6949.2,
+       "vmaf": 95.24,
+       "vmaf_harmonic": 95.22,
+       "seconds": 11.5
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11874.7,
+       "vmaf": 97.03,
+       "vmaf_harmonic": 97.01,
+       "seconds": 12.6
+      }
+     ]
+    },
+    "bd_rate_vs_current": {
+     "h264_nvenc p7 multipass": 0.0,
+     "libx264 slow 2-pass": -24.8,
+     "libx264 medium 2-pass": -21.3
+    },
+    "bd_rate_vs_current_above_vmaf_93": {
+     "h264_nvenc p7 multipass": -0.0,
+     "libx264 slow 2-pass": -18.8,
+     "libx264 medium 2-pass": -14.8
+    }
+   },
+   "16:9": {
+    "points": {
+     "h264_nvenc p5 (current)": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1162.3,
+       "vmaf": 85.02,
+       "vmaf_harmonic": 84.85,
+       "seconds": 2.9
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2102.1,
+       "vmaf": 90.78,
+       "vmaf_harmonic": 90.74,
+       "seconds": 2.7
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4165.0,
+       "vmaf": 94.3,
+       "vmaf_harmonic": 94.29,
+       "seconds": 2.8
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7317.9,
+       "vmaf": 96.01,
+       "vmaf_harmonic": 96.0,
+       "seconds": 2.7
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12466.4,
+       "vmaf": 96.92,
+       "vmaf_harmonic": 96.92,
+       "seconds": 2.7
+      }
+     ],
+     "h264_nvenc p7 multipass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 1145.8,
+       "vmaf": 86.06,
+       "vmaf_harmonic": 86.03,
+       "seconds": 4.1
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 2113.1,
+       "vmaf": 91.17,
+       "vmaf_harmonic": 91.15,
+       "seconds": 4.2
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 4185.5,
+       "vmaf": 94.38,
+       "vmaf_harmonic": 94.37,
+       "seconds": 4.2
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 7313.8,
+       "vmaf": 96.04,
+       "vmaf_harmonic": 96.03,
+       "seconds": 4.1
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 12617.0,
+       "vmaf": 96.94,
+       "vmaf_harmonic": 96.94,
+       "seconds": 4.1
+      }
+     ],
+     "libx264 slow 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 994.1,
+       "vmaf": 89.38,
+       "vmaf_harmonic": 89.37,
+       "seconds": 7.9
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1980.2,
+       "vmaf": 92.63,
+       "vmaf_harmonic": 92.62,
+       "seconds": 8.8
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3979.1,
+       "vmaf": 94.78,
+       "vmaf_harmonic": 94.77,
+       "seconds": 10.5
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6921.8,
+       "vmaf": 96.15,
+       "vmaf_harmonic": 96.14,
+       "seconds": 12.2
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11850.8,
+       "vmaf": 97.04,
+       "vmaf_harmonic": 97.03,
+       "seconds": 14.0
+      }
+     ],
+     "libx264 medium 2-pass": [
+      {
+       "target_kbps": 1000,
+       "kbps": 998.7,
+       "vmaf": 89.27,
+       "vmaf_harmonic": 89.24,
+       "seconds": 7.1
+      },
+      {
+       "target_kbps": 2000,
+       "kbps": 1999.1,
+       "vmaf": 92.56,
+       "vmaf_harmonic": 92.55,
+       "seconds": 7.7
+      },
+      {
+       "target_kbps": 4000,
+       "kbps": 3980.0,
+       "vmaf": 94.64,
+       "vmaf_harmonic": 94.63,
+       "seconds": 8.7
+      },
+      {
+       "target_kbps": 7000,
+       "kbps": 6930.1,
+       "vmaf": 96.04,
+       "vmaf_harmonic": 96.03,
+       "seconds": 9.6
+      },
+      {
+       "target_kbps": 12000,
+       "kbps": 11872.3,
+       "vmaf": 96.98,
+       "vmaf_harmonic": 96.97,
+       "seconds": 10.0
+      }
+     ]
+    },
+    "bd_rate_vs_current": {
+     "h264_nvenc p7 multipass": -4.7,
+     "libx264 slow 2-pass": -27.6,
+     "libx264 medium 2-pass": -25.2
+    },
+    "bd_rate_vs_current_above_vmaf_93": {
+     "h264_nvenc p7 multipass": -1.7,
+     "libx264 slow 2-pass": -17.5,
+     "libx264 medium 2-pass": -13.4
+    }
+   }
+  }
+ }
+}
