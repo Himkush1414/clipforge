@@ -1,9 +1,10 @@
 """Visual regression: every preset at every ratio, compared with reference frames.
 
-The references were rendered by the development machine's FFmpeg build. CI's FFmpeg and libass are
-different versions, so letters are not pixel-identical: anti-aliasing and hinting move edges by a pixel
-or so. The comparison therefore ignores single-pixel differences and fails on what a viewer would see:
-text in a different place or size, a missing or extra word, a wrong colour, or empty boxes.
+The references were rendered by the development machine's static FFmpeg build. CI uses Ubuntu's FFmpeg,
+and on 2026-11-10 (FFmpeg 8, libass 0.17.4) it drew all 126 frames pixel for pixel the same. A future
+libass, FreeType or HarfBuzz may move edges by a pixel, so the comparison ignores differences that small
+and fails on what a viewer would see: text in a different place or size, a missing or extra word, a
+wrong colour, or empty boxes.
 
 Regenerate after an intended visual change:
   CLIPFORGE_UPDATE_VISUAL=1 pytest tests/test_caption_visual.py
@@ -46,11 +47,11 @@ SCENES: dict[str, list[str]] = {
 }
 STEP = 0.8
 
-# Limits for what counts as the same picture; see compare(). Set from the measured gap between the
-# development machine's FFmpeg and CI's, with a margin, and checked against deliberate breakages.
-MAX_EDGE_SHIFT = 0.012  # fraction of the frame height
-MAX_INK_CHANGE = 0.12  # fraction of the reference's text pixels
-MAX_CHANGED_CELLS = 0.10  # fraction of 4x4 cells holding text whose colour changed clearly
+# Limits for what counts as the same picture; see compare(). CI measured 0 on all three, so these leave
+# room for a few pixels of drift in a future libass, and were checked against deliberate breakages.
+MAX_EDGE_SHIFT = 0.008  # fraction of the frame height: 4 px at 540, 8 px at 960
+MAX_INK_CHANGE = 0.08  # fraction of the reference's text pixels
+MAX_CHANGED_CELLS = 0.03  # fraction of 4x4 cells holding text whose colour changed clearly
 
 
 def scene_words(tokens: list[str]) -> list[Word]:

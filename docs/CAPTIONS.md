@@ -89,3 +89,35 @@ Captions use the language spoken in the video, and they are not translated. Each
 ## Rendering
 
 Captions are burned in with FFmpeg's `ass` filter. Each word is a separate event positioned by hand, using `\t` transforms for colour and scale. Use **Real render** in the editor to see the exact output. The live preview is a close browser approximation.
+
+## Visual regression tests
+
+`engine/tests/test_caption_visual.py` renders every built-in preset at every ratio and compares each frame with a reference PNG in `engine/tests/visual/`. Six scenes cover the tricky cases: one word, a word too wide for the safe area that must shrink, a pair of wide words that wraps in the larger presets, numbers, mixed Latin, Devanagari and Arabic, and CJK (skipped when the CJK font is missing). That makes 126 frames.
+
+The comparison ignores pixel-level drift and fails when a viewer would see a difference. It measures how far the text's edges moved, how much the amount of drawn text changed, and how many small cells of text changed colour. CI uses Ubuntu's FFmpeg, not the static build the references came from. When this was set up, CI drew all 126 frames identically. The limits leave room for a future libass to move edges by a pixel or two.
+
+After an intended change to how captions look, regenerate the references and review the changed images before committing:
+
+```bash
+cd engine
+CLIPFORGE_UPDATE_VISUAL=1 pytest tests/test_caption_visual.py
+git diff --stat tests/visual
+```
+
+When a frame fails in CI, the rendered frame and a difference image are kept in the `caption-visual` artifact of that run.
+
+The limits were checked by breaking things on purpose and rendering all 126 cases each time:
+
+| Change | Caught |
+|---|---|
+| Big word not made big | 94 of 94 that changed |
+| Active word in another colour | 126 of 126 |
+| Text 2% lower | 92 of 93 (the other sits against the safe margin, so it did not move) |
+| Text 10% larger | 98 of 98 |
+| Outline removed | 126 of 126 |
+| Another font | 126 of 126 |
+| First or last word missing | 156 of 156 |
+| Text 0.5 px lower (should pass) | 0 of 93 flagged |
+| Text 1% larger | 74 of 95 flagged |
+
+A half-pixel shift, the kind of drift a new libass could bring, passes. A 1% size change is usually flagged. That is a real change in layout, but too small to see. A looser colour check that let it through also missed 6 cases where the big word was not made big, so the stricter check was kept.
