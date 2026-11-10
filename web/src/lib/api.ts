@@ -79,6 +79,8 @@ export type Clip = {
   rights_detail: string | null;
   /** False for clips from a "Private test, never upload" job: they can never be queued or uploaded. */
   uploadable: boolean;
+  /** The channel the job was made for, or null for "No channel". */
+  channel_id: string | null;
   qc: { status?: "ok" | "warn" | "fail"; checks?: QcCheck[]; encoder?: string };
   reasons: { why?: string };
   seconds_left: number | null;

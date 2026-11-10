@@ -220,6 +220,22 @@ const TABS = [
   { value: "saved", label: "Saved", help: "Never deleted automatically." },
 ] as const;
 
+type ChannelGroup = { key: string; label: string; clips: Clip[] };
+
+/** Clips under a heading per channel, "No channel" first, so clips made without one are easy to find. */
+function groupByChannel(clips: Clip[], channels: Channel[]): ChannelGroup[] {
+  const groups = new Map<string, ChannelGroup>();
+  for (const clip of clips) {
+    const key = clip.channel_id ?? "";
+    if (!groups.has(key)) {
+      const label = key ? (channels.find((c) => c.id === key)?.name ?? "Removed channel") : "No channel";
+      groups.set(key, { key, label, clips: [] });
+    }
+    groups.get(key)!.clips.push(clip);
+  }
+  return [...groups.values()].sort((a, b) => (a.key === "" ? -1 : b.key === "" ? 1 : a.label.localeCompare(b.label)));
+}
+
 export default function ClipsPage() {
   const { data: clips, error, refresh } = usePoll<Clip[]>("/api/clips", 5000);
   const { data: channels } = usePoll<Channel[]>("/api/channels", 15000);
@@ -273,19 +289,26 @@ export default function ClipsPage() {
         }}
       />
       {clips && shown.length === 0 && <EmptyState title={`Nothing in ${TABS.find((t) => t.value === tab)?.label} right now`} />}
-      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {shown.map((clip) => (
-          <ClipCard
-            key={`${clip.id}-${clip.folder}`}
-            clip={clip}
-            channels={channels ?? []}
-            uploads={uploads?.filter((u) => u.clip_id === clip.id) ?? []}
-            selected={selected.includes(clip.id)}
-            onSelect={(on) => setSelected((s) => (on ? [...s, clip.id] : s.filter((id) => id !== clip.id)))}
-            onChange={refreshAll}
-          />
-        ))}
-      </div>
+      {groupByChannel(shown, channels ?? []).map((group) => (
+        <section key={group.key || "none"} aria-label={`Channel: ${group.label}`} className="mb-6">
+          <h2 className="mb-2 text-sm font-semibold">
+            {group.label} <span className="font-normal text-muted">({group.clips.length})</span>
+          </h2>
+          <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {group.clips.map((clip) => (
+              <ClipCard
+                key={`${clip.id}-${clip.folder}`}
+                clip={clip}
+                channels={channels ?? []}
+                uploads={uploads?.filter((u) => u.clip_id === clip.id) ?? []}
+                selected={selected.includes(clip.id)}
+                onSelect={(on) => setSelected((s) => (on ? [...s, clip.id] : s.filter((id) => id !== clip.id)))}
+                onChange={refreshAll}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
     </>
   );
 }
