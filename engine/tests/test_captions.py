@@ -114,6 +114,45 @@ def test_word_kinds():
     assert classify_word(Word("boat", 0, 1)) == "normal"
 
 
+def big_word(text: str) -> str | None:
+    """The big word of a one-group caption, from a whole sentence so names can be told apart."""
+    words = words_from(text)
+    groups = group_words(words, CaptionPreset(uppercase=False, max_words=3), "16:9")
+    big = [w.text for g in groups for w in g.words if w.kind == "emphasis"]
+    assert len(big) <= len(groups)
+    return big[-1] if big else None
+
+
+def test_a_name_mid_sentence_is_the_big_word():
+    assert big_word("studying Mars or") == "Mars"
+    # The end of a two-word name.
+    assert big_word("with Scott Kelly") == "Kelly"
+
+
+def test_a_capital_at_a_sentence_start_is_not_a_name():
+    assert big_word("Today the") is None
+    assert big_word("done. Then the") is None
+
+
+def test_capital_i_contractions_are_not_names():
+    assert big_word("and then I'll go") is None
+
+
+def test_numbers_win_over_long_words():
+    assert big_word("been eight years") == "eight"
+    assert big_word("Episode 378,") == "378,"
+
+
+def test_generic_words_are_never_big():
+    assert big_word("something actually") is None
+    assert classify_word(Word("probably", 0, 1)) == "normal"
+
+
+def test_long_content_word_is_big_and_short_one_is_not():
+    assert big_word("an integral member") == "integral"
+    assert big_word("in the park") is None
+
+
 def test_only_one_big_word_in_a_group():
     groups = group_words(words_from("incredible unbelievable amazing"), CaptionPreset(), "9:16")
     assert all(sum(w.kind == "emphasis" for w in g.words) <= 1 for g in groups)
