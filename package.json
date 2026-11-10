@@ -1,0 +1,9 @@
+{
+  "name": "clipforge",
+  "private": true,
+  "description": "Starts the engine API and the web app together. No dependencies at this level.",
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "start": "bash scripts/dev.sh --prod"
+  }
+}

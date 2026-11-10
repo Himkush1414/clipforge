@@ -13,6 +13,10 @@ export HF_HOME="$WORK/models/hf"
 API=$!
 trap 'kill $API 2>/dev/null || true' EXIT
 cd "$ROOT/web"
+if [ ! -d node_modules ]; then
+  echo "clipforge: installing the web app's packages (first run only)"
+  npm ci
+fi
 echo "clipforge: open http://localhost:3000"
 if [ "${1:-}" = "--prod" ]; then
   npm run build
