@@ -57,7 +57,7 @@ Built-in presets cannot be changed. Save a copy to edit one.
 
 | Kind | Rule |
 |---|---|
-| Emphasis (big) | Numbers, strong words, words ending in `!`, all-caps words, words of 8 or more letters |
+| Emphasis (big) | At most one word per group. Numbers, names (a capital letter mid-sentence), strong words, words ending in `!` and all-caps words come first; otherwise the longest word of 7 or more letters that is not a common or generic word ("thing", "actually"). See [ENGINE.md](ENGINE.md#caption-emphasis) |
 | Filler (small) | Common short words such as "the" and "to" |
 | Normal | Everything else |
 
