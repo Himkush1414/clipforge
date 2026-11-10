@@ -11,7 +11,7 @@ from sqlmodel import select
 from clipforge.config import get_settings
 from clipforge.db import session_scope
 from clipforge.folders import FolderError, file_lock, folder_dir, move_file
-from clipforge.models import Clip, ClipFolder, ClipStatus, Upload, UploadStatus, utcnow
+from clipforge.models import Clip, ClipFolder, ClipStatus, Job, Upload, UploadStatus, uploadable, utcnow
 
 log = logging.getLogger("clipforge.folders")
 
@@ -26,6 +26,12 @@ def move_clip(clip_id: str, folder: str) -> Clip:
             raise FolderError("Clip not found.")
         if clip.status != ClipStatus.ready.value or not clip.path:
             raise FolderError("This clip has expired and was deleted.")
+        if folder == ClipFolder.queued.value:
+            job = session.get(Job, clip.job_id)
+            if job is None or not uploadable(job.rights_type):
+                raise FolderError(
+                    "This clip is from a private test video, so it cannot be queued for upload."
+                )
         uploading = session.exec(
             select(Upload).where(Upload.clip_id == clip_id, Upload.status == UploadStatus.uploading.value)
         ).first()

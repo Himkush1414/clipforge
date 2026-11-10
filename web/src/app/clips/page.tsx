@@ -104,6 +104,7 @@ function ClipCard({
           <Badge>{formatDuration(clip.duration)}</Badge>
           <Badge>{formatBytes(clip.size_bytes)}</Badge>
           {clip.part && <Badge>Part {clip.part}</Badge>}
+          {!clip.uploadable && <Badge tone="warn">Private test: never uploaded</Badge>}
           <button type="button" className="cursor-pointer" aria-expanded={showQc} onClick={() => setShowQc(!showQc)}>
             <Badge tone={qc}>Quality: {qc}</Badge>
           </button>
@@ -189,7 +190,13 @@ function ClipCard({
             </button>
           )}
           {clip.folder !== "queued" && (
-            <button type="button" className="btn" onClick={() => run(() => moveTo("queued"), "Moved to Queued. The timer is paused.")}>
+            <button
+              type="button"
+              className="btn"
+              disabled={!clip.uploadable}
+              title={clip.uploadable ? undefined : "Private test clips are never uploaded"}
+              onClick={() => run(() => moveTo("queued"), "Moved to Queued. The timer is paused.")}
+            >
               Move to Queued
             </button>
           )}

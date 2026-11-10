@@ -77,6 +77,8 @@ export type Clip = {
   folder: "unassigned" | "queued" | "saved";
   rights_type: string | null;
   rights_detail: string | null;
+  /** False for clips from a "Private test, never upload" job: they can never be queued or uploaded. */
+  uploadable: boolean;
   qc: { status?: "ok" | "warn" | "fail"; checks?: QcCheck[]; encoder?: string };
   reasons: { why?: string };
   seconds_left: number | null;
@@ -261,6 +263,7 @@ export const RIGHTS_LABELS: Record<string, string> = {
   public_domain: "Public domain",
   creative_commons: "Creative Commons",
   written_permission: "Written permission",
+  private_test: "Private test, never upload",
 };
 
 export type ClaimMatch = {

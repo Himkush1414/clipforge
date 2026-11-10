@@ -158,6 +158,7 @@ e2e/           real browser test run
 clipforge is an editor for footage you have the right to use.
 
 - **Every job needs a source rights record:** own footage, public domain, Creative Commons with the credit text, or written permission with a link or note. It is saved with the job, and the job cannot start without it.
+- **Private test, never upload:** for trying clipforge on footage you have no rights to share. The job runs, but its clips are marked as never uploadable: Move to Queued and Upload are disabled, and the API refuses to queue or upload them. They can still be watched, downloaded for yourself, and moved to Saved.
 - **Credits are automatic.** Creative Commons credit text goes into each description and stays there even if a template or an edit leaves it out.
 - **No Content ID evasion.** There is no pitch shifting, mirroring, speed change, or crop or filter meant to dodge detection. Render graphs refuse those filters outright, and a test proves it.
 - **Claims stop everything.** When a platform reports a claim, or you report one, clipforge logs the details, holds waiting uploads from that video and blocks new ones until you decide. Your options are to trim the claimed part, replace the audio with a track you hold a licence for, or dispute with the platform if you hold a licence. Nothing re-uploads or re-edits by itself, and the claimed clip can never be sent again.

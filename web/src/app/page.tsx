@@ -17,7 +17,7 @@ import {
   type Source,
 } from "@/lib/api";
 
-type Rights = "" | "own" | "public_domain" | "creative_commons" | "written_permission";
+type Rights = "" | "own" | "public_domain" | "creative_commons" | "written_permission" | "private_test";
 type Ratio = "9:16" | "1:1" | "16:9";
 
 const GENRES = ["anime", "movie", "series", "gameplay", "podcast", "other"] as const;
@@ -231,6 +231,12 @@ export default function NewJobPage() {
                   ))}
                 </select>
               </Field>
+              {rights === "private_test" && (
+                <p className="text-xs text-warn">
+                  For trying the app on footage you have no rights to share. You can watch and keep the clips, but they can never be
+                  queued or uploaded.
+                </p>
+              )}
               {(rights === "creative_commons" || rights === "written_permission" || rights === "public_domain") && (
                 <Field
                   label={rights === "creative_commons" ? "Credit text" : rights === "written_permission" ? "Link or note" : "Source note (optional)"}
@@ -391,6 +397,7 @@ export default function NewJobPage() {
         <NoChannelDialog
           onJustMake={() => void submit("unassigned")}
           onLater={() => void submit("queued")}
+          canQueue={rights !== "private_test"}
           onCancel={() => setShowNoChannel(false)}
         />
       )}

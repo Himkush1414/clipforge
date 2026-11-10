@@ -438,3 +438,19 @@ def test_long_format_has_no_shorts_tag():
     _, description = build_metadata("A real sentence here.", "x", "other", None, "long", "own", "")
     assert "#shorts" not in description
     assert json.dumps(description)
+
+
+def test_private_test_is_an_honest_rights_choice_but_never_goes_to_the_upload_queue(client, scene_video):
+    source = add_source(client, scene_video)
+    body = {
+        "source_id": source["id"],
+        "mode": "manual",
+        "manual": manual(),
+        "rights": {"type": "private_test"},
+    }
+    queued = client.post("/api/jobs", json={**body, "destination": "queued"})
+    assert queued.status_code == 422 and "private test" in queued.text
+    assert client.get("/api/jobs").json() == []
+    made = client.post("/api/jobs", json=body)
+    assert made.status_code == 201, made.text
+    assert made.json()["rights_type"] == "private_test"

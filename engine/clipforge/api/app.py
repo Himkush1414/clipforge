@@ -60,6 +60,7 @@ from clipforge.models import (
     Upload,
     UploadStatus,
     new_id,
+    uploadable,
     utcnow,
 )
 from clipforge.pipeline import run_job
@@ -139,6 +140,7 @@ def clip_json(clip: Clip, job: Job | None = None) -> dict:
         "seconds_left": left,
         "rights_type": job.rights_type if job else None,
         "rights_detail": job.rights_detail if job else None,
+        "uploadable": uploadable(job.rights_type if job else None),
         "file_url": f"/api/clips/{clip.id}/file" if clip.path else None,
         "thumb_url": f"/api/clips/{clip.id}/thumb" if clip.thumb_path else None,
     }
@@ -377,6 +379,8 @@ def create_app() -> FastAPI:
             raise HTTPException(410, "That video was deleted.")
         if body.channel_id:
             require(session, Channel, body.channel_id, "Channel")
+        if body.destination == "queued" and not uploadable(body.rights.type.value):
+            raise HTTPException(422, "Clips from a private test video cannot go to the upload queue.")
         if body.mode == "auto" and body.frame_cuts:
             raise HTTPException(422, "Frame cuts need manual mode.")
         if body.manual and body.manual.resolution not in detect().allowed_resolutions:
