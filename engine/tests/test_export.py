@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -189,6 +190,35 @@ def test_loudness_normalized_near_target(scene_video, tmp_path):
     checks = {c["name"]: c for c in qc["checks"]}
     assert checks["loudness"]["status"] == "ok", checks["loudness"]
     assert checks["true_peak"]["status"] == "ok", checks["true_peak"]
+
+
+def test_loud_audio_ends_under_the_true_peak_ceiling_after_encoding(tmp_path):
+    """Audio that forces the limiter. The encoded file must still measure under -1.0 dBFS."""
+    from clipforge.media.ffmpeg import find_tool
+
+    source = tmp_path / "loud.mp4"
+    subprocess.run(
+        [
+            find_tool("ffmpeg"), "-v", "error", "-y",
+            "-f", "lavfi", "-i", "testsrc2=s=320x180:r=30:d=6",
+            # A quiet tone with short full-scale bursts: reaching -14 LUFS needs more gain than the
+            # bursts have headroom for, so the limiter must work, as on dialogue with sudden hits.
+            "-f", "lavfi", "-i",
+            "aevalsrc=0.02*sin(2*PI*440*t)+if(lt(mod(t\\,0.4)\\,0.02)\\,0.95*sin(2*PI*2500*t)\\,0):d=6:s=48000",
+            "-c:v", "libx264", "-c:a", "aac", "-shortest", str(source),
+        ],
+        check=True,
+    )  # fmt: skip
+    result = render_clip(spec_for(source, tmp_path, [Segment(0, 150)]))
+    out = subprocess.run(
+        [find_tool("ffmpeg"), "-hide_banner", "-nostats", "-i", str(result.path), "-filter_complex",
+         "ebur128=peak=true", "-f", "null", "-"],
+        capture_output=True, text=True, check=True,
+    ).stderr  # fmt: skip
+    peak = float(re.findall(r"Peak:\s+(-?[\d.]+) dBFS", out.split("Summary:")[-1])[-1])
+    assert peak <= -1.0, peak
+    qc = run_qc(result.path, result.width, result.height, result.duration, 30, True)
+    assert {c["name"]: c for c in qc["checks"]}["true_peak"]["status"] == "ok"
 
 
 def test_temp_files_are_removed_after_render(scene_video, tmp_path):
@@ -540,3 +570,18 @@ def test_motion_is_the_fallback_when_there_is_no_face():
     center, confidence = reframe.find_subject(frame, previous)
     assert confidence == 0.5
     assert abs(center - 270 / 320) < 0.02
+
+
+def test_second_loudness_pass_limits_peaks_at_minus_1_5():
+    from clipforge.export.render import loudnorm_filter
+
+    stats = {
+        "input_i": "-30",
+        "input_tp": "-3",
+        "input_lra": "5",
+        "input_thresh": "-40",
+        "target_offset": "0",
+    }
+    assert "TP=-1.5" in loudnorm_filter(stats)  # +16 dB would push peaks past the limit
+    quiet = {**stats, "input_tp": "-20"}
+    assert loudnorm_filter(quiet) == "volume=16.00dB"  # +16 dB leaves the peak at -4: plain gain
