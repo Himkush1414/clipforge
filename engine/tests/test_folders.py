@@ -596,3 +596,32 @@ def test_clip_list_filters_by_folder(client):
     assert [x["id"] for x in client.get("/api/clips", params={"folder": "saved"}).json()] == [c]
     assert {x["id"] for x in client.get("/api/clips").json()} == {a, b, c}
     assert next(x for x in client.get("/api/clips").json() if x["id"] == c)["seconds_left"] is None
+
+
+# ---------- private test footage ----------
+def test_private_test_clips_can_be_saved_but_never_queued_or_uploaded(client):
+    clip_id, _, _ = make_clip(rights="private_test")
+    body = client.get(f"/api/clips/{clip_id}").json()
+    assert body["rights_type"] == "private_test" and body["uploadable"] is False
+    refused = client.post(f"/api/clips/{clip_id}/move", json={"folder": "queued"})
+    assert refused.status_code == 409 and "private test" in refused.json()["detail"]
+    bulk = client.post("/api/clips/bulk", json={"clip_ids": [clip_id], "action": "move_queued"}).json()
+    assert bulk["done"] == [] and "private test" in bulk["failed"][0]["error"]
+    assert row(clip_id).folder == "unassigned"
+    channel_id = _channel()
+    with pytest.raises(service.UploadBlocked, match="private test"):
+        service.queue_upload(clip_id, [channel_id], "private", False)
+    one = client.post(f"/api/clips/{clip_id}/upload", json={"channel_id": channel_id})
+    assert one.status_code >= 400 and "private test" in one.text
+    many = client.post("/api/uploads/bulk", json={"clip_ids": [clip_id], "channel_id": channel_id}).json()
+    assert many["done"] == [] and "private test" in many["failed"][0]["error"]
+    assert client.get("/api/uploads").json() == []
+    # Keeping it is fine: Saved is not an upload queue.
+    assert client.post(f"/api/clips/{clip_id}/move", json={"folder": "saved"}).status_code == 200
+    assert row(clip_id).folder == "saved"
+
+
+def test_clips_with_real_rights_stay_uploadable(client):
+    clip_id, _, _ = make_clip(rights="own")
+    assert client.get(f"/api/clips/{clip_id}").json()["uploadable"] is True
+    assert client.post(f"/api/clips/{clip_id}/move", json={"folder": "queued"}).status_code == 200

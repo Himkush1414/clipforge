@@ -13,7 +13,17 @@ from sqlmodel import col, select
 from clipforge.clip_files import start_timer_after_upload
 from clipforge.db import session_scope
 from clipforge.metadata import credit_line
-from clipforge.models import Channel, Clip, ClipStatus, Job, RightsType, Upload, UploadStatus, utcnow
+from clipforge.models import (
+    Channel,
+    Clip,
+    ClipStatus,
+    Job,
+    RightsType,
+    Upload,
+    UploadStatus,
+    uploadable,
+    utcnow,
+)
 from clipforge.uploads import meta, youtube
 from clipforge.uploads.base import RemoteState, UploadError, UploadRequest
 
@@ -76,6 +86,8 @@ def queue_upload(clip_id: str, channel_ids: list[str], privacy: str, made_for_ki
         job = session.get(Job, clip.job_id)
         if job is None or job.rights_type not in {r.value for r in RightsType}:
             raise UploadBlocked("This clip has no source rights record, so it cannot be uploaded.")
+        if not uploadable(job.rights_type):
+            raise UploadBlocked("This clip is from a private test video, so it is never uploaded.")
         if clip.qc.get("status") == "fail":
             raise UploadBlocked("This clip failed its quality checks. Fix or recut it first.")
         claimed_before = session.exec(

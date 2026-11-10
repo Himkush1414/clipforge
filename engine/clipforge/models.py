@@ -23,6 +23,13 @@ class RightsType(StrEnum):
     public_domain = "public_domain"
     creative_commons = "creative_commons"
     written_permission = "written_permission"
+    # Footage with no upload rights, used only to try the app. Its clips can never be queued or uploaded.
+    private_test = "private_test"
+
+
+def uploadable(rights_type: str | None) -> bool:
+    """Whether clips from a job with these rights may ever be queued or uploaded."""
+    return rights_type in {r.value for r in RightsType} and rights_type != RightsType.private_test.value
 
 
 class JobStatus(StrEnum):
