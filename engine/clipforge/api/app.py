@@ -141,6 +141,7 @@ def clip_json(clip: Clip, job: Job | None = None) -> dict:
         "rights_type": job.rights_type if job else None,
         "rights_detail": job.rights_detail if job else None,
         "uploadable": uploadable(job.rights_type if job else None),
+        "channel_id": job.channel_id if job else None,
         "file_url": f"/api/clips/{clip.id}/file" if clip.path else None,
         "thumb_url": f"/api/clips/{clip.id}/thumb" if clip.thumb_path else None,
     }

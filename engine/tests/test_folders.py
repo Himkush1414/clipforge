@@ -625,3 +625,18 @@ def test_clips_with_real_rights_stay_uploadable(client):
     clip_id, _, _ = make_clip(rights="own")
     assert client.get(f"/api/clips/{clip_id}").json()["uploadable"] is True
     assert client.post(f"/api/clips/{clip_id}/move", json={"folder": "queued"}).status_code == 200
+
+
+# ---------- grouping by channel ----------
+def test_clips_say_which_channel_their_job_was_for(client):
+    loose, _, _ = make_clip()
+    channel_id = _channel()
+    for_channel, _, _ = make_clip()
+    with session_scope() as s:
+        job = s.get(Job, s.get(Clip, for_channel).job_id)
+        job.channel_id = channel_id
+        s.add(job)
+        s.commit()
+    listed = {c["id"]: c["channel_id"] for c in client.get("/api/clips").json()}
+    assert listed[loose] is None
+    assert listed[for_channel] == channel_id
