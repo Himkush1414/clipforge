@@ -12,7 +12,7 @@ Most test material is generated, so the correct answers are known exactly. That 
 | Word timing | CTC forced alignment | Whisper's own times, WhisperX | Start errors fall from about 200 ms to 25 ms on exact English samples | **Replaced** |
 | Face detection | YuNet | Haar, BlazeFace | 178 of 187 faces found, up from 116 | **Replaced** |
 | Scene cuts | Own detector | PySceneDetect, FFmpeg `scdet` | Only tool with all hard cuts and no false cuts. Misses dissolves | Kept, and fixed |
-| Encoding | NVENC | Tuned NVENC, x264, x265 | Tuning gains at most 0.1 VMAF | Kept |
+| Encoding | NVENC | Tuned NVENC, x264, x265, at equal quality and at equal bitrate | Tuning gains at most 0.1 VMAF or 3.5% bitrate. x264 slow is 17-29% smaller on two of three real clips, 7-13% larger on the third, and 4-7 times slower | Kept |
 | Loudness | Two-pass `loudnorm` | Earlier version of itself | Speech within 0.0 LU, clipped noise 1.0 LU off | Kept, and fixed |
 | Frame cuts | FFmpeg, own planning | Known answers only | 44 of 44 exact | Kept |
 | Audio sync | FFmpeg, own planning | Known answers only | Worst 15 ms over 40 cuts | Kept |
@@ -149,6 +149,31 @@ NVENC stays at its current settings. Compared with `h264_nvenc` as it is now, on
 | `libx265` medium, CRF 20 | -1.88 to +0.18 | 0.22-0.95x | 3.4-4.7x |
 
 A 0.1 VMAF gain is not visible, so tuning is not worth 20% more time. x264 makes files about half the size on real footage, for up to about a point of VMAF and about twice the time. NVENC stays for its speed, and because platforms re-encode uploads anyway. If file size starts to matter, x264 is the option to revisit.
+
+### At equal bitrate
+
+The table above compares settings at constant quality, so file size and quality both move. This second test gives every encoder the same bitrates, then asks how many bits each needs for the same VMAF (the Bjøntegaard rate difference). Negative means fewer bits than NVENC as it is now. Measured by `engine/benchmarks/encoders_bitrate.py` on 20-second excerpts of three public domain NASA videos at their original resolution (a launch collage and a spacewalk at 1080p, an interview at 4K), plus one generated clip. Each excerpt was framed as a render frames it (centre crop, then scale) and encoded at 1, 2, 4, 7 and 12 Mbps for 1080p (scaled by pixel count for 4K). Raw results: [1080p](benchmarks/encoders-bitrate-1080.json), [4K](benchmarks/encoders-bitrate-4k.json), [timing and repeat runs](benchmarks/encoders-bitrate-timing.json).
+
+Renders use constant quality 19, which lands at about VMAF 95-97 on this footage, so the first figure counts only VMAF 93 and up. The second covers every VMAF level both encoders reach.
+
+| Clip | Output | NVENC p7, multipass, spatial AQ | x264 slow, 2-pass | x264 medium, 2-pass |
+|---|---|---|---|---|
+| Launch collage | 9:16 | -0.2% (+0.5%) | +13.2% (+0.2%) | +16.2% (+6.3%) |
+| | 16:9 | -0.9% (-0.9%) | +6.7% (-2.4%) | +13.6% (+6.7%) |
+| Spacewalk | 9:16 | +0.1% (-3.1%) | -18.6% (-25.5%) | -14.7% (-22.3%) |
+| | 16:9 | -3.5% (-6.7%) | -20.4% (-27.2%) | -16.5% (-23.7%) |
+| Interview | 9:16 | -0.0% (+0.0%) | -18.8% (-24.8%) | -14.8% (-21.3%) |
+| | 16:9 | -1.7% (-4.7%) | -17.5% (-27.6%) | -13.4% (-25.2%) |
+| | 16:9 4K | -1.0% (-1.8%) | -28.8% (-31.0%) | -25.4% (-28.1%) |
+| Encode time, relative | | 1.5-2.0x | 3.8-6.8x | 3.1-5.9x |
+
+Times are three runs each, with nothing else running, and agree within 3%. They include decoding the lossless input on the CPU, which flatters x264 a little. The generated clip is mostly noise, which NVENC cannot squeeze to the lower bitrates (3.2 Mbps when asked for 1), so it is left out of the table. x264 there needs about a third fewer bits, a stress case rather than evidence. NVENC gives identical files on repeated runs. x264's vary by up to 0.03 VMAF and 0.2% in size.
+
+**Decision: NVENC stays as it is.** p7 with multipass saves at most 3.5%, usually under 2%, for up to twice the time. x264 slow is the better encoder for talking heads and slow footage, needing about a fifth fewer bits at high quality (and 29% at 4K). But it needs more bits than NVENC on the fast-cutting launch collage, and takes 4 to 7 times as long. It does not win everywhere, which was the condition for changing the default. A "smaller files" export option using x264 slow would make sense for interviews if file size matters.
+
+A first run of this test paired frames for VMAF by timestamp. The lossless reference is in Matroska, which rounds timestamps to milliseconds, so a third of the frames were compared with the previous reference frame: 85.2 VMAF instead of 97.2 for the same file. That run was discarded. The script now pairs frames by number and checks the frame counts. The equal-quality figures above were rechecked and are not affected, because their reference was MP4.
+
+Limits: three real clips; VMAF's default model, which is tuned for landscape TV viewing, so 9:16 scores are approximate; H.264 only (HEVC is used only above 4096 pixels wide).
 
 ## Render
 
