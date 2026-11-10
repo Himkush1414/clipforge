@@ -38,7 +38,18 @@ jobs:
       - name: Tests (no model or GPU)
         working-directory: engine
         # Exit code 5 means no tests were collected, which is fine on a scaffold-only branch.
+        env:
+          CLIPFORGE_VISUAL_METRICS: ${{ runner.temp }}/visual-metrics.jsonl
         run: pytest -m "not model and not gpu" || [ $? -eq 5 ]
+      - name: Keep caption comparison results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caption-visual
+          path: |
+            ${{ runner.temp }}/visual-metrics.jsonl
+            engine/tests/visual-failures/
+          if-no-files-found: ignore
   web:
     runs-on: ubuntu-latest
     steps:
