@@ -109,6 +109,28 @@ def test_the_server_is_stopped_afterwards(tmp_path):
     assert process is not None and process.poll() is not None
 
 
+def test_cuda_runtime_and_libgomp_folders_are_on_the_library_path(tmp_path):
+    root = tmp_path / "llama"
+    program = root / "b1" / "llama-b1"
+    cudart = root / "b1" / "cudart-llama-b1"
+    empty = root / "b1" / "notes"
+    for folder in (program, cudart, empty, root / "lib"):
+        folder.mkdir(parents=True)
+    (program / "llama-server").write_text("")
+    (cudart / "libcudart.so.12").write_text("")
+    assert llm_score.library_dirs(program / "llama-server") == [program, cudart, root / "lib"]
+
+
+def test_a_server_that_fails_to_start_says_why(tmp_path):
+    server = install_fake(tmp_path, "{}")
+    server.write_text(
+        f"#!{sys.executable}\nimport sys\nprint('error while loading libggml-cuda.so')\nsys.exit(3)\n"
+    )
+    with pytest.raises(RuntimeError, match="libggml-cuda"):
+        with llm_score.LocalModel(llm_score.model_path(), llm_score.runtime_path()):
+            pass
+
+
 def test_failing_clips_are_never_rated():
     weak = moments()
     for moment in weak:
