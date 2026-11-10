@@ -111,7 +111,10 @@ export type PresetData = {
   emphasis_font: string | null;
   uppercase: boolean;
   max_words: number;
+  /** Smallest text size, share of the short side. Below it a line wraps to two lines. */
   size: number;
+  /** Share of the safe width a caption line fills (fit to width). */
+  fill: number;
   emphasis_scale: number;
   filler_scale: number;
   text_color: string;
@@ -121,6 +124,8 @@ export type PresetData = {
   outline: number;
   shadow_color: string;
   shadow: number;
+  shadow_blur: number;
+  shadow_opacity: number;
   glow_color: string | null;
   glow: number;
   active_style: "color" | "box";

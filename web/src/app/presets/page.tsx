@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CaptionPreview, type PreviewRatio } from "@/components/caption-preview";
+import { CaptionPreview, centreFraction, type PreviewRatio } from "@/components/caption-preview";
 import { ErrorNote, Field, PageHeader, Panel, Segmented, Toggle } from "@/components/ui";
 import { api, apiUrl, usePoll, type Font, type Preset, type PresetData } from "@/lib/api";
 
@@ -198,7 +198,8 @@ export default function PresetsPage() {
                   </select>
                 </Field>
                 <Slider label="Words on screen" value={draft.max_words} min={1} max={3} step={1} onChange={(v) => set("max_words", v)} />
-                <Slider label="Size" value={draft.size} min={0.03} max={0.25} step={0.005} onChange={(v) => set("size", v)} format={(v) => `${Math.round(v * 100)}%`} />
+                <Slider label="Size (share of the width a line fills)" value={draft.fill} min={0.3} max={0.95} step={0.01} onChange={(v) => set("fill", v)} format={(v) => `${Math.round(v * 100)}%`} />
+                <Slider label="Minimum size (smaller lines wrap)" value={draft.size} min={0.03} max={0.25} step={0.005} onChange={(v) => set("size", v)} format={(v) => `${Math.round(v * 100)}%`} />
                 <Slider label="Big words" value={draft.emphasis_scale} min={1} max={2} step={0.05} onChange={(v) => set("emphasis_scale", v)} format={(v) => `${v.toFixed(2)}×`} />
                 <Slider label="Small filler words" value={draft.filler_scale} min={0.5} max={1} step={0.05} onChange={(v) => set("filler_scale", v)} format={(v) => `${v.toFixed(2)}×`} />
                 <Slider label="Word gap" value={draft.word_gap} min={0.1} max={0.8} step={0.02} onChange={(v) => set("word_gap", v)} />
@@ -219,6 +220,7 @@ export default function PresetsPage() {
               <div className="mt-4 grid gap-4 sm:grid-cols-3">
                 <Slider label="Outline width" value={draft.outline} min={0} max={0.3} step={0.01} onChange={(v) => set("outline", v)} />
                 <Slider label="Shadow depth" value={draft.shadow} min={0} max={0.3} step={0.01} onChange={(v) => set("shadow", v)} />
+                <Slider label="Shadow softness" value={draft.shadow_blur} min={0} max={0.2} step={0.01} onChange={(v) => set("shadow_blur", v)} />
                 <Slider label="Glow size" value={draft.glow} min={0} max={0.5} step={0.01} onChange={(v) => set("glow", v)} />
               </div>
             </Panel>
@@ -247,7 +249,15 @@ export default function PresetsPage() {
                 <Slider label="Active word pop" value={draft.active_pop} min={1} max={1.5} step={0.01} onChange={(v) => set("active_pop", v)} format={(v) => `${v.toFixed(2)}×`} />
                 <Slider label="Tilt" value={draft.tilt} min={0} max={12} step={0.5} onChange={(v) => set("tilt", v)} format={(v) => `${v}°`} />
                 <Segmented label="Position" value={draft.position} onChange={(v) => set("position", v)} options={[{ value: "upper", label: "Upper" }, { value: "center", label: "Center" }, { value: "lower", label: "Lower" }]} />
-                <Slider label="Nudge up or down" value={draft.y_offset} min={-0.2} max={0.2} step={0.01} onChange={(v) => set("y_offset", v)} format={(v) => `${Math.round(v * 100)}%`} />
+                <Slider
+                  label="Vertical position (text centre, from the top)"
+                  value={draft.y_offset}
+                  min={-0.2}
+                  max={0.2}
+                  step={0.01}
+                  onChange={(v) => set("y_offset", v)}
+                  format={(v) => `${Math.round(centreFraction({ ...draft, y_offset: v }, ratio) * 100)}%`}
+                />
               </div>
             </Panel>
             <ErrorNote message={error} />
