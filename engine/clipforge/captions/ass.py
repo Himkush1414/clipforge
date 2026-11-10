@@ -12,7 +12,9 @@ from clipforge.analysis.transcribe import Word
 from clipforge.captions.layout import LaidOutGroup, PlacedWord, group_words, is_rtl, layout_group
 from clipforge.captions.presets import CaptionPreset
 
-ENTRANCE_MS = 90
+# Pop-in: 85% to 105% to 100% over ENTRANCE_MS.
+ENTRANCE_MS = 110
+ENTRANCE_PEAK_MS = 60
 
 
 def ass_color(hex_color: str) -> str:
@@ -57,7 +59,10 @@ def _header(preset: CaptionPreset, width: int, height: int) -> str:
 def _entrance(preset: CaptionPreset) -> tuple[str, str]:
     """Return (static tags, animated tags) for how a word first appears."""
     if preset.animation == "pop":
-        return "\\fscx82\\fscy82", f"\\t(0,{ENTRANCE_MS},\\fscx100\\fscy100)"
+        return (
+            "\\fscx85\\fscy85",
+            f"\\t(0,{ENTRANCE_PEAK_MS},\\fscx105\\fscy105)\\t({ENTRANCE_PEAK_MS},{ENTRANCE_MS},\\fscx100\\fscy100)",
+        )
     if preset.animation == "bounce":
         return (
             "\\fscx70\\fscy70",
@@ -118,8 +123,22 @@ def _word_events(laid: LaidOutGroup, placed: PlacedWord, position: int, preset: 
 
     text = escape_text(word.text)
     start, end = ass_time(group.start), ass_time(group.end)
+    soft_shadow = preset.shadow > 0 and preset.shadow_blur > 0
+    if soft_shadow:
+        tags = [t for t in tags if not t.startswith("\\shad")] + ["\\shad0"]
     main = f"{{{''.join(tags)}{entrance}{highlight}{restore}{pop}}}{text}"
     events = [f"Dialogue: 2,{start},{end},Word,,0,0,0,,{main}"]
+
+    if soft_shadow:
+        # Drawn alone on a lower layer, so blurring it softens only the shadow, never the letters.
+        alpha = f"{round((1 - preset.shadow_opacity) * 255):02X}"
+        shadow_tags = [t for t in tags if not t.startswith(("\\shad", "\\1c"))]
+        shadow = (
+            f"{{{''.join(shadow_tags)}\\shad{placed.size * preset.shadow:.1f}\\1a&HFF&\\3a&HFF&"
+            f"\\4a&H{alpha}&\\4c{ass_color(preset.shadow_color)}\\blur{placed.size * preset.shadow_blur:.1f}"
+            f"{entrance}{pop}}}{text}"
+        )
+        events.append(f"Dialogue: 1,{start},{end},Word,,0,0,0,,{shadow}")
 
     if preset.glow_color and preset.glow > 0:
         glow_tags = [t for t in tags if not t.startswith(("\\bord", "\\shad", "\\1c"))]

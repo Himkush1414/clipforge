@@ -11,7 +11,8 @@ A preset is a JSON object. Sizes are relative to the frame, so a preset looks th
 | `emphasis_font` | font name or null | null | Font for big words |
 | `uppercase` | boolean | true | Force capitals |
 | `max_words` | 1 to 3 | 3 | Words on screen at once |
-| `size` | 0.03 to 0.25 | 0.1 | Text size as a share of the frame's short side |
+| `fill` | 0.3 to 0.95 | 0.78 | **Size.** Share of the safe width a caption line fills, including room for the active word's pop (fit to width) |
+| `size` | 0.03 to 0.25 | 0.1 | **Minimum size**, as a share of the frame's short side. A line that would be smaller wraps to two lines |
 | `emphasis_scale` | 1.0 to 2.0 | 1.3 | Size multiplier for big words |
 | `filler_scale` | 0.5 to 1.0 | 0.8 | Size multiplier for filler words |
 | `text_color` | `#RRGGBB` | `#FFFFFF` | Normal text |
@@ -21,6 +22,8 @@ A preset is a JSON object. Sizes are relative to the frame, so a preset looks th
 | `outline` | 0 to 0.3 | 0.08 | Outline width, share of text size |
 | `shadow_color` | `#RRGGBB` | `#000000` | Shadow |
 | `shadow` | 0 to 0.3 | 0.04 | Shadow depth, share of text size |
+| `shadow_blur` | 0 to 0.2 | 0 | Shadow softness. Above 0, the shadow is drawn on its own blurred layer |
+| `shadow_opacity` | 0 to 1 | 1 | Shadow opacity |
 | `glow_color` | `#RRGGBB` or null | null | Glow colour |
 | `glow` | 0 to 0.5 | 0 | Glow size, share of text size |
 | `active_style` | `color` or `box` | `color` | Colour the active word, or draw a box behind it |
@@ -29,14 +32,14 @@ A preset is a JSON object. Sizes are relative to the frame, so a preset looks th
 | `active_pop` | 1.0 to 1.5 | 1.12 | Scale of the active word at its peak |
 | `tilt` | 0 to 12 | 0 | Alternating word tilt in degrees |
 | `position` | `lower`, `center`, `upper` | `lower` | Vertical position |
-| `y_offset` | -0.2 to 0.2 | 0 | Nudge, as a share of frame height |
+| `y_offset` | -0.2 to 0.2 | 0 | **Vertical position**: moves the text centre, as a share of frame height |
 | `word_gap` | 0.1 to 0.8 | 0.28 | Gap between words, share of text size |
 
 ## Built-in presets
 
 | ID | Name | Style |
 |---|---|---|
-| `anime-impact` | Anime Impact | Anton, yellow active word, red big words, heavy outline, pop |
+| `anime-impact` | Anime Impact | Anton in capitals, fills 84% of the width, yellow active word on white, outline about 7% of the em, soft shadow, pop-in |
 | `manga-punch` | Manga Punch | Bangers, tilted words, bounce |
 | `neon-glow` | Neon Glow | Lilita One, cyan active word, magenta glow |
 | `karaoke-box` | Karaoke Box | Poppins Black, box behind the active word |
@@ -50,8 +53,25 @@ Built-in presets cannot be changed. Save a copy to edit one.
 
 - A group holds up to `max_words` words and has a character limit per ratio.
 - A group ends at punctuation or a pause of 0.35 seconds or more.
-- Groups never overlap. A group stays on screen until the next one starts when the gap is under 0.2 seconds, which prevents flicker. Otherwise it holds for up to 0.3 seconds.
+- A group does not end on a word that leads into the next, such as "the", "of" or "my". That word starts the next group instead.
+- A lone word joins the phrase it belongs to, or borrows a word from a full neighbour (3 + 1 becomes 2 + 2). Only an emphasis word may stand alone.
+- Groups never overlap, and each starts exactly when its first word is spoken. After its last word a group holds for 0.3 seconds. If that would leave a blank gap shorter than 0.15 seconds, it holds until the next group starts, so captions never blink.
 - Each group gets at most one big word.
+
+## Size: fit to width
+
+Each group is scaled so its line fills `fill` of the safe width, so short groups are drawn bigger than long ones. Three limits apply:
+
+- A lone short word stops at twice the size of a typical three-word line ("THE BEST PART"). For one-word presets, the comparison is a typical word ("PERFECT") and the limit is 1.3 times.
+- Text is never taller than the room around its position allows (see below).
+- A line that would fall below the preset's minimum size wraps to two lines instead. Only a single word too long for the width at that size is drawn smaller, since it cannot wrap.
+
+At 1:1 and 16:9 the fill is scaled by 0.85 and 0.55, since a landscape line filling the width would be huge. On real 9:16 anime clips, Anime Impact lines fill a median 80% of the safe width. Capital letters are at least 60 px tall at 1080x1920 (tested).
+
+## Animation
+
+- **Pop-in** (`pop`): each group appears at 85%, grows to 105% in 60 ms and settles at 100% by 110 ms.
+- The active word turns `active_color` the moment it is spoken and back to its normal colour when the next word starts. With Anime Impact, earlier and later words are white.
 
 ## Word sizes
 
@@ -63,13 +83,15 @@ Built-in presets cannot be changed. Save a copy to edit one.
 
 ## Safe margins
 
-Text is shrunk, then wrapped to two lines, so it stays inside these margins even at the peak of its pop. A test measures this on rendered pixels for every preset and ratio.
+Text is sized, wrapped or shrunk so it stays inside these margins even at the peak of its pop. Tests check this on rendered pixels for every preset, ratio and test scene.
 
-| Ratio | Top | Bottom | Sides | Default line height |
+| Ratio | Top | Bottom | Sides | Lower captions centred at |
 |---|---|---|---|---|
-| 9:16 | 12% | 24% | 8% | 66% down the frame |
-| 1:1 | 8% | 12% | 7% | 80% |
-| 16:9 | 8% | 10% | 6% | 84% |
+| 9:16 | 12% | 22% | 8% | 65% down the frame |
+| 1:1 | 8% | 14% | 7% | 70% |
+| 16:9 | 8% | 10% | 6% | 74% |
+
+To fit, the text centre may move up to 3% of the frame height from where it is anchored. At 9:16 that keeps lower captions centred 62% to 68% down the frame (tested).
 
 The large bottom margin at 9:16 keeps text clear of the buttons and captions that Shorts and Reels draw over the video.
 

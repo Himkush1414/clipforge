@@ -222,7 +222,8 @@ RTL_WORDS = {
 
 @pytest.mark.parametrize("language", sorted(RTL_WORDS))
 def test_rtl_words_are_placed_right_to_left_and_keep_spoken_order(language):
-    preset = CaptionPreset(uppercase=True)
+    # A low minimum size keeps the three words on one line, so the order across the line can be checked.
+    preset = CaptionPreset(uppercase=True, size=0.04)
     tokens = RTL_WORDS[language]
     words = [Word(t, i * 0.5, i * 0.5 + 0.45) for i, t in enumerate(tokens)]
     group = group_words(words, preset, "9:16")[0]
@@ -281,9 +282,8 @@ def test_rtl_width_prediction_matches_libass_including_joined_letters(text, font
     assert placed.font == font_expected
     drawn = x1 - x0 + 1
     assert abs(drawn - placed.width) / drawn < 0.1, (drawn, placed.width)
-    assert (
-        abs((x0 + x1) / 2 - 540) < 1080 * 0.02
-    )  # Side bearings grow with the text, so relative to the frame.
+    # Side bearings and the tails of joined letters grow with the text, so relative to its width.
+    assert abs((x0 + x1) / 2 - 540) < 0.1 * drawn
 
 
 def test_arabic_letters_are_actually_joined(tmp_path):
@@ -404,7 +404,7 @@ def test_measured_width_matches_what_libass_draws(font, tmp_path):
     placed = layout_group(group, preset, width, height, "9:16").words[0]
     drawn = x1 - x0 + 1
     assert abs(drawn - measure("MEASURE", placed.font, placed.size)) / drawn < 0.05
-    assert abs((x0 + x1) / 2 - width / 2) < 8
+    assert abs((x0 + x1) / 2 - width / 2) < max(8, 0.02 * drawn)  # side bearings grow with the text
 
 
 @pytest.mark.parametrize(
@@ -528,8 +528,9 @@ def _word_columns(path, threshold=120):
 def test_big_word_leaves_visible_space_on_the_rendered_frame_at_peak_pop(tmp_path):
     """Measured on real pixels at the moment the middle word is at its largest."""
     # A white outline on black: letters merge into word blobs, so only gaps between words remain.
+    # A low minimum size keeps the three words on one line, where their gaps can be seen.
     preset = BUILTIN_PRESETS["manga-punch"].model_copy(
-        update={"tilt": 0.0, "shadow": 0.0, "outline_color": "#FFFFFF"}
+        update={"tilt": 0.0, "shadow": 0.0, "outline_color": "#FFFFFF", "size": 0.05}
     )
     words = [Word("really", 0.0, 0.5), Word("wondered", 0.5, 1.0), Word("how", 1.0, 1.5)]
     out = render_preview(
@@ -542,3 +543,104 @@ def test_big_word_leaves_visible_space_on_the_rendered_frame_at_peak_pop(tmp_pat
         background=BG.format(w=1080, h=1920),
     )
     assert len(_word_columns(out)) == 3
+
+
+# ---------- fit to width (anime clipper look) ----------
+ANIME = BUILTIN_PRESETS["anime-impact"]
+SAFE_W_916 = 1080 * (1 - 2 * SAFE_MARGINS["9:16"]["side"])
+
+
+def _laid(text, preset=ANIME, ratio="9:16", size=(1080, 1920)):
+    words = words_from(text)
+    group = group_words(words, preset, ratio)[0]
+    return layout_group(group, preset, *size, ratio)
+
+
+def _span(laid):
+    return max(p.x + p.width / 2 for p in laid.words) - min(p.x - p.width / 2 for p in laid.words)
+
+
+def _block_center(laid):
+    top = min(p.y - p.height / 2 for p in laid.words)
+    bottom = max(p.y + p.height / 2 for p in laid.words)
+    return (top + bottom) / 2
+
+
+@pytest.mark.parametrize("text", ["find the answers", "time flies fast", "we never stop"])
+def test_a_three_word_line_fills_70_to_85_percent_of_the_safe_width(text):
+    laid = _laid(text)
+    # Words on one line overlap vertically; words on two lines do not.
+    assert max(p.y - p.height / 2 for p in laid.words) < min(p.y + p.height / 2 for p in laid.words)
+    assert 0.70 <= _span(laid) / SAFE_W_916 <= 0.85
+
+
+def test_a_single_short_word_is_about_twice_a_three_word_line():
+    single = _laid("mad?").words[0].size
+    line = max(p.size for p in _laid("time flies fast").words if p.word.kind == "normal")
+    assert 1.6 <= single / line <= 2.2
+
+
+def test_emphasis_words_are_bigger_than_the_rest_of_their_line():
+    sizes = {p.word.kind: p.size for p in _laid("the 2026 launch").words}
+    assert sizes["emphasis"] > sizes["normal"] > sizes["filler"]
+
+
+def test_letters_are_at_least_60_px_tall_at_1080x1920():
+    """Anton capitals are 0.496 of the libass size. The preset minimum keeps them at least 60 px.
+
+    Only a single word too long for the safe width at that size is drawn smaller, since it cannot wrap.
+    """
+    for text in [
+        "find the answers",
+        "unbelievably",
+        "unbelievable wonderful stuff",
+        "mad?",
+        "time flies fast",
+    ]:
+        laid = _laid(text)
+        normal = [p for p in laid.words if p.word.kind != "filler"]
+        assert min(p.size for p in normal) * 0.496 >= 60, text
+
+
+@pytest.mark.parametrize(
+    "text", ["find the answers", "mad?", "unbelievable wonderful stuff", "counterrevolutionaries"]
+)
+def test_lower_captions_are_centred_62_to_68_percent_down_a_9_16_frame(text):
+    assert 0.62 <= _block_center(_laid(text)) / 1920 <= 0.68
+
+
+def test_no_group_ends_on_a_word_that_leads_into_the_next():
+    words = words_from("we saw the dragon fly over the river")
+    groups = group_words(words, ANIME, "9:16")
+    assert all(g.words[-1].text.lower() not in {"the", "of", "a"} for g in groups[:-1])
+
+
+def test_a_lone_ordinary_word_is_given_company_but_a_strong_word_may_stand_alone():
+    texts = [[w.text for w in g.words] for g in group_words(words_from("we went home today."), ANIME, "9:16")]
+    assert all(len(t) > 1 for t in texts), texts
+    texts = [
+        [w.text for w in g.words]
+        for g in group_words(words_from("it was over. unless, did it work"), ANIME, "9:16")
+    ]
+    assert ["UNLESS,", "DID"] in [g[:2] for g in texts], texts  # a comma does not leave "unless," alone
+    texts = [[w.text for w in g.words] for g in group_words(words_from("ready? 2026."), ANIME, "9:16")]
+    assert ["2026."] in [[t.lower() for t in g] for g in texts]
+
+
+def test_groups_switch_on_word_boundaries_with_no_short_blank_gaps():
+    # Gaps of 0.30 s (bridged) and 0.90 s (left, longer than 0.15 s once the hold ends).
+    words = [Word("one.", 0.0, 0.4), Word("two.", 0.7, 1.1), Word("three.", 2.0, 2.4)]
+    groups = group_words(words, ANIME, "9:16")
+    assert [g.start for g in groups] == [0.0, 0.7, 2.0]  # each group starts with its first word
+    for a, b in zip(groups, groups[1:], strict=False):
+        assert a.end <= b.start
+        assert a.end == b.start or b.start - a.end >= 0.15
+
+
+def test_anime_impact_pops_in_85_105_100_and_has_a_soft_shadow_layer():
+    ass = build_ass(words_from("hello there"), ANIME, 1080, 1920, "9:16")
+    main = [line for line in ass.splitlines() if line.startswith("Dialogue: 2")][0]
+    assert "\\fscx85\\fscy85" in main and "\\t(0,60,\\fscx105\\fscy105)\\t(60,110,\\fscx100\\fscy100)" in main
+    assert "\\shad0" in main
+    shadow = [line for line in ass.splitlines() if line.startswith("Dialogue: 1")][0]
+    assert "\\1a&HFF&" in shadow and "\\blur" in shadow and "\\4a&H" in shadow
