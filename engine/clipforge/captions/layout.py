@@ -313,8 +313,9 @@ def _merge_orphans(raw: list[list[int]], words: list[Word], max_words: int, limi
             index += 1
             continue
         joins_prev = prev is not None and not ends_sentence(prev) and gap(prev, group) <= ORPHAN_MERGE_GAP
+        # A comma does not stop "UNLESS," joining "DID SOMETHING"; the end of a sentence does.
         joins_next = (
-            nxt is not None and not BREAK_AFTER.search(words[at].text) and gap(group, nxt) <= ORPHAN_MERGE_GAP
+            nxt is not None and not END_MARK.search(words[at].text) and gap(group, nxt) <= ORPHAN_MERGE_GAP
         )
         if joins_prev and prev and len(prev) < max_words and chars(prev + group) <= limit:
             prev.extend(group)

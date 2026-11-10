@@ -618,6 +618,11 @@ def test_no_group_ends_on_a_word_that_leads_into_the_next():
 def test_a_lone_ordinary_word_is_given_company_but_a_strong_word_may_stand_alone():
     texts = [[w.text for w in g.words] for g in group_words(words_from("we went home today."), ANIME, "9:16")]
     assert all(len(t) > 1 for t in texts), texts
+    texts = [
+        [w.text for w in g.words]
+        for g in group_words(words_from("it was over. unless, did it work"), ANIME, "9:16")
+    ]
+    assert ["UNLESS,", "DID"] in [g[:2] for g in texts], texts  # a comma does not leave "unless," alone
     texts = [[w.text for w in g.words] for g in group_words(words_from("ready? 2026."), ANIME, "9:16")]
     assert ["2026."] in [[t.lower() for t in g] for g in texts]
 
