@@ -16,6 +16,7 @@ import os
 import secrets
 import socket
 import subprocess
+import tempfile
 import time
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -63,6 +64,23 @@ def runtime_path() -> Path | None:
     return next(iter(sorted(root.glob("*/**/llama-server"))), None) if root.exists() else None
 
 
+def library_dirs(runtime: Path) -> list[Path]:
+    """Folders holding the libraries llama-server loads.
+
+    The CUDA build ships its CUDA runtime in a separate archive, unpacked beside the program's folder,
+    and libgomp sits in tools/llama/lib when the system lacks it. Without them on the library path the
+    CUDA backend does not load and the model would quietly run on the CPU.
+    """
+    release, root = runtime.parent.parent, runtime.parent.parent.parent
+    found = [runtime.parent]
+    found += sorted(
+        d for d in release.iterdir() if d.is_dir() and d != runtime.parent and any(d.glob("*.so*"))
+    )
+    if (root / "lib").is_dir():
+        found.append(root / "lib")
+    return found
+
+
 def model_path(name: str = MODEL_FILE) -> Path | None:
     path = get_settings().models_dir / "llm" / name
     return path if path.exists() else None
@@ -86,6 +104,7 @@ class LocalModel:
         self.key = secrets.token_urlsafe(24)
         self.port = _free_port()
         self.process: subprocess.Popen | None = None
+        self.log_file = tempfile.TemporaryFile()  # the server's own output, for errors
         self.client = httpx.Client(
             base_url=f"http://127.0.0.1:{self.port}",
             headers={"Authorization": f"Bearer {self.key}"},
@@ -94,10 +113,8 @@ class LocalModel:
         )
 
     def __enter__(self) -> LocalModel:
-        env = {
-            **os.environ,
-            "LD_LIBRARY_PATH": f"{self.runtime.parent}:{os.environ.get('LD_LIBRARY_PATH', '')}",
-        }
+        libraries = ":".join(str(d) for d in library_dirs(self.runtime))
+        env = {**os.environ, "LD_LIBRARY_PATH": f"{libraries}:{os.environ.get('LD_LIBRARY_PATH', '')}"}
         self.process = subprocess.Popen(
             [
                 str(self.runtime),
@@ -119,24 +136,37 @@ class LocalModel:
                 "--reasoning",
                 "off",
             ],  # fmt: skip
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=self.log_file,
+            stderr=subprocess.STDOUT,
             env=env,
         )
         deadline = time.monotonic() + START_TIMEOUT
         while time.monotonic() < deadline:
             if self.process.poll() is not None:
-                raise RuntimeError(f"llama-server stopped with code {self.process.returncode}")
+                raise RuntimeError(
+                    f"llama-server stopped with code {self.process.returncode}: {self.log_tail()}"
+                )
             try:
                 if self.client.get("/health").status_code == 200:
                     return self
             except httpx.TransportError:
                 pass
             time.sleep(0.25)
-        raise RuntimeError("llama-server did not start in time")
+        raise RuntimeError(f"llama-server did not start in time: {self.log_tail()}")
+
+    def log_tail(self, size: int = 600) -> str:
+        """The end of the server's own output, which says why it failed."""
+        self.log_file.seek(0, os.SEEK_END)
+        self.log_file.seek(max(0, self.log_file.tell() - size))
+        return self.log_file.read().decode(errors="replace").strip()
+
+    def log_text(self) -> str:
+        self.log_file.seek(0)
+        return self.log_file.read().decode(errors="replace")
 
     def __exit__(self, *_exc) -> None:
         self.client.close()
+        self.log_file.close()
         if self.process and self.process.poll() is None:
             self.process.terminate()
             try:
