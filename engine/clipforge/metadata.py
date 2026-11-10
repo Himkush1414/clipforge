@@ -8,6 +8,7 @@ from collections import Counter
 
 from clipforge.analysis.scoring import EMOTION_WORDS, tokenize
 from clipforge.models import RightsType
+from clipforge.wordfilter import contains_blocked, is_blocked
 
 TITLE_LIMIT = 70
 DESCRIPTION_LIMIT = 4500
@@ -55,10 +56,11 @@ def _sentence_score(sentence: str, position: int) -> float:
 
 
 def make_title(text: str, genre: str) -> str:
-    sentences = split_text(text)
-    if not sentences:
+    # A line with a blocked word is never a title, wherever it sits in the clip.
+    candidates = [(i, s) for i, s in enumerate(split_text(text)) if not contains_blocked(s)]
+    if not candidates:
         return f"{GENRE_LABEL.get(genre, 'Video')} highlight"
-    best = max(enumerate(sentences), key=lambda item: _sentence_score(item[1], item[0]))[1]
+    best = max(candidates, key=lambda item: _sentence_score(item[1], item[0]))[1]
     best = best.rstrip(".,;:…- ")
     if len(best) > TITLE_LIMIT:
         # A whole clause reads better than a sentence chopped at a word.
@@ -71,7 +73,32 @@ def make_title(text: str, genre: str) -> str:
 
 
 def make_summary(text: str, limit: int = 2) -> str:
-    return " ".join(split_text(text)[:limit])
+    return " ".join([s for s in split_text(text) if not contains_blocked(s)][:limit])
+
+
+def topic_tags(text: str, corpus: str, limit: int = 2) -> list[str]:
+    """Hashtags from words the clip is about: they recur in it, are plain letters, and are not blocked.
+
+    A word said once is a line of dialogue, not a topic, so it never becomes a hashtag.
+    """
+    counts = Counter(tokenize(text))
+    chosen = []
+    for word in keywords(text, corpus, 12):
+        if counts[word] >= 2 and word.isalpha() and len(word) >= 4 and not is_blocked(word):
+            chosen.append(word)
+        if len(chosen) == limit:
+            break
+    return chosen
+
+
+def make_hashtags(text: str, corpus: str, genre: str, part: int | None, fmt: str) -> list[str]:
+    """Format, genre and part first; topic words only when the clip clearly has one."""
+    tags = ["#shorts"] if fmt == "short" else []
+    tags.append(f"#{genre}")
+    if part is not None:
+        tags.append(f"#part{part}")
+    tags += [f"#{w}" for w in topic_tags(text, corpus)]
+    return [t for t in dict.fromkeys(tags) if not is_blocked(t.lstrip("#"))]
 
 
 def credit_line(rights_type: str, detail: str) -> str:
@@ -102,17 +129,14 @@ def build_metadata(
     description_template: str = "{summary}\n\n{hashtags}",
 ) -> tuple[str, str]:
     title = make_title(text, genre)
-    tags = [f"#{w}" for w in keywords(text, corpus, 4)]
-    tags.append(f"#{genre}")
-    if fmt == "short":
-        tags.insert(0, "#shorts")
+    tags = make_hashtags(text, corpus, genre, part, fmt)
     credit = credit_line(rights_type, rights_detail)
     values = {
         "title": title,
         "part": str(part or ""),
         "genre": GENRE_LABEL.get(genre, "Video"),
         "summary": make_summary(text),
-        "hashtags": " ".join(dict.fromkeys(tags)),
+        "hashtags": " ".join(tags),
         "credit": credit,
     }
     final_title = _fill(title_template, values).strip()
