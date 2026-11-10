@@ -1,0 +1,1059 @@
+{
+ "_about": [
+  "Hand labels for emphasis_eval.py: per caption group, the index of the one word that should be big, or null.",
+  "Labelled by Claude, the AI that wrote this code, from the text and its surrounding words only, before any candidate rule was written. Rule used: the word carrying the phrase's meaning and stress (key noun, name, number, strong verb or adjective, stressed contrast); null for groups of only function or generic words.",
+  "The heldout set (Ep403) is for checking a finished rule only. One AI's judgement, not a person's."
+ ],
+ "groups": {
+  "ep393:38": {
+   "set": "tuning",
+   "text": "They'll be joining",
+   "key": 2
+  },
+  "ep393:86": {
+   "set": "tuning",
+   "text": "At the time",
+   "key": null
+  },
+  "ep393:87": {
+   "set": "tuning",
+   "text": "of her selection,",
+   "key": 2
+  },
+  "ep393:101": {
+   "set": "tuning",
+   "text": "environments that",
+   "key": 0
+  },
+  "ep393:146": {
+   "set": "tuning",
+   "text": "Virginia.",
+   "key": 0
+  },
+  "ep393:176": {
+   "set": "tuning",
+   "text": "park",
+   "key": null
+  },
+  "ep393:184": {
+   "set": "tuning",
+   "text": "an amazing high",
+   "key": 1
+  },
+  "ep393:203": {
+   "set": "tuning",
+   "text": "why I went",
+   "key": null
+  },
+  "ep393:272": {
+   "set": "tuning",
+   "text": "know I was",
+   "key": null
+  },
+  "ep393:288": {
+   "set": "tuning",
+   "text": "that research?",
+   "key": 1
+  },
+  "ep393:294": {
+   "set": "tuning",
+   "text": "but",
+   "key": null
+  },
+  "ep393:299": {
+   "set": "tuning",
+   "text": "my own projects",
+   "key": 2
+  },
+  "ep393:317": {
+   "set": "tuning",
+   "text": "that I worked",
+   "key": null
+  },
+  "ep393:339": {
+   "set": "tuning",
+   "text": "and from year",
+   "key": null
+  },
+  "ep393:373": {
+   "set": "tuning",
+   "text": "studying Mars or",
+   "key": 1
+  },
+  "ep393:375": {
+   "set": "tuning",
+   "text": "probably used to",
+   "key": null
+  },
+  "ep393:386": {
+   "set": "tuning",
+   "text": "exists.",
+   "key": 0
+  },
+  "ep393:432": {
+   "set": "tuning",
+   "text": "you to become",
+   "key": null
+  },
+  "ep393:447": {
+   "set": "tuning",
+   "text": "but that wasn't",
+   "key": null
+  },
+  "ep393:448": {
+   "set": "tuning",
+   "text": "me.",
+   "key": 0
+  },
+  "ep393:487": {
+   "set": "tuning",
+   "text": "that became the",
+   "key": null
+  },
+  "ep393:490": {
+   "set": "tuning",
+   "text": "the eight",
+   "key": 1
+  },
+  "ep393:501": {
+   "set": "tuning",
+   "text": "that wasn't my",
+   "key": null
+  },
+  "ep393:628": {
+   "set": "tuning",
+   "text": "but here we",
+   "key": null
+  },
+  "ep393:653": {
+   "set": "tuning",
+   "text": "I will never",
+   "key": 2
+  },
+  "ep393:655": {
+   "set": "tuning",
+   "text": "I love that.",
+   "key": 1
+  },
+  "ep393:709": {
+   "set": "tuning",
+   "text": "the moon.",
+   "key": 1
+  },
+  "ep393:725": {
+   "set": "tuning",
+   "text": "time meeting him",
+   "key": null
+  },
+  "ep393:727": {
+   "set": "tuning",
+   "text": "anniversary of",
+   "key": 0
+  },
+  "ep393:739": {
+   "set": "tuning",
+   "text": "It came out",
+   "key": null
+  },
+  "ep393:786": {
+   "set": "tuning",
+   "text": "ahead of your",
+   "key": null
+  },
+  "ep393:851": {
+   "set": "tuning",
+   "text": "of the most",
+   "key": null
+  },
+  "ep393:873": {
+   "set": "tuning",
+   "text": "I think is",
+   "key": null
+  },
+  "ep393:927": {
+   "set": "tuning",
+   "text": "we expected,",
+   "key": null
+  },
+  "ep393:940": {
+   "set": "tuning",
+   "text": "but spaceflight is",
+   "key": 1
+  },
+  "ep393:971": {
+   "set": "tuning",
+   "text": "trained with so",
+   "key": 0
+  },
+  "ep393:979": {
+   "set": "tuning",
+   "text": "Crew -9.",
+   "key": 1
+  },
+  "ep393:1050": {
+   "set": "tuning",
+   "text": "I drew the",
+   "key": 1
+  },
+  "ep393:1056": {
+   "set": "tuning",
+   "text": "graphic artists.",
+   "key": 1
+  },
+  "ep393:1079": {
+   "set": "tuning",
+   "text": "So how do",
+   "key": null
+  },
+  "ep393:1091": {
+   "set": "tuning",
+   "text": "always say off",
+   "key": null
+  },
+  "ep393:1106": {
+   "set": "tuning",
+   "text": "ways,",
+   "key": null
+  },
+  "ep393:1110": {
+   "set": "tuning",
+   "text": "is going to",
+   "key": null
+  },
+  "ep393:1116": {
+   "set": "tuning",
+   "text": "write a lot",
+   "key": 0
+  },
+  "ep393:1139": {
+   "set": "tuning",
+   "text": "just share what",
+   "key": 1
+  },
+  "ep393:1169": {
+   "set": "tuning",
+   "text": "So much of",
+   "key": null
+  },
+  "ep393:1237": {
+   "set": "tuning",
+   "text": "first.",
+   "key": 0
+  },
+  "ep393:1281": {
+   "set": "tuning",
+   "text": "these really",
+   "key": null
+  },
+  "ep393:1296": {
+   "set": "tuning",
+   "text": "It's like a",
+   "key": null
+  },
+  "ep393:1351": {
+   "set": "tuning",
+   "text": "Zena,",
+   "key": 0
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:4": {
+   "set": "tuning",
+   "text": "official podcast of",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:7": {
+   "set": "tuning",
+   "text": "Episode 378,",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:29": {
+   "set": "tuning",
+   "text": "Flight Surgeon,",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:31": {
+   "set": "tuning",
+   "text": "medical doctor and",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:101": {
+   "set": "tuning",
+   "text": "be here.",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:103": {
+   "set": "tuning",
+   "text": "back to the",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:121": {
+   "set": "tuning",
+   "text": "I want",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:130": {
+   "set": "tuning",
+   "text": "on your Facebook,",
+   "key": 2
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:166": {
+   "set": "tuning",
+   "text": "like me.",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:190": {
+   "set": "tuning",
+   "text": "you know i",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:201": {
+   "set": "tuning",
+   "text": "of hopefully",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:208": {
+   "set": "tuning",
+   "text": "with that,",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:311": {
+   "set": "tuning",
+   "text": "13.",
+   "key": 0
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:322": {
+   "set": "tuning",
+   "text": "one of the",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:374": {
+   "set": "tuning",
+   "text": "we understand",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:406": {
+   "set": "tuning",
+   "text": "first time i",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:449": {
+   "set": "tuning",
+   "text": "Santa Monica.",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:451": {
+   "set": "tuning",
+   "text": "And so that",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:484": {
+   "set": "tuning",
+   "text": "i knew i",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:495": {
+   "set": "tuning",
+   "text": "people that I",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:501": {
+   "set": "tuning",
+   "text": "the Navy recruiter",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:503": {
+   "set": "tuning",
+   "text": "kind of group",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:510": {
+   "set": "tuning",
+   "text": "that were going",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:594": {
+   "set": "tuning",
+   "text": "So there was",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:595": {
+   "set": "tuning",
+   "text": "an ROTC program.",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:606": {
+   "set": "tuning",
+   "text": "starting as you",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:612": {
+   "set": "tuning",
+   "text": "graduated high",
+   "key": 0
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:614": {
+   "set": "tuning",
+   "text": "and I",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:666": {
+   "set": "tuning",
+   "text": "actually joined",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:729": {
+   "set": "tuning",
+   "text": "son,",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:781": {
+   "set": "tuning",
+   "text": "can get into.",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:787": {
+   "set": "tuning",
+   "text": "something else",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:817": {
+   "set": "tuning",
+   "text": "I came here.",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:835": {
+   "set": "tuning",
+   "text": "you were supposed",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:885": {
+   "set": "tuning",
+   "text": "You got your",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:891": {
+   "set": "tuning",
+   "text": "an officer in",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:908": {
+   "set": "tuning",
+   "text": "amazing program",
+   "key": 0
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:972": {
+   "set": "tuning",
+   "text": "been eight years",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1031": {
+   "set": "tuning",
+   "text": "an integral member",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1157": {
+   "set": "tuning",
+   "text": "leadership?",
+   "key": 0
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1166": {
+   "set": "tuning",
+   "text": "the training to",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1176": {
+   "set": "tuning",
+   "text": "team",
+   "key": 0
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1186": {
+   "set": "tuning",
+   "text": "cleaning the team",
+   "key": 2
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1190": {
+   "set": "tuning",
+   "text": "some trouble,",
+   "key": 1
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1202": {
+   "set": "tuning",
+   "text": "you know,",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1229": {
+   "set": "tuning",
+   "text": "before you put",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1254": {
+   "set": "tuning",
+   "text": "lot of what",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1271": {
+   "set": "tuning",
+   "text": "of the group",
+   "key": 2
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1297": {
+   "set": "tuning",
+   "text": "it will come",
+   "key": null
+  },
+  "Ep378_Pursuit_of_Lifelong_Learning:1311": {
+   "set": "tuning",
+   "text": "And I think",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:3": {
+   "set": "tuning",
+   "text": "Welcome to the",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:18": {
+   "set": "tuning",
+   "text": "scientists,",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:24": {
+   "set": "tuning",
+   "text": "the world of",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:34": {
+   "set": "tuning",
+   "text": "would have impacts",
+   "key": 2
+  },
+  "Ep370_Spaceflight_Adaptation:94": {
+   "set": "tuning",
+   "text": "always know that",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:109": {
+   "set": "tuning",
+   "text": "Dayton at Wright",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:151": {
+   "set": "tuning",
+   "text": "and board certified",
+   "key": 2
+  },
+  "Ep370_Spaceflight_Adaptation:170": {
+   "set": "tuning",
+   "text": "in the air",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:202": {
+   "set": "tuning",
+   "text": "I kind of",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:206": {
+   "set": "tuning",
+   "text": "Well,",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:269": {
+   "set": "tuning",
+   "text": "having fun.",
+   "key": 1
+  },
+  "Ep370_Spaceflight_Adaptation:270": {
+   "set": "tuning",
+   "text": "That must be",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:290": {
+   "set": "tuning",
+   "text": "You know,",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:301": {
+   "set": "tuning",
+   "text": "But we",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:361": {
+   "set": "tuning",
+   "text": "sure that",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:416": {
+   "set": "tuning",
+   "text": "room is radiation.",
+   "key": 2
+  },
+  "Ep370_Spaceflight_Adaptation:431": {
+   "set": "tuning",
+   "text": "And there's what's",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:457": {
+   "set": "tuning",
+   "text": "Then the",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:461": {
+   "set": "tuning",
+   "text": "bone loss from",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:477": {
+   "set": "tuning",
+   "text": "is because normally",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:557": {
+   "set": "tuning",
+   "text": "you kind of",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:565": {
+   "set": "tuning",
+   "text": "do several things.",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:569": {
+   "set": "tuning",
+   "text": "private medical",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:577": {
+   "set": "tuning",
+   "text": "doing.",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:605": {
+   "set": "tuning",
+   "text": "to take",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:611": {
+   "set": "tuning",
+   "text": "for at home,",
+   "key": 2
+  },
+  "Ep370_Spaceflight_Adaptation:628": {
+   "set": "tuning",
+   "text": "but",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:637": {
+   "set": "tuning",
+   "text": "how many calories",
+   "key": 2
+  },
+  "Ep370_Spaceflight_Adaptation:639": {
+   "set": "tuning",
+   "text": "and how they're",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:644": {
+   "set": "tuning",
+   "text": "psychological",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:647": {
+   "set": "tuning",
+   "text": "psychologist",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:661": {
+   "set": "tuning",
+   "text": "of a holistic",
+   "key": 2
+  },
+  "Ep370_Spaceflight_Adaptation:721": {
+   "set": "tuning",
+   "text": "but mentally as",
+   "key": 1
+  },
+  "Ep370_Spaceflight_Adaptation:763": {
+   "set": "tuning",
+   "text": "endurance to it",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:780": {
+   "set": "tuning",
+   "text": "D,",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:823": {
+   "set": "tuning",
+   "text": "Scott Kelly",
+   "key": 1
+  },
+  "Ep370_Spaceflight_Adaptation:844": {
+   "set": "tuning",
+   "text": "I think Scott,",
+   "key": 2
+  },
+  "Ep370_Spaceflight_Adaptation:869": {
+   "set": "tuning",
+   "text": "rain when it",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:876": {
+   "set": "tuning",
+   "text": "have mentioned when",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:913": {
+   "set": "tuning",
+   "text": "adapt to life",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:1001": {
+   "set": "tuning",
+   "text": "time,",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:1023": {
+   "set": "tuning",
+   "text": "limbs are a",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:1077": {
+   "set": "tuning",
+   "text": "called Phenergan",
+   "key": 1
+  },
+  "Ep370_Spaceflight_Adaptation:1098": {
+   "set": "tuning",
+   "text": "we can get",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:1153": {
+   "set": "tuning",
+   "text": "you start to",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:1184": {
+   "set": "tuning",
+   "text": "because it takes",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:1200": {
+   "set": "tuning",
+   "text": "that's one of",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:1269": {
+   "set": "tuning",
+   "text": "COVID",
+   "key": 0
+  },
+  "Ep370_Spaceflight_Adaptation:1286": {
+   "set": "tuning",
+   "text": "it is just",
+   "key": null
+  },
+  "Ep370_Spaceflight_Adaptation:1316": {
+   "set": "tuning",
+   "text": "similar to like",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:9": {
+   "set": "heldout",
+   "text": "I'm Dane Turner,",
+   "key": 2
+  },
+  "Ep403_Positive_Impacts:24": {
+   "set": "heldout",
+   "text": "The second member",
+   "key": 1
+  },
+  "Ep403_Positive_Impacts:37": {
+   "set": "heldout",
+   "text": "of Exhibition 73",
+   "key": 2
+  },
+  "Ep403_Positive_Impacts:59": {
+   "set": "heldout",
+   "text": "a board -certified",
+   "key": 2
+  },
+  "Ep403_Positive_Impacts:71": {
+   "set": "heldout",
+   "text": "Oncology Department",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:82": {
+   "set": "heldout",
+   "text": "and he was",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:112": {
+   "set": "heldout",
+   "text": "get a chance",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:116": {
+   "set": "heldout",
+   "text": "So let's start",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:140": {
+   "set": "heldout",
+   "text": "from,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:147": {
+   "set": "heldout",
+   "text": "as I can",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:154": {
+   "set": "heldout",
+   "text": "of wanting to",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:171": {
+   "set": "heldout",
+   "text": "doctorate from",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:209": {
+   "set": "heldout",
+   "text": "for four and",
+   "key": 1
+  },
+  "Ep403_Positive_Impacts:211": {
+   "set": "heldout",
+   "text": "that.",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:235": {
+   "set": "heldout",
+   "text": "gives us this",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:269": {
+   "set": "heldout",
+   "text": "everywhere universe",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:277": {
+   "set": "heldout",
+   "text": "we look at",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:296": {
+   "set": "heldout",
+   "text": "hydrogen",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:300": {
+   "set": "heldout",
+   "text": "or absorb",
+   "key": 1
+  },
+  "Ep403_Positive_Impacts:353": {
+   "set": "heldout",
+   "text": "background radiation",
+   "key": 1
+  },
+  "Ep403_Positive_Impacts:382": {
+   "set": "heldout",
+   "text": "and",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:394": {
+   "set": "heldout",
+   "text": "middle of a",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:399": {
+   "set": "heldout",
+   "text": "sort of",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:419": {
+   "set": "heldout",
+   "text": "this signal from",
+   "key": 1
+  },
+  "Ep403_Positive_Impacts:431": {
+   "set": "heldout",
+   "text": "radio frequencies.",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:432": {
+   "set": "heldout",
+   "text": "That is absolutely",
+   "key": 2
+  },
+  "Ep403_Positive_Impacts:437": {
+   "set": "heldout",
+   "text": "as a clinical",
+   "key": 2
+  },
+  "Ep403_Positive_Impacts:438": {
+   "set": "heldout",
+   "text": "physicist doing",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:474": {
+   "set": "heldout",
+   "text": "working at a,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:533": {
+   "set": "heldout",
+   "text": "I would have",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:547": {
+   "set": "heldout",
+   "text": "EMT and just",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:550": {
+   "set": "heldout",
+   "text": "and felt a",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:603": {
+   "set": "heldout",
+   "text": "um,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:631": {
+   "set": "heldout",
+   "text": "of the people",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:641": {
+   "set": "heldout",
+   "text": "call.",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:644": {
+   "set": "heldout",
+   "text": "a little bit",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:645": {
+   "set": "heldout",
+   "text": "about what it",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:676": {
+   "set": "heldout",
+   "text": "cancer treatments",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:704": {
+   "set": "heldout",
+   "text": "we use in",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:737": {
+   "set": "heldout",
+   "text": "about how to",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:778": {
+   "set": "heldout",
+   "text": "absolute blast.",
+   "key": 1
+  },
+  "Ep403_Positive_Impacts:780": {
+   "set": "heldout",
+   "text": "lot of fun.",
+   "key": 2
+  },
+  "Ep403_Positive_Impacts:782": {
+   "set": "heldout",
+   "text": "one of the",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:829": {
+   "set": "heldout",
+   "text": "sets.",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:850": {
+   "set": "heldout",
+   "text": "you're flying in",
+   "key": 1
+  },
+  "Ep403_Positive_Impacts:854": {
+   "set": "heldout",
+   "text": "skills",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:894": {
+   "set": "heldout",
+   "text": "uh,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:907": {
+   "set": "heldout",
+   "text": "into,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:942": {
+   "set": "heldout",
+   "text": "ground jobs,",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:977": {
+   "set": "heldout",
+   "text": "uh,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:987": {
+   "set": "heldout",
+   "text": "you know,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:1009": {
+   "set": "heldout",
+   "text": "it's been,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:1029": {
+   "set": "heldout",
+   "text": "And so,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:1030": {
+   "set": "heldout",
+   "text": "uh,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:1046": {
+   "set": "heldout",
+   "text": "you know,",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:1095": {
+   "set": "heldout",
+   "text": "I think as",
+   "key": null
+  },
+  "Ep403_Positive_Impacts:1140": {
+   "set": "heldout",
+   "text": "great education to",
+   "key": 1
+  },
+  "Ep403_Positive_Impacts:1155": {
+   "set": "heldout",
+   "text": "absolutely.",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:1166": {
+   "set": "heldout",
+   "text": "second spaceflight.",
+   "key": 0
+  },
+  "Ep403_Positive_Impacts:1167": {
+   "set": "heldout",
+   "text": "He",
+   "key": null
+  }
+ }
+}

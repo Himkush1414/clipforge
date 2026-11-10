@@ -15,7 +15,7 @@ from fontTools.ttLib import TTFont
 from PIL import ImageFont
 
 from clipforge.analysis.scoring import EMOTION_WORDS
-from clipforge.analysis.scoring_text import STOPWORDS
+from clipforge.analysis.scoring_text import END_MARK, STOPWORDS
 from clipforge.analysis.transcribe import Word
 from clipforge.captions.presets import CJK_FACES, FALLBACK_FILES, CaptionPreset, cjk_path, font_location
 
@@ -156,27 +156,68 @@ def undrawable_words(words: list[Word], preset: CaptionPreset, language: str | N
     return missing
 
 
-def classify_word(word: Word) -> str:
-    clean = re.sub(r"[^\w']", "", word.text).lower()
-    if not clean:
-        return "filler"
-    if any(ch.isdigit() for ch in clean) or clean in EMOTION_WORDS:
-        return "emphasis"
-    if word.text.rstrip("\"')").endswith("!"):
-        return "emphasis"
-    if len(clean) > 2 and word.text.strip(".,!?\"'").isupper():
-        return "emphasis"
-    if clean in STOPWORDS:
-        return "filler"
-    return "emphasis" if len(clean) >= 8 else "normal"
+# Words that say little on their own, on top of the stopwords. They are never the big word.
+GENERIC_WORDS = frozenset(
+    """time times know knew think thought thing things kind sort lot lots way ways going go goes went
+    gone say said says tell told want wanted mean means see saw look looked little bit something anything
+    stuff actually probably maybe pretty well right yes sure make made take took come came back much many
+    able also even still let's that's it's i'm there's what's they're we're you're don't didn't can't
+    wasn't isn't doing done being been one start started put getting""".split()
+)
+NUMBER_WORDS = frozenset(
+    """two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen twenty thirty
+    forty fifty hundred thousand million billion first second third half""".split()
+)
+LONG_WORD = 7
 
 
-def _end_group(words: list[Word], preset: CaptionPreset) -> list[StyledWord]:
-    styled = [StyledWord(w.text, w.start, w.end, classify_word(w)) for w in words]
-    # One big word per group: several just reads as one big line.
-    emphasized = [s for s in styled if s.kind == "emphasis"]
-    for extra in sorted(emphasized, key=lambda s: len(s.text), reverse=True)[1:]:
-        extra.kind = "normal"
+def _clean(text: str) -> str:
+    return re.sub(r"[^\w']", "", text).lower()
+
+
+def emphasis_strength(word: Word, sentence_start: bool = True) -> int:
+    """2 for a word that should be big, 1 for a long content word that may be, 0 for neither.
+
+    Strong: numbers, names (a capital letter mid-sentence), strong words, a closing "!" and all-caps words.
+    Chosen against hand labels of real podcast captions (scripts/bench/emphasis_eval.py).
+    """
+    clean = _clean(word.text)
+    number = any(ch.isdigit() for ch in clean) or clean in NUMBER_WORDS
+    if not number and (
+        len(clean) < 3 or clean in STOPWORDS or clean in GENERIC_WORDS or clean.startswith("i'")
+    ):
+        return 0
+    letters = word.text.lstrip("\"'(-¿¡")
+    name = not sentence_start and bool(letters) and letters[0].isupper()
+    shouted = word.text.rstrip("\"')").endswith("!") or word.text.strip(".,!?\"'").isupper()
+    if number or name or shouted or clean in EMOTION_WORDS:
+        return 2
+    return 1 if len(clean) >= LONG_WORD else 0
+
+
+def classify_word(word: Word, sentence_start: bool = True) -> str:
+    """'emphasis' for a word that could be the big one, 'filler' for small words, else 'normal'."""
+    if emphasis_strength(word, sentence_start):
+        return "emphasis"
+    clean = _clean(word.text)
+    return "filler" if not clean or clean in STOPWORDS else "normal"
+
+
+def _end_group(words: list[Word], starts: list[bool], preset: CaptionPreset) -> list[StyledWord]:
+    styled = [
+        StyledWord(w.text, w.start, w.end, classify_word(w, s)) for w, s in zip(words, starts, strict=True)
+    ]
+    # One big word per group: several just reads as one big line. A strong word beats a long one, the last
+    # strong word wins (the end of a name), and among long words the longest.
+    strength = [emphasis_strength(w, s) for w, s in zip(words, starts, strict=True)]
+    big = None
+    if 2 in strength:
+        big = max(i for i, v in enumerate(strength) if v == 2)
+    elif 1 in strength:
+        big = max((i for i, v in enumerate(strength) if v == 1), key=lambda i: (len(words[i].text), -i))
+    for i, s in enumerate(styled):
+        if s.kind == "emphasis" and i != big:
+            s.kind = "normal"
     if preset.uppercase:
         for s in styled:
             s.text = s.text.upper()
@@ -186,14 +227,15 @@ def _end_group(words: list[Word], preset: CaptionPreset) -> list[StyledWord]:
 def group_words(words: list[Word], preset: CaptionPreset, ratio: str, hold: float = 0.3) -> list[WordGroup]:
     """1 to max_words per group. Breaks at punctuation, pauses and width. Groups never overlap."""
     limit = GROUP_CHAR_LIMIT[ratio]
-    raw: list[list[Word]] = []
-    current: list[Word] = []
+    # Positions in words, so each word knows whether it opens a sentence (a capital there is not a name).
+    raw: list[list[int]] = []
+    current: list[int] = []
     for i, word in enumerate(words):
-        length = sum(len(w.text) + 1 for w in current) + len(word.text)
+        length = sum(len(words[j].text) + 1 for j in current) + len(word.text)
         if current and (len(current) >= preset.max_words or length > limit):
             raw.append(current)
             current = []
-        current.append(word)
+        current.append(i)
         next_word = words[i + 1] if i + 1 < len(words) else None
         if BREAK_AFTER.search(word.text) or (next_word and next_word.start - word.end >= 0.35):
             raw.append(current)
@@ -202,13 +244,15 @@ def group_words(words: list[Word], preset: CaptionPreset, ratio: str, hold: floa
         raw.append(current)
 
     groups: list[WordGroup] = []
-    for index, chunk in enumerate(raw):
-        next_start = raw[index + 1][0].start if index + 1 < len(raw) else None
+    for index, positions in enumerate(raw):
+        chunk = [words[i] for i in positions]
+        starts = [i == 0 or bool(END_MARK.search(words[i - 1].text)) for i in positions]
+        next_start = words[raw[index + 1][0]].start if index + 1 < len(raw) else None
         end = chunk[-1].end + hold
         if next_start is not None:
             # A tiny gap would make captions flicker, so the group holds until the next one starts.
             end = next_start if next_start - chunk[-1].end < 0.2 else min(end, next_start)
-        groups.append(WordGroup(_end_group(chunk, preset), chunk[0].start, end, index))
+        groups.append(WordGroup(_end_group(chunk, starts, preset), chunk[0].start, end, index))
     return groups
 
 

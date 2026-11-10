@@ -1,0 +1,63 @@
+{
+  "set": "heldout",
+  "groups": 60,
+  "results": {
+    "previous": {
+      "agreement": 0.75,
+      "precision": 0.588,
+      "recall": 0.4,
+      "big_share": 0.283
+    },
+    "stoplist": {
+      "agreement": 0.7,
+      "precision": 0.5,
+      "recall": 0.72,
+      "big_share": 0.6
+    },
+    "rarity": {
+      "agreement": 0.733,
+      "precision": 0.556,
+      "recall": 0.8,
+      "big_share": 0.6
+    },
+    "priority_len4": {
+      "agreement": 0.733,
+      "precision": 0.559,
+      "recall": 0.76,
+      "big_share": 0.567
+    },
+    "priority_len5": {
+      "agreement": 0.783,
+      "precision": 0.613,
+      "recall": 0.76,
+      "big_share": 0.517
+    },
+    "priority_len6": {
+      "agreement": 0.8,
+      "precision": 0.633,
+      "recall": 0.76,
+      "big_share": 0.5
+    },
+    "priority_len7": {
+      "agreement": 0.8,
+      "precision": 0.682,
+      "recall": 0.6,
+      "big_share": 0.367
+    },
+    "priority_len8": {
+      "agreement": 0.833,
+      "precision": 0.75,
+      "recall": 0.6,
+      "big_share": 0.333
+    },
+    "engine": {
+      "agreement": 0.8,
+      "precision": 0.682,
+      "recall": 0.6,
+      "big_share": 0.367
+    },
+    "always_none": {
+      "agreement": 0.583
+    }
+  }
+}

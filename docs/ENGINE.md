@@ -18,6 +18,7 @@ Most test material is generated, so the correct answers are known exactly. That 
 | Audio sync | FFmpeg, own planning | Known answers only | Worst 15 ms over 40 cuts | Kept |
 | Captions | libass, own layout | Known answers only | 84 renders, none outside the safe area | Kept |
 | Clip selection | Own scoring plus editor pass | Random windows, chosen clips | Held-out recall 0.62, up from 0.48, against 0.34 for random | **Added editor** |
+| Caption emphasis | Own rule | Hand labels on real podcast captions | Held-out agreement 0.75 to 0.80, precision 0.59 to 0.68 | **Replaced** |
 | Silence | Own threshold, now level-split | Silero VAD, WebRTC VAD, FFmpeg silencedetect | 0 false gaps in noise, worst speech edge 46 to 10 ms | **Replaced** |
 
 "Known answers only" means no alternative tool was compared, so those rows show that the stage works, not that it is the best choice.
@@ -228,6 +229,35 @@ The engine benchmark's own noise test went from 6 gaps found (2 false) with a 20
 **Why not a speech detector.** Silero and WebRTC answer "is someone talking?", not "is it quiet?", so they find none of the quiet gaps in noise, and fewer than half the pauses in the podcast. FFmpeg's fixed -35 dB threshold is perfect on generated material but finds only 30 of 125 real pauses, since real room tone sits above it.
 
 Limits: the podcast reference comes from aligned word times, which are accurate to about 40 ms, and counts only pauses between words, so breaths and laughter add both misses and false gaps for every method. All five methods are MIT or BSD licensed.
+
+## Caption emphasis
+
+Each caption group gets at most one big word. The old rule made any number, strong word, "!" word, all-caps word or word of 8 or more letters a candidate, then took the longest. It missed names and spelled-out numbers ("Mars", "Scott Kelly", "eight") and sometimes chose a long weak word ("actually") over them.
+
+The new rule (`emphasis_strength` in `engine/clipforge/captions/layout.py`):
+
+1. A word is never big if it is a stopword or a generic word ("time", "know", "thing", "actually").
+2. Strong words come first: numbers (digits or spelled out), names (a capital letter mid-sentence), strong words, a closing "!" and all-caps words. The last one wins, so a two-word name ends on its second word.
+3. Failing that, the longest remaining word of 7 or more letters.
+4. Failing that, no big word.
+
+Measured by `scripts/bench/emphasis_eval.py` on 210 caption groups from NASA podcast transcripts, grouped exactly as captions are. Each group was labelled with the word that should be big, or none, before any rule was written. Tuning: 150 groups from episodes 393, 378 and 370. Held out: 60 groups from episode 403, scored once, after the rule was chosen. Raw results: [benchmarks/emphasis-tuning.json](benchmarks/emphasis-tuning.json), [benchmarks/emphasis-heldout.json](benchmarks/emphasis-heldout.json).
+
+| Set | Measure | Old | **New** | Always none |
+|---|---|---|---|---|
+| Tuning, 150 groups | Agreement | 0.687 | **0.753** | 0.553 |
+| | Precision / recall | 0.66 / 0.46 | **0.69 / 0.67** | |
+| | Groups with a big word (labels: 45%) | 31% | **43%** | |
+| Held out, 60 groups | Agreement | 0.750 | **0.800** | 0.583 |
+| | Precision / recall | 0.59 / 0.40 | **0.68 / 0.60** | |
+
+Groups where only one rule matches the label: 16 to 6 for the new rule on tuning (exact McNemar p = 0.05), 5 to 2 on held out (p = 0.45). Better on every measure in both sets and in each tuning episode, but the margin is modest.
+
+**What did not help.** Scoring words by rarity in the video, by being last in the sentence, and by loudness against the 3 s around them, with weights chosen by grid search, fitted the tuning labels at 0.75 to 0.76. Choosing the weights on two episodes and scoring the third gave 0.64 to 0.67, below the old rule, so the grid was fitting the labels and not finding anything. In a 20-minute episode most words occur once or twice, so in-video rarity barely separates them. A general word-frequency list would, but the usual one (wordfreq) is a new dependency with CC BY-SA data.
+
+**Minimum length.** 7 and 8 letters tied on tuning (0.753). 7 was chosen because its share of big words matched the labels. On held out, 8 scored 0.833 against 0.800 for 7. That was seen after the choice, so 7 was kept rather than tuning on the held-out set.
+
+Limits: the labels are one AI's judgement (Claude's), not a person's, on one podcast series. Names rely on capital letters, so they are found only in scripts that have them, and in German every noun counts as a name. The stopword and generic lists are English. Other languages fall back to strong words and long words, as before.
 
 ## Not measured
 
