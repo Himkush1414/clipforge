@@ -5,6 +5,7 @@ import { Badge, EmptyState, ErrorNote, PageHeader } from "@/components/ui";
 import { BulkBar, QueuedBanner } from "@/components/clip-actions";
 import { UploadPanel } from "@/components/upload-panel";
 import { api, apiUrl, formatBytes, formatDuration, usePoll, type Channel, type Clip, type Upload } from "@/lib/api";
+import { inPartOrder } from "@/lib/clip-order";
 
 function useNow() {
   const [now, setNow] = useState(() => Date.now());
@@ -289,7 +290,7 @@ export default function ClipsPage() {
         }}
       />
       {clips && shown.length === 0 && <EmptyState title={`Nothing in ${TABS.find((t) => t.value === tab)?.label} right now`} />}
-      {groupByChannel(shown, channels ?? []).map((group) => (
+      {groupByChannel(inPartOrder(shown), channels ?? []).map((group) => (
         <section key={group.key || "none"} aria-label={`Channel: ${group.label}`} className="mb-6">
           <h2 className="mb-2 text-sm font-semibold">
             {group.label} <span className="font-normal text-muted">({group.clips.length})</span>
